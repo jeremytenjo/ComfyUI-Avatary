@@ -6,7 +6,7 @@ class ComfyUIGroupBypasser:
     RETURN_TYPES = ()
     RETURN_NAMES = ()
     FUNCTION = "noop"
-    CATEGORY = "utils"
+    CATEGORY = "Avatary/Utilities"
 
     def noop(self):
         return ()

@@ -5,7 +5,7 @@ A dynamic multi-input switch custom node for ComfyUI, modeled after **Switch Pix
 ## Node
 
 - `Switch` (`ComfySwitch`)
-- Category: `ComfyUI-Switch`
+- Category: `Avatary/Switch`
 
 ## Behavior
 

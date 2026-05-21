@@ -68,7 +68,7 @@ class NanoBananaProImage:
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("image",)
     FUNCTION = "generate_image"
-    CATEGORY = "api/image"
+    CATEGORY = "Avatary/API/Image"
 
     def generate_image(
         self,

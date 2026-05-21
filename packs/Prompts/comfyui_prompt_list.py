@@ -31,7 +31,7 @@ class ComfyUIPromptList:
     RETURN_NAMES = ("positive", "negative")
     OUTPUT_IS_LIST = (True, True)
     FUNCTION = "split"
-    CATEGORY = "utils/string"
+    CATEGORY = "Avatary/Text"
 
     def _parse_block(self, block: str) -> Tuple[str, str]:
         lines = block.split("\n")

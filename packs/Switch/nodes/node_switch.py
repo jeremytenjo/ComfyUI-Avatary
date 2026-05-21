@@ -29,7 +29,7 @@ class ComfySwitch:
     RETURN_TYPES = (ANY,)
     RETURN_NAMES = ("output",)
     FUNCTION = "pick"
-    CATEGORY = "ComfyUI-Switch"
+    CATEGORY = "Avatary/Switch"
 
     def pick(self, SwitchState="1", **kwargs):
         try:
