@@ -46,6 +46,13 @@ Use Avatary-branded categories and names:
 - Ensure assets remain compatible with `WEB_DIRECTORY = "./web"`.
 - Avoid pack-local web wiring for new work.
 
+## UI Component Reuse Rules
+- Reuse existing UI components before creating new UI markup/styles for similar behavior.
+- For Switch UI work, check `web/switch/components/` first and extend existing components when possible.
+- If a new UI primitive is needed, create it as a reusable component module under an appropriate `components/` folder (for example `web/switch/components/`), not inline in feature files.
+- Component modules should expose a small API (factory/setup functions) and keep their own scoped style injection.
+- Avoid duplicating component CSS across files; centralize style ownership in the component module.
+
 ## Testing Expectations
 Before finalizing changes, run targeted tests:
 - `pytest -q tests/test_registry.py`
