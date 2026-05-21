@@ -1,0 +1,9 @@
+SPDX-License-Identifier: GPL-3.0-only
+
+This extension is distributed under the GNU General Public License v3.0.
+
+If this folder is used inside a ComfyUI checkout, refer to the repository root
+LICENSE file for the full GPL-3.0 text.
+
+You can also read the full license text at:
+https://www.gnu.org/licenses/gpl-3.0.txt
