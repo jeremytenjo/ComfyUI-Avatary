@@ -6,6 +6,7 @@ const HIDDEN_INPUT_NAME = "SwitchState";
 const MAX_INPUTS = 32;
 const DEFAULT_W = 340;
 const PANEL_HEIGHT = 220;
+const STYLE_ID = "avatary-switch-panel-styles";
 
 function rowName(i) {
   return `input_${i}`;
@@ -129,8 +130,65 @@ function ensurePanelWidget(node) {
   return panel;
 }
 
+function ensureStyles() {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ID;
+  style.textContent = `
+    .avatary-switch-panel { font-family: Inter, system-ui, sans-serif; }
+    .avatary-switch-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .avatary-switch-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 30px;
+      border-radius: 10px;
+      border: 1px solid #4b5266;
+      background: #272d3b;
+      color: #d9dce4;
+      padding: 0 10px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .avatary-switch-input::placeholder { color: #8d95a8; }
+    .avatary-switch-toggle {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid #555d71;
+      background: #2e3442;
+      position: relative;
+      cursor: pointer;
+      box-sizing: border-box;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .avatary-switch-toggle .knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: #f1f3f7;
+      box-shadow: 0 1px 2px rgba(0,0,0,.35);
+      transition: left .15s ease;
+    }
+    .avatary-switch-toggle.active {
+      background: #f66744;
+      border-color: #f66744;
+    }
+    .avatary-switch-toggle.active .knob { left: 22px; }
+    .avatary-switch-toggle.disabled {
+      opacity: .4;
+      cursor: default;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function renderPanel(node) {
   const state = getState(node);
+  ensureStyles();
   const panel = ensurePanelWidget(node);
   if (!panel) return;
 
@@ -139,14 +197,14 @@ function renderPanel(node) {
 
   for (const row of rows) {
     const wrap = document.createElement("div");
-    wrap.style.cssText = "display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;";
+    wrap.className = "avatary-switch-row";
 
     const input = document.createElement("input");
     input.type = "text";
     input.value = row.label;
     input.placeholder = row.type || "Label";
     input.disabled = row.trailing;
-    input.style.cssText = "height:28px;border-radius:8px;border:1px solid #4b4f5a;background:#2a2d35;color:#d8d8d8;padding:0 10px;";
+    input.className = "avatary-switch-input";
     input.addEventListener("change", () => {
       const v = String(input.value || "").trim();
       if (!v) delete state.labels[row.i];
@@ -155,29 +213,29 @@ function renderPanel(node) {
       renderPanel(node);
     });
 
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.disabled = row.trailing || !row.connected;
-    const name = row.label || row.type || `Row ${row.i}`;
-    btn.textContent = row.trailing ? "Waiting" : row.active ? `ON · ${name}` : `OFF · ${name}`;
-    btn.style.cssText = [
-      "height:28px",
-      "min-width:100px",
-      "border-radius:8px",
-      "border:1px solid #4b4f5a",
-      row.active ? "background:#f66744;color:#fff;" : "background:#30333b;color:#d8d8d8;",
-      "padding:0 10px",
-      "cursor:pointer",
-    ].join("");
-    btn.addEventListener("click", () => {
-      if (row.trailing || !row.connected) return;
+    const toggle = document.createElement("div");
+    const disabled = row.trailing || !row.connected;
+    toggle.setAttribute("role", "switch");
+    toggle.setAttribute("aria-checked", row.active ? "true" : "false");
+    toggle.title = row.label || row.type || `Row ${row.i}`;
+    toggle.className = "avatary-switch-toggle";
+    if (row.active) toggle.classList.add("active");
+    if (disabled) toggle.classList.add("disabled");
+
+    const knob = document.createElement("span");
+    knob.className = "knob";
+
+    toggle.addEventListener("click", () => {
+      if (disabled) return;
       state.activeIndex = row.i;
       app.graph?.setDirtyCanvas?.(true, true);
       renderPanel(node);
     });
 
+    toggle.appendChild(knob);
+
     wrap.appendChild(input);
-    wrap.appendChild(btn);
+    wrap.appendChild(toggle);
     panel.appendChild(wrap);
   }
 }
