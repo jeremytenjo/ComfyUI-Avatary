@@ -70,6 +70,7 @@ All notable changes to internal packs are documented in this file.
 
 ### 2026-05-21
 
+- Added `Switch Avatary`, ported from Pixaroma's dynamic Switch (Python + frontend JS modules) and wired into the explicit Avatary registry.
 - Refactored root loader from dynamic pack import to explicit Pixaroma-style node registry.
 - Added unified `nodes/` namespace and migrated node-bearing modules into normalized node files.
 - Added `extensions/` namespace and wired Downloader as an explicit side-effect extension import.

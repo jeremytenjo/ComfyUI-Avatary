@@ -13,6 +13,7 @@
 - `Nano Banana Pro Avatary`
 - `Prompt List Avatary`
 - `Save Image Ultra Avatary`
+- `Switch Avatary`
 
 ## Category Taxonomy
 

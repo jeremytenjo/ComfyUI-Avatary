@@ -37,6 +37,8 @@ try:
         NODE_CLASS_MAPPINGS as _MAPS_SAVE_IMAGE_ULTRA,
     )
     from .nodes.node_save_image_ultra import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SAVE_IMAGE_ULTRA
+    from .nodes.node_switch import NODE_CLASS_MAPPINGS as _MAPS_SWITCH
+    from .nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
 except ImportError:
     from nodes.node_group_bypasser import NODE_CLASS_MAPPINGS as _MAPS_GROUP_BYPASSER
     from nodes.node_group_bypasser import (
@@ -52,6 +54,8 @@ except ImportError:
     from nodes.node_save_image_ultra import (
         NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SAVE_IMAGE_ULTRA,
     )
+    from nodes.node_switch import NODE_CLASS_MAPPINGS as _MAPS_SWITCH
+    from nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
 
 
 def _merge_mapping_dicts(*mapping_dicts: dict[str, object]) -> dict[str, object]:
@@ -72,6 +76,7 @@ NODE_CLASS_MAPPINGS = _merge_mapping_dicts(
     _MAPS_NANO_BANANA,
     _MAPS_PROMPT_LIST,
     _MAPS_SAVE_IMAGE_ULTRA,
+    _MAPS_SWITCH,
 )
 
 NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
@@ -79,6 +84,7 @@ NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
     _NAMES_NANO_BANANA,
     _NAMES_PROMPT_LIST,
     _NAMES_SAVE_IMAGE_ULTRA,
+    _NAMES_SWITCH,
 )
 
 WEB_DIRECTORY = "./web"

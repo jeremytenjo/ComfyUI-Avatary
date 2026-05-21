@@ -43,6 +43,7 @@ def test_root_registry_contains_expected_nodes():
         "NanoBananaProImage",
         "ComfyUI-Prompts",
         "SaveImageWithPromptToggle",
+        "AvatarySwitch",
     }
     assert set(module.NODE_CLASS_MAPPINGS.keys()) == expected_keys
     assert module.WEB_DIRECTORY == "./web"
