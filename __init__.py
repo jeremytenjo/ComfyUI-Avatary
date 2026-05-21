@@ -1,101 +1,88 @@
-"""ComfyUI-Avatary meta pack.
+"""ComfyUI-Avatary explicit node registry.
 
-Loads selected custom node packs and exposes their nodes through one package.
+Pixaroma-style startup wiring:
+- explicit node module imports
+- centralized mapping merge
+- explicit side-effect extension imports
 """
 
 from __future__ import annotations
 
-import importlib.util
-import sys
-from pathlib import Path
-from types import ModuleType
-
-BASE_DIR = Path(__file__).resolve().parent
-PACKS_DIR = BASE_DIR / "packs"
-
-# Highlighted packs from your screenshot.
-PACKS = [
-    "Downloader",
-    "Group-Bypasser",
-    "Nano-Banana",
-    "Prompts",
-    "Save-Image-Ultra",
-]
-
-NODE_CLASS_MAPPINGS: dict[str, object] = {}
-NODE_DISPLAY_NAME_MAPPINGS: dict[str, str] = {}
-
-
-def _load_module_from_init(pack_dir: Path, unique_name: str) -> ModuleType | None:
-    init_path = pack_dir / "__init__.py"
-    if not init_path.exists():
-        print(f"[ComfyUI-Avatary] Skipping {pack_dir.name}: missing __init__.py")
-        return None
-
-    spec = importlib.util.spec_from_file_location(
-        unique_name,
-        init_path,
-        submodule_search_locations=[str(pack_dir)],
-    )
-    if spec is None or spec.loader is None:
-        print(f"[ComfyUI-Avatary] Failed to build import spec for {pack_dir.name}")
-        return None
-
-    module = importlib.util.module_from_spec(spec)
-    # Required for packages that use relative imports from their __init__.py
-    # (e.g. `from .node_mappings import ...`).
-    sys.modules[unique_name] = module
-    added_path = str(pack_dir)
-    if added_path not in sys.path:
-        sys.path.insert(0, added_path)
+# Side-effect import: registers Downloader backend routes/utilities.
+def _try_load_downloader_extension() -> None:
     try:
-        spec.loader.exec_module(module)
-    except Exception as exc:
-        print(f"[ComfyUI-Avatary] Failed to load {pack_dir.name}: {exc}")
-        return None
-    finally:
-        if added_path in sys.path:
-            sys.path.remove(added_path)
-    return module
+        from .extensions import downloader_extension as _downloader_extension  # noqa: F401
+    except Exception:
+        try:
+            import extensions.downloader_extension as _downloader_extension  # noqa: F401
+        except Exception as exc:
+            print(
+                "[ComfyUI-Avatary] Downloader extension not loaded in this runtime: "
+                f"{exc}"
+            )
 
 
-def _merge_from(module: ModuleType, pack_name: str) -> None:
-    class_map = getattr(module, "NODE_CLASS_MAPPINGS", {}) or {}
+_try_load_downloader_extension()
 
-    # Support both naming styles used by custom nodes.
-    display_map = (
-        getattr(module, "NODE_DISPLAY_NAME_MAPPINGS", None)
-        or getattr(module, "NODE_DISPLAY_NAMES", None)
-        or {}
+try:
+    from .nodes.node_group_bypasser import NODE_CLASS_MAPPINGS as _MAPS_GROUP_BYPASSER
+    from .nodes.node_group_bypasser import (
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES_GROUP_BYPASSER,
+    )
+    from .nodes.node_nano_banana import NODE_CLASS_MAPPINGS as _MAPS_NANO_BANANA
+    from .nodes.node_nano_banana import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_NANO_BANANA
+    from .nodes.node_prompt_list import NODE_CLASS_MAPPINGS as _MAPS_PROMPT_LIST
+    from .nodes.node_prompt_list import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_PROMPT_LIST
+    from .nodes.node_save_image_ultra import (
+        NODE_CLASS_MAPPINGS as _MAPS_SAVE_IMAGE_ULTRA,
+    )
+    from .nodes.node_save_image_ultra import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SAVE_IMAGE_ULTRA
+except ImportError:
+    from nodes.node_group_bypasser import NODE_CLASS_MAPPINGS as _MAPS_GROUP_BYPASSER
+    from nodes.node_group_bypasser import (
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES_GROUP_BYPASSER,
+    )
+    from nodes.node_nano_banana import NODE_CLASS_MAPPINGS as _MAPS_NANO_BANANA
+    from nodes.node_nano_banana import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_NANO_BANANA
+    from nodes.node_prompt_list import NODE_CLASS_MAPPINGS as _MAPS_PROMPT_LIST
+    from nodes.node_prompt_list import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_PROMPT_LIST
+    from nodes.node_save_image_ultra import (
+        NODE_CLASS_MAPPINGS as _MAPS_SAVE_IMAGE_ULTRA,
+    )
+    from nodes.node_save_image_ultra import (
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SAVE_IMAGE_ULTRA,
     )
 
-    for key, value in class_map.items():
-        if key in NODE_CLASS_MAPPINGS:
-            print(
-                f"[ComfyUI-Avatary] Duplicate node key '{key}' from {pack_name}; keeping first occurrence."
-            )
-            continue
-        NODE_CLASS_MAPPINGS[key] = value
-        if key in display_map:
-            NODE_DISPLAY_NAME_MAPPINGS[key] = display_map[key]
+
+def _merge_mapping_dicts(*mapping_dicts: dict[str, object]) -> dict[str, object]:
+    merged: dict[str, object] = {}
+    for mapping in mapping_dicts:
+        for key, value in mapping.items():
+            if key in merged:
+                print(
+                    f"[ComfyUI-Avatary] Duplicate node key '{key}' detected; keeping first occurrence."
+                )
+                continue
+            merged[key] = value
+    return merged
 
 
-for idx, pack_name in enumerate(PACKS, start=1):
-    pack_dir = PACKS_DIR / pack_name
-    if not pack_dir.exists():
-        print(f"[ComfyUI-Avatary] Missing pack: {pack_name}")
-        continue
-
-    module = _load_module_from_init(pack_dir, f"comfyui_avatary_pack_{idx}")
-    if module is None:
-        continue
-    _merge_from(module, pack_name)
-
-print(
-    f"[ComfyUI-Avatary] Loaded {len(NODE_CLASS_MAPPINGS)} nodes from {len(PACKS)} packs."
+NODE_CLASS_MAPPINGS = _merge_mapping_dicts(
+    _MAPS_GROUP_BYPASSER,
+    _MAPS_NANO_BANANA,
+    _MAPS_PROMPT_LIST,
+    _MAPS_SAVE_IMAGE_ULTRA,
 )
 
-# Expose web assets from embedded packs under ComfyUI-Avatary's web route.
-WEB_DIRECTORY = "./packs"
+NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
+    _NAMES_GROUP_BYPASSER,
+    _NAMES_NANO_BANANA,
+    _NAMES_PROMPT_LIST,
+    _NAMES_SAVE_IMAGE_ULTRA,
+)
+
+WEB_DIRECTORY = "./web"
+
+print(f"[ComfyUI-Avatary] Loaded {len(NODE_CLASS_MAPPINGS)} nodes from explicit registry.")
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]

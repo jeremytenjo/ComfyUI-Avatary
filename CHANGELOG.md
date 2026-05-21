@@ -65,3 +65,13 @@ All notable changes to internal packs are documented in this file.
 #### Changed
 
 - Node now skips API calls and returns cached output when the same image size, prompt, size, and resolution are provided.
+
+## Avatary Core
+
+### 2026-05-21
+
+- Refactored root loader from dynamic pack import to explicit Pixaroma-style node registry.
+- Added unified `nodes/` namespace and migrated node-bearing modules into normalized node files.
+- Added `extensions/` namespace and wired Downloader as an explicit side-effect extension import.
+- Consolidated frontend web assets under top-level `web/` and switched root `WEB_DIRECTORY` to `./web`.
+- Unified node branding with Avatary-prefixed display names and `👑 Avatary/...` category taxonomy.
