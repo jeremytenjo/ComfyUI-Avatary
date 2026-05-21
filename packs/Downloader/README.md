@@ -53,4 +53,4 @@ Restart ComfyUI.
 
 ## Changelog
 
-See [CHANGELOG.md](./CHANGELOG.md).
+See [root CHANGELOG.md](../../CHANGELOG.md).
