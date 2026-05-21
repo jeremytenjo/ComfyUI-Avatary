@@ -20,7 +20,6 @@ PACKS = [
     "Nano-Banana",
     "Prompts",
     "Save-Image-Ultra",
-    "Switch",
 ]
 
 NODE_CLASS_MAPPINGS: dict[str, object] = {}
