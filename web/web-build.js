@@ -3511,7 +3511,7 @@ function ensureTextfieldStyles() {
       transition: background .12s ease, box-shadow .12s ease, border-color .12s ease;
     }
     .avatary-textfield:not(:disabled):hover {
-      background: var(--component-node-widget-background-hovered, #4a4e5e);
+      background: red;
       border-color: color-mix(in srgb, var(--p-primary-color, #60A5FA) 50%, transparent);
     }
     .avatary-textfield::placeholder {
@@ -3520,11 +3520,11 @@ function ensureTextfieldStyles() {
     }
     .avatary-textfield:not(:disabled):focus {
       border-color: var(--p-primary-color, #60A5FA);
-      background: var(--component-node-widget-background-hovered, #4a4e5e);
+      background: red;
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary-color, #60A5FA) 25%, transparent);
     }
     .avatary-textfield:not(:disabled):active {
-      background: var(--component-node-widget-background-selected, #555a69);
+      background: red;
       border-color: var(--p-primary-color, #60A5FA);
     }
     .avatary-textfield:disabled {
