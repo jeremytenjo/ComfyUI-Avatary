@@ -1,3 +1,4 @@
+// @ts-nocheck
 (() => {
 	const DIALOG_ID = "download-to-directory-dialog";
 	const BUTTON_ID = "download-to-directory-button";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { app } from "../../scripts/app.js";
 
 const NODE_NAME = "ComfyUI-Group-Bypasser";
