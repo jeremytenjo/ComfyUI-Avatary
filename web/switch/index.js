@@ -235,7 +235,7 @@ function ensurePanelWidget(node) {
     'display:flex',
     'flex-direction:column',
     'gap:8px',
-    'padding:8px',
+    'padding:1px',
     'height:100%',
     'overflow:auto',
     'box-sizing:border-box',

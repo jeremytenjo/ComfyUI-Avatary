@@ -1,16 +1,16 @@
 // web-src/download_to_directory.ts
 (() => {
-  const DIALOG_ID = "download-to-directory-dialog";
-  const BUTTON_ID = "download-to-directory-button";
-  const RECENT_FOLDERS_KEY = "download-to-directory-recent-folders-v1";
-  const ADVANCED_OPEN_KEY = "download-to-directory-advanced-open-v1";
-  const HISTORY_KEY = "download-to-directory-history-v1";
-  const HF_TOKEN_KEY = "download-to-directory-hf-token-v1";
+  const DIALOG_ID = 'download-to-directory-dialog';
+  const BUTTON_ID = 'download-to-directory-button';
+  const RECENT_FOLDERS_KEY = 'download-to-directory-recent-folders-v1';
+  const ADVANCED_OPEN_KEY = 'download-to-directory-advanced-open-v1';
+  const HISTORY_KEY = 'download-to-directory-history-v1';
+  const HF_TOKEN_KEY = 'download-to-directory-hf-token-v1';
   const MAX_RECENT_FOLDERS = 8;
   const MAX_HISTORY_ITEMS = 100;
   const HOT_RELOAD_POLL_MS = 800;
   const state = {
-    apiPrefix: "/api",
+    apiPrefix: '/api',
     roots: [],
     toggleEl: null,
     dialogEl: null,
@@ -20,11 +20,11 @@
     missingCheckBusy: false,
     installBusy: false,
     manualSourceOverrides: {},
-    installJobId: "",
+    installJobId: '',
     installProgress: null,
     installPollTimer: null,
     installResults: [],
-    uploadFolder: "output"
+    uploadFolder: 'output',
   };
   let restartConfirmResolver = null;
   let uploadPathResolver = null;
@@ -32,9 +32,9 @@
   let hotReloadTimer = null;
   let lastHotReloadStamp = null;
   function ensureStyles2() {
-    if (document.getElementById("download-to-directory-style")) return;
-    const style = document.createElement("style");
-    style.id = "download-to-directory-style";
+    if (document.getElementById('download-to-directory-style')) return;
+    const style = document.createElement('style');
+    style.id = 'download-to-directory-style';
     style.textContent = `
       #download-to-directory-inline-slot {
         display: flex;
@@ -751,9 +751,9 @@
     const response = await fetch(
       `${state.apiPrefix}/download-to-dir/dev/web-change-stamp`,
       {
-        cache: "no-store",
-        headers: { Accept: "application/json" }
-      }
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      },
     );
     if (!response.ok) {
       throw new Error(`Hot reload probe failed: ${response.status}`);
@@ -766,7 +766,10 @@
       try {
         const payload = await fetchWebChangeStamp();
         if (!payload?.enabled) return;
-        const stamp = typeof payload.stamp === "number" ? payload.stamp : Number(payload.stamp);
+        const stamp =
+          typeof payload.stamp === 'number'
+            ? payload.stamp
+            : Number(payload.stamp);
         if (!Number.isFinite(stamp) || stamp <= 0) return;
         if (lastHotReloadStamp === null) {
           lastHotReloadStamp = stamp;
@@ -776,12 +779,11 @@
           lastHotReloadStamp = stamp;
           window.location.reload();
         }
-      } catch (_err) {
-      }
+      } catch (_err) {}
     }, HOT_RELOAD_POLL_MS);
   }
   async function apiFetch(path, options) {
-    const prefixes = [state.apiPrefix, "", "/api"];
+    const prefixes = [state.apiPrefix, '', '/api'];
     let lastError = null;
     for (const prefix of prefixes) {
       const url = `${prefix}${path}`;
@@ -794,36 +796,46 @@
         lastError = err;
       }
     }
-    throw lastError || new Error("Unable to reach ComfyUI API");
+    throw lastError || new Error('Unable to reach ComfyUI API');
   }
-  function setStatus(message, type = "") {
+  function setStatus(message, type = '') {
     const status = document.querySelector(`#${DIALOG_ID} .status`);
     if (!status) return;
-    const normalized = String(message || "").trim().replace(/\.$/, "").toLowerCase();
-    const hideStatus = normalized === "ready";
+    const normalized = String(message || '')
+      .trim()
+      .replace(/\.$/, '')
+      .toLowerCase();
+    const hideStatus = normalized === 'ready';
     status.hidden = hideStatus;
     status.className = `status ${type}`.trim();
-    status.textContent = hideStatus ? "" : message;
+    status.textContent = hideStatus ? '' : message;
   }
   function escapeHtml(value) {
-    return String(value || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+    return String(value || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
   }
   function collectCurrentWorkflowJson() {
     try {
       const graph = window.app?.graph;
       if (!graph?.serialize) return null;
       const workflow = graph.serialize();
-      return workflow && typeof workflow === "object" ? workflow : null;
+      return workflow && typeof workflow === 'object' ? workflow : null;
     } catch {
       return null;
     }
   }
   function isIgnoredUnknownNodeName(raw) {
-    const value = String(raw || "").trim();
+    const value = String(raw || '').trim();
     if (!value) return true;
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      value
-    )) {
+    if (
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        value,
+      )
+    ) {
       return true;
     }
     if (/^[0-9a-f]{32}$/i.test(value)) {
@@ -833,15 +845,17 @@
   }
   function collectMissingNodeTypesFromGraph() {
     try {
-      const graphNodes = Array.isArray(window.app?.graph?._nodes) ? window.app.graph._nodes : [];
+      const graphNodes = Array.isArray(window.app?.graph?._nodes)
+        ? window.app.graph._nodes
+        : [];
       if (graphNodes.length === 0) return [];
       const registeredTypes = new Set(
-        Object.keys(window.LiteGraph?.registered_node_types || {})
+        Object.keys(window.LiteGraph?.registered_node_types || {}),
       );
-      const virtualNodeTypes = /* @__PURE__ */ new Set(["Reroute", "Note"]);
+      const virtualNodeTypes = /* @__PURE__ */ new Set(['Reroute', 'Note']);
       const missing = /* @__PURE__ */ new Set();
       for (const node of graphNodes) {
-        const typeName = String(node?.type || "").trim();
+        const typeName = String(node?.type || '').trim();
         if (!typeName) continue;
         if (virtualNodeTypes.has(typeName)) continue;
         if (isIgnoredUnknownNodeName(typeName)) continue;
@@ -855,74 +869,99 @@
     }
   }
   function normalizeMissingState(raw) {
-    const value = String(raw || "").trim().toLowerCase();
-    if (!value) return "unknown";
+    const value = String(raw || '')
+      .trim()
+      .toLowerCase();
+    if (!value) return 'unknown';
     return value;
   }
   function setMissingNodeData(payload) {
     const missing = Array.isArray(payload?.missing) ? payload.missing : [];
-    const unknown = Array.isArray(payload?.unknown_nodes) ? payload.unknown_nodes : [];
+    const unknown = Array.isArray(payload?.unknown_nodes)
+      ? payload.unknown_nodes
+      : [];
     state.missingNodes = missing.map((entry) => {
-      const sourceUrl = String(entry?.source_url || "").trim();
-      const displayName = String(entry?.display_name || "").trim() || "unknown";
-      const key = String(entry?.key || "").trim() || sourceUrl || displayName;
+      const sourceUrl = String(entry?.source_url || '').trim();
+      const displayName = String(entry?.display_name || '').trim() || 'unknown';
+      const key = String(entry?.key || '').trim() || sourceUrl || displayName;
       return {
         key,
         display_name: displayName,
         source_url: sourceUrl,
         state: normalizeMissingState(entry?.state),
-        install_target: String(entry?.install_target || "").trim() || sourceUrl || displayName
+        install_target:
+          String(entry?.install_target || '').trim() ||
+          sourceUrl ||
+          displayName,
       };
     });
-    state.unknownNodes = unknown.map((item) => String(item || "").trim()).filter((item) => item && !isIgnoredUnknownNodeName(item));
+    state.unknownNodes = unknown
+      .map((item) => String(item || '').trim())
+      .filter((item) => item && !isIgnoredUnknownNodeName(item));
     updateMissingWarningVisibility();
     renderMissingNodesModalContent();
   }
   function updateMissingWarningVisibility() {
-    const warningButton = document.getElementById("dtd-missing-warning");
+    const warningButton = document.getElementById('dtd-missing-warning');
     if (!warningButton) return;
-    const count = Number(state.missingNodes.length || 0) + Number(state.unknownNodes.length || 0);
+    const count =
+      Number(state.missingNodes.length || 0) +
+      Number(state.unknownNodes.length || 0);
     const visible = count > 0;
-    warningButton.classList.toggle("visible", visible);
+    warningButton.classList.toggle('visible', visible);
     warningButton.hidden = !visible;
     warningButton.setAttribute(
-      "aria-label",
-      visible ? `${count} missing workflow node${count === 1 ? "" : "s"}` : "No missing custom nodes"
+      'aria-label',
+      visible
+        ? `${count} missing workflow node${count === 1 ? '' : 's'}`
+        : 'No missing custom nodes',
     );
-    warningButton.title = visible ? `${count} missing workflow node${count === 1 ? "" : "s"}` : "";
+    warningButton.title = visible
+      ? `${count} missing workflow node${count === 1 ? '' : 's'}`
+      : '';
   }
   function renderMissingNodesModalContent() {
-    const body = document.getElementById("dtd-missing-body");
-    const installButton = document.getElementById("dtd-missing-install");
-    const restartButton = document.getElementById("dtd-missing-restart");
+    const body = document.getElementById('dtd-missing-body');
+    const installButton = document.getElementById('dtd-missing-install');
+    const restartButton = document.getElementById('dtd-missing-restart');
     if (!body) return;
     const disableInputs = state.installBusy;
     const progress = state.installProgress || null;
     const progressPercent = Math.max(
       0,
-      Math.min(100, Number(progress?.progress_percent || 0))
+      Math.min(100, Number(progress?.progress_percent || 0)),
     );
     const progressCompleted = Number(progress?.completed_targets || 0);
     const progressFailed = Number(progress?.failed_targets || 0);
     const progressTotal = Number(progress?.total_targets || 0);
-    const progressCurrent = String(progress?.current_target || "").trim();
-    const progressStatus = String(progress?.status || "").trim() || "idle";
-    const progressMarkup = state.installBusy || progress ? `
+    const progressCurrent = String(progress?.current_target || '').trim();
+    const progressStatus = String(progress?.status || '').trim() || 'idle';
+    const progressMarkup =
+      state.installBusy || progress
+        ? `
       <div class="missing-progress">
         <p class="missing-progress-title">Install Progress: ${escapeHtml(progressCompleted)}/${escapeHtml(progressTotal || 0)} complete</p>
-        <p class="missing-progress-sub">Status: ${escapeHtml(progressStatus)}${progressCurrent ? ` | Current: ${escapeHtml(progressCurrent)}` : ""}</p>
+        <p class="missing-progress-sub">Status: ${escapeHtml(progressStatus)}${progressCurrent ? ` | Current: ${escapeHtml(progressCurrent)}` : ''}</p>
         <p class="missing-progress-sub">Succeeded: ${escapeHtml(progressCompleted)} | Failed: ${escapeHtml(progressFailed)}</p>
         <progress value="${escapeHtml(progressPercent)}" max="100"></progress>
       </div>
-    ` : "";
-    const missingMarkup = state.missingNodes.length ? state.missingNodes.map((entry) => {
-      const sourceUrl = String(entry.source_url || "").trim();
-      const stateText = escapeHtml(entry.state || "unknown");
-      const heading = escapeHtml(entry.display_name || "unknown");
-      const sourceMarkup = sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceUrl)}</a>` : "<b>source unavailable</b>";
-      const disabledAttr = disableInputs ? "disabled" : "";
-      const manualInput = sourceUrl.length > 0 ? "" : `<input class="missing-row-url" type="text" data-action="manual-source" data-key="${escapeHtml(entry.key)}" value="${escapeHtml(state.manualSourceOverrides[entry.key] || "")}" placeholder="Enter git URL for this node (optional)" ${disabledAttr} />`;
-      return `
+    `
+        : '';
+    const missingMarkup = state.missingNodes.length
+      ? state.missingNodes
+          .map((entry) => {
+            const sourceUrl = String(entry.source_url || '').trim();
+            const stateText = escapeHtml(entry.state || 'unknown');
+            const heading = escapeHtml(entry.display_name || 'unknown');
+            const sourceMarkup = sourceUrl
+              ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceUrl)}</a>`
+              : '<b>source unavailable</b>';
+            const disabledAttr = disableInputs ? 'disabled' : '';
+            const manualInput =
+              sourceUrl.length > 0
+                ? ''
+                : `<input class="missing-row-url" type="text" data-action="manual-source" data-key="${escapeHtml(entry.key)}" value="${escapeHtml(state.manualSourceOverrides[entry.key] || '')}" placeholder="Enter git URL for this node (optional)" ${disabledAttr} />`;
+            return `
               <div class="missing-row">
                 <p class="missing-row-name">${heading}</p>
                 <p class="missing-row-meta">State: <b>${stateText}</b></p>
@@ -930,26 +969,32 @@
                 ${manualInput}
               </div>
             `;
-    }).join("") : '<p class="missing-copy">No missing custom nodes detected.</p>';
-    const unknownMarkup = state.unknownNodes.length ? `
+          })
+          .join('')
+      : '<p class="missing-copy">No missing custom nodes detected.</p>';
+    const unknownMarkup = state.unknownNodes.length
+      ? `
         <div class="missing-unknown">
           <h4>Unknown Node Classes</h4>
           <div class="missing-list">
-            ${state.unknownNodes.map((name) => {
-      const key = `unknown:${name}`;
-      const value = String(state.manualSourceOverrides[key] || "");
-      const disabledAttr = disableInputs ? "disabled" : "";
-      return `
+            ${state.unknownNodes
+              .map((name) => {
+                const key = `unknown:${name}`;
+                const value = String(state.manualSourceOverrides[key] || '');
+                const disabledAttr = disableInputs ? 'disabled' : '';
+                return `
                   <div class="missing-row">
                     <p class="missing-row-name">${escapeHtml(name)}</p>
                     <p class="missing-row-meta">Source: <b>source unavailable</b></p>
                     <input class="missing-row-url" type="text" data-action="manual-source" data-key="${escapeHtml(key)}" value="${escapeHtml(value)}" placeholder="Enter git URL for this node (optional)" ${disabledAttr} />
                   </div>
                 `;
-    }).join("")}
+              })
+              .join('')}
           </div>
         </div>
-      ` : "";
+      `
+      : '';
     body.innerHTML = `
       <p class="missing-copy">Install missing custom nodes for the currently open workflow.</p>
       ${progressMarkup}
@@ -957,45 +1002,57 @@
       ${unknownMarkup}
     `;
     if (installButton) {
-      const canInstall = buildMissingInstallTargets().length > 0 && !state.installBusy;
+      const canInstall =
+        buildMissingInstallTargets().length > 0 && !state.installBusy;
       installButton.disabled = !canInstall;
-      installButton.textContent = state.installBusy ? "Installing..." : "Install Missing Nodes";
+      installButton.textContent = state.installBusy
+        ? 'Installing...'
+        : 'Install Missing Nodes';
     }
     if (restartButton) {
-      const showRestart = !state.installBusy && String(progressStatus || "").toLowerCase() === "completed" && progressCompleted > 0;
-      restartButton.classList.toggle("visible", showRestart);
+      const showRestart =
+        !state.installBusy &&
+        String(progressStatus || '').toLowerCase() === 'completed' &&
+        progressCompleted > 0;
+      restartButton.classList.toggle('visible', showRestart);
       restartButton.hidden = !showRestart;
     }
   }
   function refreshMissingActionButtons() {
-    const installButton = document.getElementById("dtd-missing-install");
-    const restartButton = document.getElementById("dtd-missing-restart");
+    const installButton = document.getElementById('dtd-missing-install');
+    const restartButton = document.getElementById('dtd-missing-restart');
     if (installButton) {
-      const canInstall = buildMissingInstallTargets().length > 0 && !state.installBusy;
+      const canInstall =
+        buildMissingInstallTargets().length > 0 && !state.installBusy;
       installButton.disabled = !canInstall;
-      installButton.textContent = state.installBusy ? "Installing..." : "Install Missing Nodes";
+      installButton.textContent = state.installBusy
+        ? 'Installing...'
+        : 'Install Missing Nodes';
     }
     if (restartButton) {
       const progress = state.installProgress || null;
-      const showRestart = !state.installBusy && String(progress?.status || "").toLowerCase() === "completed" && Number(progress?.completed_targets || 0) > 0;
-      restartButton.classList.toggle("visible", showRestart);
+      const showRestart =
+        !state.installBusy &&
+        String(progress?.status || '').toLowerCase() === 'completed' &&
+        Number(progress?.completed_targets || 0) > 0;
+      restartButton.classList.toggle('visible', showRestart);
       restartButton.hidden = !showRestart;
     }
   }
   function openMissingNodesModal() {
-    const modal = document.getElementById("dtd-missing-modal");
+    const modal = document.getElementById('dtd-missing-modal');
     if (!modal) return;
     modal.hidden = false;
     renderMissingNodesModalContent();
   }
   function closeMissingNodesModal() {
-    const modal = document.getElementById("dtd-missing-modal");
+    const modal = document.getElementById('dtd-missing-modal');
     if (!modal) return;
     modal.hidden = true;
   }
   function isTerminalInstallStatus(status) {
-    return ["completed", "partial", "failed"].includes(
-      String(status || "").toLowerCase()
+    return ['completed', 'partial', 'failed'].includes(
+      String(status || '').toLowerCase(),
     );
   }
   function clearInstallPollTimer() {
@@ -1013,20 +1070,25 @@
     const response = await apiFetch(
       `/download-to-dir/missing-nodes/install-progress/${encodeURIComponent(jobId)}`,
       {
-        method: "GET",
-        headers: { Accept: "application/json" }
-      }
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      },
     );
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const reason = String(data?.reason || data?.error || "").trim() || `Failed to poll install progress (${response.status})`;
+      const reason =
+        String(data?.reason || data?.error || '').trim() ||
+        `Failed to poll install progress (${response.status})`;
       throw new Error(reason);
     }
     return data;
   }
   function applyInstallProgress(progress) {
-    state.installProgress = progress && typeof progress === "object" ? progress : null;
-    state.installResults = Array.isArray(progress?.results) ? progress.results : [];
+    state.installProgress =
+      progress && typeof progress === 'object' ? progress : null;
+    state.installResults = Array.isArray(progress?.results)
+      ? progress.results
+      : [];
     state.installBusy = !isTerminalInstallStatus(progress?.status);
     renderMissingNodesModalContent();
   }
@@ -1052,19 +1114,21 @@
     state.missingCheckBusy = true;
     try {
       const response = await apiFetch(
-        "/download-to-dir/missing-nodes/analyze",
+        '/download-to-dir/missing-nodes/analyze',
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json"
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
           },
-          body: JSON.stringify({ workflow })
-        }
+          body: JSON.stringify({ workflow }),
+        },
       );
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const reason = String(data?.reason || data?.error || data?.stderr || "").trim() || `Failed to analyze workflow dependencies (${response.status})`;
+        const reason =
+          String(data?.reason || data?.error || data?.stderr || '').trim() ||
+          `Failed to analyze workflow dependencies (${response.status})`;
         throw new Error(reason);
       }
       setMissingNodeData(data);
@@ -1081,7 +1145,7 @@
         return;
       }
       if (!silent) {
-        setStatus(err?.message || String(err), "error");
+        setStatus(err?.message || String(err), 'error');
       }
     } finally {
       state.missingCheckBusy = false;
@@ -1092,9 +1156,9 @@
     const targets = [];
     const seen = /* @__PURE__ */ new Set();
     for (const entry of state.missingNodes) {
-      const sourceUrl = String(entry.source_url || "").trim();
+      const sourceUrl = String(entry.source_url || '').trim();
       const manualSource = String(
-        state.manualSourceOverrides[entry.key] || ""
+        state.manualSourceOverrides[entry.key] || '',
       ).trim();
       const target = sourceUrl || manualSource;
       if (!target || seen.has(target)) continue;
@@ -1104,7 +1168,7 @@
     for (const unknownName of state.unknownNodes) {
       const key = `unknown:${unknownName}`;
       const manualSource = String(
-        state.manualSourceOverrides[key] || ""
+        state.manualSourceOverrides[key] || '',
       ).trim();
       if (!manualSource || seen.has(manualSource)) continue;
       seen.add(manualSource);
@@ -1117,95 +1181,102 @@
     const targets = buildMissingInstallTargets();
     if (targets.length === 0) {
       setStatus(
-        "No install targets available. Add git URLs for rows with unavailable source.",
-        "error"
+        'No install targets available. Add git URLs for rows with unavailable source.',
+        'error',
       );
       return;
     }
     state.installBusy = true;
-    state.installJobId = "";
+    state.installJobId = '';
     state.installResults = [];
     state.installProgress = {
-      status: "queued",
+      status: 'queued',
       total_targets: targets.length,
       completed_targets: 0,
       failed_targets: 0,
       progress_percent: 0,
-      current_target: "",
-      results: []
+      current_target: '',
+      results: [],
     };
     renderMissingNodesModalContent();
     setStatus(`Installing ${targets.length} missing node(s)...`);
     try {
       const response = await apiFetch(
-        "/download-to-dir/missing-nodes/install",
+        '/download-to-dir/missing-nodes/install',
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json"
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
           },
-          body: JSON.stringify({ targets })
-        }
+          body: JSON.stringify({ targets }),
+        },
       );
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data?.job_id) {
-        const reason = String(data?.reason || data?.error || "").trim() || `Failed to start missing-node install (${response.status})`;
+        const reason =
+          String(data?.reason || data?.error || '').trim() ||
+          `Failed to start missing-node install (${response.status})`;
         throw new Error(reason);
       }
-      state.installJobId = String(data.job_id || "").trim();
+      state.installJobId = String(data.job_id || '').trim();
       applyInstallProgress({
-        ...state.installProgress || {},
-        ...data
+        ...(state.installProgress || {}),
+        ...data,
       });
       const finalProgress = await waitForInstallJobCompletion(
-        state.installJobId
+        state.installJobId,
       );
-      const finalStatus = String(finalProgress?.status || "").toLowerCase();
+      const finalStatus = String(finalProgress?.status || '').toLowerCase();
       const installed = Number(finalProgress?.completed_targets || 0);
       const failed = Number(finalProgress?.failed_targets || 0);
-      const successfulInstalls = Array.isArray(finalProgress?.results) ? finalProgress.results.filter((entry) => Boolean(entry?.ok)) : [];
+      const successfulInstalls = Array.isArray(finalProgress?.results)
+        ? finalProgress.results.filter((entry) => Boolean(entry?.ok))
+        : [];
       state.installBusy = false;
       renderMissingNodesModalContent();
-      if (finalStatus === "partial") {
+      if (finalStatus === 'partial') {
         setStatus(
           `Installed ${installed} node(s); ${failed} failed. Review logs, then restart if needed.`,
-          "error"
+          'error',
         );
-      } else if (finalStatus === "completed") {
+      } else if (finalStatus === 'completed') {
         setStatus(
           `Installed ${installed} missing node(s). Click Restart in this modal.`,
-          "success"
+          'success',
         );
       } else {
         const firstError = String(
-          finalProgress?.results?.find?.((entry) => !entry?.ok)?.stderr || ""
+          finalProgress?.results?.find?.((entry) => !entry?.ok)?.stderr || '',
         ).trim();
         setStatus(
-          firstError || `Failed to install missing nodes. ${failed} target(s) failed.`,
-          "error"
+          firstError ||
+            `Failed to install missing nodes. ${failed} target(s) failed.`,
+          'error',
         );
       }
       for (const entry of successfulInstalls) {
-        const target = String(entry?.target || "").trim();
+        const target = String(entry?.target || '').trim();
         if (!target) continue;
-        const base = target.split("/").pop() || target;
-        const displayName = base.toLowerCase().endsWith(".git") ? base.slice(0, -4) : base;
+        const base = target.split('/').pop() || target;
+        const displayName = base.toLowerCase().endsWith('.git')
+          ? base.slice(0, -4)
+          : base;
         addHistoryEntry({
-          operation: "install",
-          status: "success",
+          operation: 'install',
+          status: 'success',
           file_name: displayName || target,
           destination_path: target,
           path: target,
           bytes_written: 0,
           total_bytes: null,
           progress_percent: null,
-          error: ""
+          error: '',
         });
       }
       await refreshMissingNodes({ silent: true });
     } catch (err) {
-      setStatus(err?.message || String(err), "error");
+      setStatus(err?.message || String(err), 'error');
     } finally {
       clearInstallPollTimer();
       state.installBusy = false;
@@ -1225,41 +1296,40 @@
   function writeSessionJson(key, value) {
     try {
       sessionStorage.setItem(key, JSON.stringify(value));
-    } catch {
-    }
+    } catch {}
   }
   function readSessionBoolean(key, fallback = false) {
     const value = readSessionJson(key, fallback);
-    return typeof value === "boolean" ? value : fallback;
+    return typeof value === 'boolean' ? value : fallback;
   }
   function writeSessionBoolean(key, value) {
     writeSessionJson(key, Boolean(value));
   }
   function findActionbarMountNode() {
-    const actionbarContainer = document.querySelector(".actionbar-container");
+    const actionbarContainer = document.querySelector('.actionbar-container');
     if (actionbarContainer?.parentElement) {
       return {
         parent: actionbarContainer.parentElement,
-        before: actionbarContainer
+        before: actionbarContainer,
       };
     }
     const content = document.querySelector(
-      ".actionbar [data-pc-section='content']"
+      ".actionbar [data-pc-section='content']",
     );
     if (content) {
       const inlineRow = content.querySelector(
-        ".relative.flex.items-center.gap-2.select-none"
+        '.relative.flex.items-center.gap-2.select-none',
       );
       return {
         parent: inlineRow || content,
-        before: null
+        before: null,
       };
     }
-    const fallback = document.querySelector(".actionbar .p-panel-content");
+    const fallback = document.querySelector('.actionbar .p-panel-content');
     if (fallback) {
       return {
         parent: fallback,
-        before: null
+        before: null,
       };
     }
     return null;
@@ -1269,14 +1339,17 @@
     if (!toggle) return;
     const mountTarget = findActionbarMountNode();
     if (!mountTarget?.parent) return;
-    let slot = document.getElementById("download-to-directory-inline-slot");
+    let slot = document.getElementById('download-to-directory-inline-slot');
     if (!slot) {
-      slot = document.createElement("div");
-      slot.id = "download-to-directory-inline-slot";
+      slot = document.createElement('div');
+      slot.id = 'download-to-directory-inline-slot';
     }
     if (slot.parentElement !== mountTarget.parent) {
       mountTarget.parent.insertBefore(slot, mountTarget.before);
-    } else if (mountTarget.before && slot.nextElementSibling !== mountTarget.before) {
+    } else if (
+      mountTarget.before &&
+      slot.nextElementSibling !== mountTarget.before
+    ) {
       mountTarget.parent.insertBefore(slot, mountTarget.before);
     }
     if (toggle.parentElement !== slot) {
@@ -1284,62 +1357,77 @@
     }
   }
   function formatApiError(status, data, fallbackMessage) {
-    const raw = String(data?.reason || data?.error || "").trim();
+    const raw = String(data?.reason || data?.error || '').trim();
     const msg = raw.toLowerCase();
     if (status === 405) {
-      return "Upload endpoint is not available in the running backend. Restart ComfyUI to load the new upload route.";
+      return 'Upload endpoint is not available in the running backend. Restart ComfyUI to load the new upload route.';
     }
     if (status === 409) {
       return 'A file with that name already exists. Enable "Overwrite existing file" or choose a different filename/subdirectory.';
     }
-    if (status === 400 && msg.includes("only http/https")) {
-      return "Only HTTP/HTTPS links are supported.";
+    if (status === 400 && msg.includes('only http/https')) {
+      return 'Only HTTP/HTTPS links are supported.';
     }
-    if (status === 400 && msg.includes("outside allowed comfyui roots")) {
-      return "That file is outside allowed ComfyUI roots and cannot be deleted.";
+    if (status === 400 && msg.includes('outside allowed comfyui roots')) {
+      return 'That file is outside allowed ComfyUI roots and cannot be deleted.';
     }
-    if (status === 400 && msg.includes("outside custom_nodes")) {
-      return "Only directories inside custom_nodes can be deleted.";
+    if (status === 400 && msg.includes('outside custom_nodes')) {
+      return 'Only directories inside custom_nodes can be deleted.';
     }
-    if (status === 400 && msg.includes("directory")) {
-      return "Directory deletion is only supported for custom_nodes entries.";
+    if (status === 400 && msg.includes('directory')) {
+      return 'Directory deletion is only supported for custom_nodes entries.';
     }
-    if (msg.includes("certificate verify failed")) {
-      return "Secure connection failed while validating the site certificate. Install/update certificates in your Python environment and try again.";
+    if (msg.includes('certificate verify failed')) {
+      return 'Secure connection failed while validating the site certificate. Install/update certificates in your Python environment and try again.';
     }
-    if (msg.includes("timed out")) {
-      return "The download timed out. Please retry or try a different source.";
+    if (msg.includes('timed out')) {
+      return 'The download timed out. Please retry or try a different source.';
     }
     if (status === 404) {
-      return "The file could not be found at that URL (404).";
+      return 'The file could not be found at that URL (404).';
     }
     if (status >= 500) {
-      return "Server error while downloading. Check ComfyUI logs for details and try again.";
+      return 'Server error while downloading. Check ComfyUI logs for details and try again.';
     }
     return raw || fallbackMessage || `Request failed (${status})`;
   }
   function isHuggingFaceUrl(url) {
     try {
-      const parsed = new URL(String(url || "").trim());
-      const host = String(parsed.hostname || "").toLowerCase();
-      return host === "huggingface.co" || host === "www.huggingface.co" || host === "hf.co";
+      const parsed = new URL(String(url || '').trim());
+      const host = String(parsed.hostname || '').toLowerCase();
+      return (
+        host === 'huggingface.co' ||
+        host === 'www.huggingface.co' ||
+        host === 'hf.co'
+      );
     } catch {
       return false;
     }
   }
   function formatHuggingFaceAuthMessage(rawMessage) {
-    const base = String(rawMessage || "").trim() || "Hugging Face download was blocked.";
+    const base =
+      String(rawMessage || '').trim() || 'Hugging Face download was blocked.';
     return `${base} Add your Hugging Face token in Advanced > Hugging Face token, then retry. Create/read token at https://huggingface.co/settings/tokens and make sure you accepted access terms on the model page.`;
   }
   function maybeFormatHuggingFaceAuthError(url, message) {
-    const raw = String(message || "").trim();
+    const raw = String(message || '').trim();
     const normalized = raw.toLowerCase();
-    const isAuthError = normalized.includes("401") || normalized.includes("403") || normalized.includes("unauthorized") || normalized.includes("forbidden") || normalized.includes("authentication") || normalized.includes("blocked");
+    const isAuthError =
+      normalized.includes('401') ||
+      normalized.includes('403') ||
+      normalized.includes('unauthorized') ||
+      normalized.includes('forbidden') ||
+      normalized.includes('authentication') ||
+      normalized.includes('blocked');
     if (!isAuthError || !isHuggingFaceUrl(url)) return raw;
     return formatHuggingFaceAuthMessage(raw);
   }
   function normalizeFolderValue(value) {
-    return String(value || "").trim().replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/{2,}/g, "/");
+    return String(value || '')
+      .trim()
+      .replace(/\\/g, '/')
+      .replace(/^\/+/, '')
+      .replace(/\/{2,}/g, '/');
   }
   function readRecentFolders() {
     try {
@@ -1347,7 +1435,10 @@
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
-      return parsed.map((entry) => normalizeFolderValue(entry)).filter((entry) => entry.length > 0).slice(0, MAX_RECENT_FOLDERS);
+      return parsed
+        .map((entry) => normalizeFolderValue(entry))
+        .filter((entry) => entry.length > 0)
+        .slice(0, MAX_RECENT_FOLDERS);
     } catch {
       return [];
     }
@@ -1356,240 +1447,280 @@
     try {
       localStorage.setItem(
         RECENT_FOLDERS_KEY,
-        JSON.stringify(folders.slice(0, MAX_RECENT_FOLDERS))
+        JSON.stringify(folders.slice(0, MAX_RECENT_FOLDERS)),
       );
-    } catch {
-    }
+    } catch {}
   }
   function saveRecentFolder(folder) {
     const normalized = normalizeFolderValue(folder);
     if (!normalized) return;
     const deduped = [
       normalized,
-      ...readRecentFolders().filter((f) => f !== normalized)
+      ...readRecentFolders().filter((f) => f !== normalized),
     ];
     writeRecentFolders(deduped);
   }
   function readHistoryEntries() {
     const parsed = readSessionJson(HISTORY_KEY, []);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((entry) => entry && typeof entry === "object").slice(0, MAX_HISTORY_ITEMS);
+    return parsed
+      .filter((entry) => entry && typeof entry === 'object')
+      .slice(0, MAX_HISTORY_ITEMS);
   }
   function writeHistoryEntries(entries) {
-    const sanitized = Array.isArray(entries) ? entries.filter((entry) => entry && typeof entry === "object") : [];
+    const sanitized = Array.isArray(entries)
+      ? entries.filter((entry) => entry && typeof entry === 'object')
+      : [];
     state.historyEntries = sanitized.slice(0, MAX_HISTORY_ITEMS);
     writeSessionJson(HISTORY_KEY, state.historyEntries);
   }
   function addHistoryEntry(entry) {
     const record = {
-      id: entry?.id && String(entry.id).trim() ? String(entry.id).trim() : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      id:
+        entry?.id && String(entry.id).trim()
+          ? String(entry.id).trim()
+          : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
       created_at: Number(entry?.created_at || Date.now()),
       status: (() => {
-        const candidate = String(entry?.status || "failed").toLowerCase();
-        return ["queued", "running", "success", "failed"].includes(candidate) ? candidate : "failed";
+        const candidate = String(entry?.status || 'failed').toLowerCase();
+        return ['queued', 'running', 'success', 'failed'].includes(candidate)
+          ? candidate
+          : 'failed';
       })(),
-      url: String(entry?.url || "").trim(),
-      selected_root_value: String(entry?.selected_root_value || "").trim(),
-      root_key: String(entry?.root_key || "").trim(),
-      folder: String(entry?.folder || "").trim(),
-      subdirectory: String(entry?.subdirectory || "").trim(),
-      filename: String(entry?.filename || "").trim(),
-      file_name: String(entry?.file_name || "").trim(),
+      url: String(entry?.url || '').trim(),
+      selected_root_value: String(entry?.selected_root_value || '').trim(),
+      root_key: String(entry?.root_key || '').trim(),
+      folder: String(entry?.folder || '').trim(),
+      subdirectory: String(entry?.subdirectory || '').trim(),
+      filename: String(entry?.filename || '').trim(),
+      file_name: String(entry?.file_name || '').trim(),
       operation: (() => {
-        const candidate = String(entry?.operation || "download").trim().toLowerCase();
-        if (candidate === "upload") return "upload";
-        if (candidate === "install") return "install";
-        return "download";
+        const candidate = String(entry?.operation || 'download')
+          .trim()
+          .toLowerCase();
+        if (candidate === 'upload') return 'upload';
+        if (candidate === 'install') return 'install';
+        return 'download';
       })(),
       overwrite: Boolean(entry?.overwrite),
-      destination_path: String(entry?.destination_path || "").trim(),
-      path: String(entry?.path || "").trim(),
+      destination_path: String(entry?.destination_path || '').trim(),
+      path: String(entry?.path || '').trim(),
       bytes_written: Number(entry?.bytes_written || 0),
-      total_bytes: entry?.total_bytes == null ? null : Number(entry.total_bytes || 0),
-      progress_percent: entry?.progress_percent == null ? null : Number(entry.progress_percent || 0),
-      error: String(entry?.error || "").trim()
+      total_bytes:
+        entry?.total_bytes == null ? null : Number(entry.total_bytes || 0),
+      progress_percent:
+        entry?.progress_percent == null
+          ? null
+          : Number(entry.progress_percent || 0),
+      error: String(entry?.error || '').trim(),
     };
     writeHistoryEntries([record, ...state.historyEntries]);
     renderHistory();
   }
   function updateHistoryEntry(entryId, patch) {
-    const id = String(entryId || "").trim();
+    const id = String(entryId || '').trim();
     if (!id) return;
     writeHistoryEntries(
       state.historyEntries.map((entry) => {
         if (entry.id !== id) return entry;
         return { ...entry, ...patch };
-      })
+      }),
     );
     renderHistory();
   }
   function removeHistoryEntry(entryId) {
-    const id = String(entryId || "").trim();
+    const id = String(entryId || '').trim();
     if (!id) return;
     writeHistoryEntries(
-      state.historyEntries.filter((entry) => entry.id !== id)
+      state.historyEntries.filter((entry) => entry.id !== id),
     );
     renderHistory();
   }
   function getHistoryEntry(entryId) {
-    const id = String(entryId || "").trim();
+    const id = String(entryId || '').trim();
     if (!id) return null;
     return state.historyEntries.find((entry) => entry.id === id) || null;
   }
   function formatTimestamp(ms) {
     const value = Number(ms || 0);
-    if (!Number.isFinite(value) || value <= 0) return "";
+    if (!Number.isFinite(value) || value <= 0) return '';
     try {
       return new Date(value).toLocaleString();
     } catch {
-      return "";
+      return '';
     }
   }
   function getEntryPath(entry) {
-    const explicit = String(entry?.path || "").trim();
+    const explicit = String(entry?.path || '').trim();
     if (explicit) return explicit;
-    if (entry?.status === "success") {
-      return String(entry?.destination_path || "").trim();
+    if (entry?.status === 'success') {
+      return String(entry?.destination_path || '').trim();
     }
-    return normalizeFolderValue(entry?.folder) || normalizeFolderValue(
-      `${entry?.root_key || ""}${entry?.subdirectory ? `/${entry.subdirectory}` : ""}`
+    return (
+      normalizeFolderValue(entry?.folder) ||
+      normalizeFolderValue(
+        `${entry?.root_key || ''}${entry?.subdirectory ? `/${entry.subdirectory}` : ''}`,
+      )
     );
   }
   function normalizePathForCompare(value) {
-    return String(value || "").replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+    return String(value || '')
+      .replace(/\\/g, '/')
+      .replace(/\/+$/, '')
+      .toLowerCase();
   }
   function looksLikeUrl(value) {
-    const raw = String(value || "").trim();
+    const raw = String(value || '').trim();
     if (!raw) return false;
     if (/^git@[^:]+:.+/.test(raw)) return true;
     try {
       const parsed = new URL(raw);
-      return ["http:", "https:"].includes(parsed.protocol);
+      return ['http:', 'https:'].includes(parsed.protocol);
     } catch {
       return false;
     }
   }
   function isAbsolutePathLike(value) {
-    const raw = String(value || "").trim();
+    const raw = String(value || '').trim();
     if (!raw) return false;
-    return raw.startsWith("/") || raw.startsWith("\\\\") || /^[a-zA-Z]:[\\/]/.test(raw);
+    return (
+      raw.startsWith('/') ||
+      raw.startsWith('\\\\') ||
+      /^[a-zA-Z]:[\\/]/.test(raw)
+    );
   }
   function isPathUnderCustomNodes(pathValue) {
-    const candidateRaw = String(pathValue || "").trim();
+    const candidateRaw = String(pathValue || '').trim();
     if (!candidateRaw || !isAbsolutePathLike(candidateRaw)) return false;
     const candidate = normalizePathForCompare(candidateRaw);
-    const customRoots = state.roots.filter(
-      (root) => /^custom_nodes(?:_\d+)?$/i.test(String(root?.key || "").trim())
-    ).map((root) => normalizePathForCompare(root?.path || "")).filter(Boolean);
+    const customRoots = state.roots
+      .filter((root) =>
+        /^custom_nodes(?:_\d+)?$/i.test(String(root?.key || '').trim()),
+      )
+      .map((root) => normalizePathForCompare(root?.path || ''))
+      .filter(Boolean);
     if (customRoots.length > 0) {
       return customRoots.some(
-        (rootPath) => candidate === rootPath || candidate.startsWith(`${rootPath}/`)
+        (rootPath) =>
+          candidate === rootPath || candidate.startsWith(`${rootPath}/`),
       );
     }
-    return candidate.includes("/custom_nodes/");
+    return candidate.includes('/custom_nodes/');
   }
   function getCustomNodeDiskPath(entry) {
     const candidates = [
-      String(entry?.destination_path || "").trim(),
-      String(entry?.path || "").trim(),
-      String(getEntryPath(entry) || "").trim()
+      String(entry?.destination_path || '').trim(),
+      String(entry?.path || '').trim(),
+      String(getEntryPath(entry) || '').trim(),
     ];
     for (const candidate of candidates) {
       if (!candidate || looksLikeUrl(candidate)) continue;
       if (isPathUnderCustomNodes(candidate)) return candidate;
     }
-    return "";
+    return '';
   }
   function getCustomNodeInstallTarget(entry) {
     const sourceCandidates = [
-      String(entry?.url || "").trim(),
-      String(entry?.install_target || "").trim(),
-      String(entry?.source_url || "").trim(),
-      String(entry?.path || "").trim(),
-      String(entry?.destination_path || "").trim()
+      String(entry?.url || '').trim(),
+      String(entry?.install_target || '').trim(),
+      String(entry?.source_url || '').trim(),
+      String(entry?.path || '').trim(),
+      String(entry?.destination_path || '').trim(),
     ];
     for (const candidate of sourceCandidates) {
       if (!candidate) continue;
       if (looksLikeUrl(candidate)) return candidate;
-      if (!isAbsolutePathLike(candidate) && !candidate.startsWith(".")) {
+      if (!isAbsolutePathLike(candidate) && !candidate.startsWith('.')) {
         return candidate;
       }
     }
-    return "";
+    return '';
   }
   function canUpdateCustomNodeEntry(entry) {
-    return String(entry?.status || "").toLowerCase() === "success" && Boolean(getCustomNodeDiskPath(entry)) && Boolean(getCustomNodeInstallTarget(entry));
+    return (
+      String(entry?.status || '').toLowerCase() === 'success' &&
+      Boolean(getCustomNodeDiskPath(entry)) &&
+      Boolean(getCustomNodeInstallTarget(entry))
+    );
   }
   function inferDisplayNameFromEntry(entry) {
-    if (String(entry?.operation || "").toLowerCase() === "install") {
+    if (String(entry?.operation || '').toLowerCase() === 'install') {
       if (entry?.file_name) return String(entry.file_name);
       const installTarget = String(
-        entry?.destination_path || entry?.path || ""
+        entry?.destination_path || entry?.path || '',
       ).trim();
       if (installTarget) {
-        const base = installTarget.split("/").pop() || installTarget;
-        return base.toLowerCase().endsWith(".git") ? base.slice(0, -4) : base;
+        const base = installTarget.split('/').pop() || installTarget;
+        return base.toLowerCase().endsWith('.git') ? base.slice(0, -4) : base;
       }
-      return "Installed custom node";
+      return 'Installed custom node';
     }
     if (entry?.file_name) return String(entry.file_name);
     if (entry?.filename) return String(entry.filename);
-    const destinationName = String(entry?.destination_path || "").trim().split("/").pop();
+    const destinationName = String(entry?.destination_path || '')
+      .trim()
+      .split('/')
+      .pop();
     if (destinationName) return destinationName;
     try {
-      const parsed = new URL(String(entry?.url || "").trim());
-      const urlName = String(parsed.pathname || "").split("/").pop();
-      return urlName || "download.bin";
+      const parsed = new URL(String(entry?.url || '').trim());
+      const urlName = String(parsed.pathname || '')
+        .split('/')
+        .pop();
+      return urlName || 'download.bin';
     } catch {
-      return "download.bin";
+      return 'download.bin';
     }
   }
   function formatEntryProgress(entry) {
-    const normalizedStatus = String(entry?.status || "").toLowerCase();
-    const operation = String(entry?.operation || "").toLowerCase();
-    if (operation === "install") {
-      if (normalizedStatus === "running") return "Installing...";
-      if (normalizedStatus === "success") return "Installed";
-      if (normalizedStatus === "failed") return "Install failed";
-      return "";
+    const normalizedStatus = String(entry?.status || '').toLowerCase();
+    const operation = String(entry?.operation || '').toLowerCase();
+    if (operation === 'install') {
+      if (normalizedStatus === 'running') return 'Installing...';
+      if (normalizedStatus === 'success') return 'Installed';
+      if (normalizedStatus === 'failed') return 'Install failed';
+      return '';
     }
-    if (normalizedStatus === "queued") return "Queued...";
-    if (normalizedStatus === "running") {
+    if (normalizedStatus === 'queued') return 'Queued...';
+    if (normalizedStatus === 'running') {
       const bytesWritten = Number(entry?.bytes_written || 0);
-      const totalBytes = entry?.total_bytes == null ? null : Number(entry.total_bytes);
+      const totalBytes =
+        entry?.total_bytes == null ? null : Number(entry.total_bytes);
       const percent = Number(entry?.progress_percent);
       if (Number.isFinite(totalBytes) && totalBytes > 0) {
-        const pct = Number.isFinite(percent) ? percent.toFixed(1) : (bytesWritten / totalBytes * 100).toFixed(1);
+        const pct = Number.isFinite(percent)
+          ? percent.toFixed(1)
+          : ((bytesWritten / totalBytes) * 100).toFixed(1);
         return `${formatBytes(bytesWritten)} / ${formatBytes(totalBytes)} (${pct}%)`;
       }
       return `${formatBytes(bytesWritten)} downloaded`;
     }
-    if (normalizedStatus === "success" && Number(entry?.bytes_written) > 0) {
+    if (normalizedStatus === 'success' && Number(entry?.bytes_written) > 0) {
       return formatBytes(Number(entry.bytes_written));
     }
-    return "";
+    return '';
   }
   function renderRootOptions() {
-    const select = document.getElementById("dtd-root");
+    const select = document.getElementById('dtd-root');
     if (!select) return;
     const recentFolders = readRecentFolders();
     const previousValue = select.value;
-    select.innerHTML = "";
+    select.innerHTML = '';
     if (recentFolders.length > 0) {
-      const recentGroup = document.createElement("optgroup");
-      recentGroup.label = "Recent folders";
+      const recentGroup = document.createElement('optgroup');
+      recentGroup.label = 'Recent folders';
       for (const folder of recentFolders) {
-        const opt = document.createElement("option");
+        const opt = document.createElement('option');
         opt.value = `recent:${folder}`;
         opt.textContent = folder;
         opt.title = `ComfyUI root/${folder}`;
         recentGroup.appendChild(opt);
       }
       select.appendChild(recentGroup);
-      const allGroup = document.createElement("optgroup");
-      allGroup.label = "All folders";
+      const allGroup = document.createElement('optgroup');
+      allGroup.label = 'All folders';
       for (const root of state.roots) {
-        const opt = document.createElement("option");
+        const opt = document.createElement('option');
         opt.value = root.key;
         opt.textContent = root.key;
         opt.title = root.path;
@@ -1598,7 +1729,7 @@
       select.appendChild(allGroup);
     } else {
       for (const root of state.roots) {
-        const opt = document.createElement("option");
+        const opt = document.createElement('option');
         opt.value = root.key;
         opt.textContent = root.key;
         opt.title = root.path;
@@ -1607,118 +1738,127 @@
     }
     if (previousValue) {
       const hasPrevious = Array.from(select.options).some(
-        (opt) => opt.value === previousValue
+        (opt) => opt.value === previousValue,
       );
       if (hasPrevious) select.value = previousValue;
     }
   }
   function formatBytes(bytes) {
     const value = Number(bytes || 0);
-    if (!Number.isFinite(value) || value <= 0) return "0 B";
-    const units = ["B", "KB", "MB", "GB", "TB"];
+    if (!Number.isFinite(value) || value <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     const exp = Math.min(
       Math.floor(Math.log(value) / Math.log(1024)),
-      units.length - 1
+      units.length - 1,
     );
     const size = value / 1024 ** exp;
     return `${size.toFixed(exp >= 2 ? 2 : 1)} ${units[exp]}`;
   }
   function createHistoryItemElement(entry) {
-    const item = document.createElement("div");
+    const item = document.createElement('div');
     item.className = `history-item ${entry.status}`;
-    const top = document.createElement("div");
-    top.className = "history-top";
-    const status = document.createElement("span");
+    const top = document.createElement('div');
+    top.className = 'history-top';
+    const status = document.createElement('span');
     status.className = `history-status ${entry.status}`;
-    status.textContent = entry.status === "success" ? "Success" : entry.status === "failed" ? "Failed" : entry.status === "running" ? "Running" : "Queued";
-    const time = document.createElement("span");
-    time.className = "history-time";
+    status.textContent =
+      entry.status === 'success'
+        ? 'Success'
+        : entry.status === 'failed'
+          ? 'Failed'
+          : entry.status === 'running'
+            ? 'Running'
+            : 'Queued';
+    const time = document.createElement('span');
+    time.className = 'history-time';
     time.textContent = formatTimestamp(entry.created_at);
     top.append(status, time);
-    const main = document.createElement("div");
-    main.className = "history-main";
+    const main = document.createElement('div');
+    main.className = 'history-main';
     main.textContent = inferDisplayNameFromEntry(entry);
-    const sub = document.createElement("div");
-    sub.className = "history-sub";
+    const sub = document.createElement('div');
+    sub.className = 'history-sub';
     const parts = [];
-    const locationLabel = String(entry.destination_path || "").trim() || getEntryPath(entry);
+    const locationLabel =
+      String(entry.destination_path || '').trim() || getEntryPath(entry);
     if (locationLabel) parts.push(locationLabel);
     const progressLabel = formatEntryProgress(entry);
     if (progressLabel) parts.push(progressLabel);
-    sub.textContent = parts.join(" \u2022 ");
-    const error = document.createElement("div");
-    error.className = "history-error";
-    error.hidden = !(entry.status === "failed" && entry.error);
-    error.textContent = entry.status === "failed" ? String(entry.error || "") : "";
-    const actions = document.createElement("div");
-    actions.className = "history-actions";
-    if (entry.status === "success" && entry.operation !== "install") {
+    sub.textContent = parts.join(' \u2022 ');
+    const error = document.createElement('div');
+    error.className = 'history-error';
+    error.hidden = !(entry.status === 'failed' && entry.error);
+    error.textContent =
+      entry.status === 'failed' ? String(entry.error || '') : '';
+    const actions = document.createElement('div');
+    actions.className = 'history-actions';
+    if (entry.status === 'success' && entry.operation !== 'install') {
       if (canUpdateCustomNodeEntry(entry)) {
-        const updateBtn = document.createElement("button");
-        updateBtn.type = "button";
-        updateBtn.dataset.action = "update-custom-node";
+        const updateBtn = document.createElement('button');
+        updateBtn.type = 'button';
+        updateBtn.dataset.action = 'update-custom-node';
         updateBtn.dataset.id = entry.id;
-        updateBtn.textContent = "Update";
+        updateBtn.textContent = 'Update';
         actions.appendChild(updateBtn);
       }
-      const deleteBtn = document.createElement("button");
-      deleteBtn.type = "button";
-      deleteBtn.className = "danger";
-      deleteBtn.dataset.action = "delete-file";
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'danger';
+      deleteBtn.dataset.action = 'delete-file';
       deleteBtn.dataset.id = entry.id;
-      deleteBtn.textContent = "Delete from disk";
+      deleteBtn.textContent = 'Delete from disk';
       actions.appendChild(deleteBtn);
-    } else if (entry.status === "success" && entry.operation === "install") {
+    } else if (entry.status === 'success' && entry.operation === 'install') {
       if (canUpdateCustomNodeEntry(entry)) {
-        const updateBtn = document.createElement("button");
-        updateBtn.type = "button";
-        updateBtn.dataset.action = "update-custom-node";
+        const updateBtn = document.createElement('button');
+        updateBtn.type = 'button';
+        updateBtn.dataset.action = 'update-custom-node';
         updateBtn.dataset.id = entry.id;
-        updateBtn.textContent = "Update";
+        updateBtn.textContent = 'Update';
         actions.appendChild(updateBtn);
       }
-      const removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.dataset.action = "remove-entry";
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.dataset.action = 'remove-entry';
       removeBtn.dataset.id = entry.id;
-      removeBtn.textContent = "Remove";
+      removeBtn.textContent = 'Remove';
       actions.appendChild(removeBtn);
-    } else if (entry.status === "failed" && entry.operation !== "upload") {
-      const pathInput = document.createElement("input");
-      pathInput.type = "text";
-      pathInput.className = "history-path-input";
-      pathInput.dataset.action = "edit-path";
+    } else if (entry.status === 'failed' && entry.operation !== 'upload') {
+      const pathInput = document.createElement('input');
+      pathInput.type = 'text';
+      pathInput.className = 'history-path-input';
+      pathInput.dataset.action = 'edit-path';
       pathInput.dataset.id = entry.id;
       pathInput.value = getEntryPath(entry);
       item.append(pathInput);
-      const retryBtn = document.createElement("button");
-      retryBtn.type = "button";
-      retryBtn.dataset.action = "retry-entry";
+      const retryBtn = document.createElement('button');
+      retryBtn.type = 'button';
+      retryBtn.dataset.action = 'retry-entry';
       retryBtn.dataset.id = entry.id;
-      retryBtn.textContent = "Retry";
+      retryBtn.textContent = 'Retry';
       actions.appendChild(retryBtn);
-      const removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.dataset.action = "remove-entry";
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.dataset.action = 'remove-entry';
       removeBtn.dataset.id = entry.id;
-      removeBtn.textContent = "Ignore";
+      removeBtn.textContent = 'Ignore';
       actions.appendChild(removeBtn);
-    } else if (entry.status === "failed") {
-      const removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.dataset.action = "remove-entry";
+    } else if (entry.status === 'failed') {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.dataset.action = 'remove-entry';
       removeBtn.dataset.id = entry.id;
-      removeBtn.textContent = "Ignore";
+      removeBtn.textContent = 'Ignore';
       actions.appendChild(removeBtn);
     }
     item.append(top, main, sub, error, actions);
     return item;
   }
   function renderHistory() {
-    const historyList = document.getElementById("dtd-history-list");
-    const emptyEl = document.getElementById("dtd-history-empty");
+    const historyList = document.getElementById('dtd-history-list');
+    const emptyEl = document.getElementById('dtd-history-empty');
     if (!historyList || !emptyEl) return;
-    historyList.innerHTML = "";
+    historyList.innerHTML = '';
     if (state.historyEntries.length === 0) {
       emptyEl.hidden = false;
       return;
@@ -1729,54 +1869,58 @@
     }
   }
   function readDownloadFormValues() {
-    const urlInput = document.getElementById("dtd-url");
-    const rootInput = document.getElementById("dtd-root");
-    const folderInput = document.getElementById("dtd-folder");
-    const subdirInput = document.getElementById("dtd-subdir");
-    const filenameInput = document.getElementById("dtd-filename");
-    const overwriteInput = document.getElementById("dtd-overwrite");
-    const hfTokenInput = document.getElementById("dtd-hf-token");
-    const url = (urlInput?.value || "").trim();
-    const selectedRootValue = (rootInput?.value || "").trim();
-    const folder = (folderInput?.value || "").trim();
-    const subdirectory = (subdirInput?.value || "").trim();
-    const selectedRecentFolder = selectedRootValue.startsWith("recent:") ? selectedRootValue.slice("recent:".length) : "";
+    const urlInput = document.getElementById('dtd-url');
+    const rootInput = document.getElementById('dtd-root');
+    const folderInput = document.getElementById('dtd-folder');
+    const subdirInput = document.getElementById('dtd-subdir');
+    const filenameInput = document.getElementById('dtd-filename');
+    const overwriteInput = document.getElementById('dtd-overwrite');
+    const hfTokenInput = document.getElementById('dtd-hf-token');
+    const url = (urlInput?.value || '').trim();
+    const selectedRootValue = (rootInput?.value || '').trim();
+    const folder = (folderInput?.value || '').trim();
+    const subdirectory = (subdirInput?.value || '').trim();
+    const selectedRecentFolder = selectedRootValue.startsWith('recent:')
+      ? selectedRootValue.slice('recent:'.length)
+      : '';
     const effectiveFolder = folder || selectedRecentFolder;
-    const effectiveRootKey = selectedRootValue.startsWith("recent:") ? "" : selectedRootValue;
+    const effectiveRootKey = selectedRootValue.startsWith('recent:')
+      ? ''
+      : selectedRootValue;
     return {
       url,
       selected_root_value: selectedRootValue,
       root_key: effectiveRootKey,
       folder: effectiveFolder,
       subdirectory,
-      filename: (filenameInput?.value || "").trim(),
+      filename: (filenameInput?.value || '').trim(),
       overwrite: Boolean(overwriteInput?.checked),
-      huggingface_token: (hfTokenInput?.value || "").trim()
+      huggingface_token: (hfTokenInput?.value || '').trim(),
     };
   }
   function _prefillFromHistory(entry) {
     if (!entry) return;
-    const urlInput = document.getElementById("dtd-url");
-    const rootInput = document.getElementById("dtd-root");
-    const folderInput = document.getElementById("dtd-folder");
-    const subdirInput = document.getElementById("dtd-subdir");
-    const filenameInput = document.getElementById("dtd-filename");
-    const overwriteInput = document.getElementById("dtd-overwrite");
-    const advanced = document.getElementById("dtd-advanced");
-    if (urlInput) urlInput.value = entry.url || "";
+    const urlInput = document.getElementById('dtd-url');
+    const rootInput = document.getElementById('dtd-root');
+    const folderInput = document.getElementById('dtd-folder');
+    const subdirInput = document.getElementById('dtd-subdir');
+    const filenameInput = document.getElementById('dtd-filename');
+    const overwriteInput = document.getElementById('dtd-overwrite');
+    const advanced = document.getElementById('dtd-advanced');
+    if (urlInput) urlInput.value = entry.url || '';
     if (folderInput)
-      folderInput.value = getEntryPath(entry) || entry.folder || "";
-    if (subdirInput) subdirInput.value = entry.subdirectory || "";
-    if (filenameInput) filenameInput.value = entry.filename || "";
+      folderInput.value = getEntryPath(entry) || entry.folder || '';
+    if (subdirInput) subdirInput.value = entry.subdirectory || '';
+    if (filenameInput) filenameInput.value = entry.filename || '';
     if (overwriteInput) overwriteInput.checked = Boolean(entry.overwrite);
     if (rootInput) {
       const candidateValues = [
         entry.selected_root_value,
-        entry.root_key
+        entry.root_key,
       ].filter((value) => Boolean(value));
       for (const candidate of candidateValues) {
         const hasOption = Array.from(rootInput.options).some(
-          (opt) => opt.value === candidate
+          (opt) => opt.value === candidate,
         );
         if (hasOption) {
           rootInput.value = candidate;
@@ -1789,40 +1933,40 @@
       writeSessionBoolean(ADVANCED_OPEN_KEY, true);
     }
     setStatus(
-      "Prefilled failed download. Update destination if needed, then click Download."
+      'Prefilled failed download. Update destination if needed, then click Download.',
     );
   }
   async function deleteFileFromHistory(entry) {
     const deletePath = getEntryPath(entry);
     if (!deletePath) {
-      setStatus("This history entry does not have a saved file path.", "error");
+      setStatus('This history entry does not have a saved file path.', 'error');
       return;
     }
     const confirmed = await requestActionConfirmation({
-      title: "Delete file from disk?",
+      title: 'Delete file from disk?',
       copy: deletePath,
-      confirmLabel: "Delete"
+      confirmLabel: 'Delete',
     });
     if (!confirmed) return;
-    setStatus("Deleting file...");
-    const resp = await apiFetch("/download-to-dir/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: deletePath })
+    setStatus('Deleting file...');
+    const resp = await apiFetch('/download-to-dir/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: deletePath }),
     });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
       throw new Error(
-        formatApiError(resp.status, data, `Delete failed (${resp.status})`)
+        formatApiError(resp.status, data, `Delete failed (${resp.status})`),
       );
     }
     removeHistoryEntry(entry.id);
     if (data.deleted) {
-      setStatus(`Deleted ${deletePath}`, "success");
+      setStatus(`Deleted ${deletePath}`, 'success');
     } else {
       setStatus(
-        "File was already missing. Removed entry from history.",
-        "success"
+        'File was already missing. Removed entry from history.',
+        'success',
       );
     }
   }
@@ -1831,32 +1975,32 @@
     const installTarget = getCustomNodeInstallTarget(entry);
     if (!customNodePath || !installTarget) {
       setStatus(
-        "Update is only available for custom_nodes entries with a valid source URL.",
-        "error"
+        'Update is only available for custom_nodes entries with a valid source URL.',
+        'error',
       );
       return;
     }
     const confirmed = await requestActionConfirmation({
-      title: "Update custom node?",
+      title: 'Update custom node?',
       copy: `${customNodePath}
 
 Reinstall source: ${installTarget}`,
-      confirmLabel: "Update"
+      confirmLabel: 'Update',
     });
     if (!confirmed) return;
     updateHistoryEntry(entry.id, {
       created_at: Date.now(),
-      status: "running",
-      error: "",
+      status: 'running',
+      error: '',
       path: customNodePath,
-      destination_path: customNodePath
+      destination_path: customNodePath,
     });
     setStatus(`Updating ${inferDisplayNameFromEntry(entry)}...`);
     try {
-      const deleteResp = await apiFetch("/download-to-dir/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: customNodePath })
+      const deleteResp = await apiFetch('/download-to-dir/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: customNodePath }),
       });
       const deleteData = await deleteResp.json().catch(() => ({}));
       if (!deleteResp.ok) {
@@ -1864,83 +2008,86 @@ Reinstall source: ${installTarget}`,
           formatApiError(
             deleteResp.status,
             deleteData,
-            `Delete failed (${deleteResp.status})`
-          )
+            `Delete failed (${deleteResp.status})`,
+          ),
         );
       }
       state.installBusy = true;
-      state.installJobId = "";
+      state.installJobId = '';
       state.installResults = [];
       state.installProgress = {
-        status: "queued",
+        status: 'queued',
         total_targets: 1,
         completed_targets: 0,
         failed_targets: 0,
         progress_percent: 0,
         current_target: installTarget,
-        results: []
+        results: [],
       };
       renderMissingNodesModalContent();
       const installResp = await apiFetch(
-        "/download-to-dir/missing-nodes/install",
+        '/download-to-dir/missing-nodes/install',
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json"
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
           },
-          body: JSON.stringify({ targets: [installTarget] })
-        }
+          body: JSON.stringify({ targets: [installTarget] }),
+        },
       );
       const installData = await installResp.json().catch(() => ({}));
       if (!installResp.ok || !installData?.job_id) {
-        const reason = String(installData?.reason || installData?.error || "").trim() || `Failed to start update install (${installResp.status})`;
+        const reason =
+          String(installData?.reason || installData?.error || '').trim() ||
+          `Failed to start update install (${installResp.status})`;
         throw new Error(reason);
       }
-      state.installJobId = String(installData.job_id || "").trim();
+      state.installJobId = String(installData.job_id || '').trim();
       applyInstallProgress({
-        ...state.installProgress || {},
-        ...installData
+        ...(state.installProgress || {}),
+        ...installData,
       });
       const finalProgress = await waitForInstallJobCompletion(
-        state.installJobId
+        state.installJobId,
       );
-      const finalStatus = String(finalProgress?.status || "").toLowerCase();
+      const finalStatus = String(finalProgress?.status || '').toLowerCase();
       const failedCount = Number(finalProgress?.failed_targets || 0);
       const firstError = String(
-        finalProgress?.results?.find?.((result) => !result?.ok)?.stderr || ""
+        finalProgress?.results?.find?.((result) => !result?.ok)?.stderr || '',
       ).trim();
-      if (finalStatus === "completed") {
+      if (finalStatus === 'completed') {
         updateHistoryEntry(entry.id, {
-          status: "success",
-          error: "",
+          status: 'success',
+          error: '',
           url: installTarget,
           path: customNodePath,
-          destination_path: customNodePath
+          destination_path: customNodePath,
         });
         setStatus(
           `Updated ${inferDisplayNameFromEntry(entry)}. Restart ComfyUI if needed.`,
-          "success"
+          'success',
         );
       } else {
-        const reason = firstError || `Update failed (${failedCount} target(s) failed).`;
+        const reason =
+          firstError || `Update failed (${failedCount} target(s) failed).`;
         updateHistoryEntry(entry.id, {
-          status: "failed",
+          status: 'failed',
           error: reason,
           path: customNodePath,
-          destination_path: customNodePath
+          destination_path: customNodePath,
         });
-        setStatus(reason, "error");
+        setStatus(reason, 'error');
       }
     } catch (err) {
       const message = err?.message || String(err);
       updateHistoryEntry(entry.id, {
-        status: "failed",
+        status: 'failed',
         error: message,
         path: customNodePath,
-        destination_path: customNodePath
+        destination_path: customNodePath,
       });
-      setStatus(message, "error");
+      setStatus(message, 'error');
     } finally {
       clearInstallPollTimer();
       state.installBusy = false;
@@ -1950,7 +2097,7 @@ Reinstall source: ${installTarget}`,
   async function pollDownloadProgress(jobId, historyEntryId = jobId) {
     while (true) {
       const resp = await apiFetch(`/download-to-dir/progress/${jobId}`, {
-        method: "GET"
+        method: 'GET',
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
@@ -1958,52 +2105,56 @@ Reinstall source: ${installTarget}`,
           formatApiError(
             resp.status,
             data,
-            `Could not read download progress (${resp.status})`
-          )
+            `Could not read download progress (${resp.status})`,
+          ),
         );
       }
-      const status = String(data.status || "").toLowerCase();
+      const status = String(data.status || '').toLowerCase();
       const bytesWritten = Number(data.bytes_written || 0);
-      const totalBytes = data.total_bytes == null ? null : Number(data.total_bytes);
+      const totalBytes =
+        data.total_bytes == null ? null : Number(data.total_bytes);
       const percent = Number(data.progress_percent);
       updateHistoryEntry(historyEntryId, {
         status,
         bytes_written: bytesWritten,
         total_bytes: totalBytes,
-        progress_percent: Number.isFinite(percent) ? percent : null
+        progress_percent: Number.isFinite(percent) ? percent : null,
       });
-      if (status === "completed") {
+      if (status === 'completed') {
         return data;
-      } else if (status === "failed") {
-        throw new Error(String(data.error || "Download failed."));
+      } else if (status === 'failed') {
+        throw new Error(String(data.error || 'Download failed.'));
       }
       await sleep(350);
     }
   }
   function buildRetryAttemptFromEntry(entry) {
     const formValues = readDownloadFormValues();
-    const retryPath = String(getEntryPath(entry) || "").trim();
+    const retryPath = String(getEntryPath(entry) || '').trim();
     return {
-      url: String(entry?.url || "").trim(),
-      selected_root_value: "",
-      root_key: "",
+      url: String(entry?.url || '').trim(),
+      selected_root_value: '',
+      root_key: '',
       folder: retryPath,
-      subdirectory: "",
-      filename: String(entry?.filename || entry?.file_name || "").trim(),
+      subdirectory: '',
+      filename: String(entry?.filename || entry?.file_name || '').trim(),
       overwrite: Boolean(entry?.overwrite),
-      huggingface_token: String(formValues?.huggingface_token || "").trim()
+      huggingface_token: String(formValues?.huggingface_token || '').trim(),
     };
   }
   async function handleDownload(options = {}) {
-    const attempt = options?.attempt && typeof options.attempt === "object" ? options.attempt : readDownloadFormValues();
-    const existingEntryId = String(options?.existingEntryId || "").trim();
-    const historyTargetId = existingEntryId || "";
-    let trackedJobId = "";
-    if (!attempt.url || !attempt.root_key && !attempt.folder) {
-      setStatus("URL and destination are required.", "error");
+    const attempt =
+      options?.attempt && typeof options.attempt === 'object'
+        ? options.attempt
+        : readDownloadFormValues();
+    const existingEntryId = String(options?.existingEntryId || '').trim();
+    const historyTargetId = existingEntryId || '';
+    let trackedJobId = '';
+    if (!attempt.url || (!attempt.root_key && !attempt.folder)) {
+      setStatus('URL and destination are required.', 'error');
       return;
     }
-    setStatus("Ready.");
+    setStatus('Ready.');
     const payload = {
       url: attempt.url,
       root_key: attempt.root_key,
@@ -2011,13 +2162,13 @@ Reinstall source: ${installTarget}`,
       subdirectory: attempt.subdirectory,
       filename: attempt.filename,
       overwrite: attempt.overwrite,
-      huggingface_token: attempt.huggingface_token
+      huggingface_token: attempt.huggingface_token,
     };
     try {
-      const startResp = await apiFetch("/download-to-dir/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+      const startResp = await apiFetch('/download-to-dir/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
       const startData = await startResp.json().catch(() => ({}));
       if (!startResp.ok) {
@@ -2026,40 +2177,40 @@ Reinstall source: ${installTarget}`,
           formatApiError(
             startResp.status,
             startData,
-            `Download failed (${startResp.status})`
-          )
+            `Download failed (${startResp.status})`,
+          ),
         );
-        setStatus(message, "error");
+        setStatus(message, 'error');
         if (historyTargetId) {
           updateHistoryEntry(historyTargetId, {
-            status: "failed",
-            error: message
+            status: 'failed',
+            error: message,
           });
         } else {
           addHistoryEntry({
             ...attempt,
-            operation: "download",
-            status: "failed",
-            error: message
+            operation: 'download',
+            status: 'failed',
+            error: message,
           });
         }
         return;
       }
-      const jobId = String(startData.job_id || "").trim();
+      const jobId = String(startData.job_id || '').trim();
       if (!jobId) {
-        const message = "Download did not return a tracking job id.";
-        setStatus(message, "error");
+        const message = 'Download did not return a tracking job id.';
+        setStatus(message, 'error');
         if (historyTargetId) {
           updateHistoryEntry(historyTargetId, {
-            status: "failed",
-            error: message
+            status: 'failed',
+            error: message,
           });
         } else {
           addHistoryEntry({
             ...attempt,
-            operation: "download",
-            status: "failed",
-            error: message
+            operation: 'download',
+            status: 'failed',
+            error: message,
           });
         }
         return;
@@ -2069,101 +2220,115 @@ Reinstall source: ${installTarget}`,
       if (!historyTargetId) {
         addHistoryEntry({
           ...attempt,
-          operation: "download",
+          operation: 'download',
           id: entryId,
           created_at: Date.now(),
-          status: "queued",
+          status: 'queued',
           file_name: inferDisplayNameFromEntry({
             ...attempt,
-            destination_path: String(startData.destination_path || "")
+            destination_path: String(startData.destination_path || ''),
           }),
-          destination_path: String(startData.destination_path || ""),
+          destination_path: String(startData.destination_path || ''),
           bytes_written: 0,
           total_bytes: null,
           progress_percent: 0,
-          error: ""
+          error: '',
         });
       }
       updateHistoryEntry(entryId, {
         created_at: Date.now(),
-        status: "running",
+        status: 'running',
         bytes_written: 0,
         total_bytes: null,
         progress_percent: 0,
-        destination_path: String(startData.destination_path || ""),
+        destination_path: String(startData.destination_path || ''),
         file_name: inferDisplayNameFromEntry({
           ...attempt,
-          destination_path: String(startData.destination_path || "")
+          destination_path: String(startData.destination_path || ''),
         }),
-        error: ""
+        error: '',
       });
       const done = await pollDownloadProgress(jobId, entryId);
       const mb = Number(done.bytes_written || 0) / (1024 * 1024);
-      const recentFolder = normalizeFolderValue(attempt.folder) || normalizeFolderValue(
-        `${attempt.root_key}${attempt.subdirectory ? `/${attempt.subdirectory}` : ""}`
-      );
+      const recentFolder =
+        normalizeFolderValue(attempt.folder) ||
+        normalizeFolderValue(
+          `${attempt.root_key}${attempt.subdirectory ? `/${attempt.subdirectory}` : ''}`,
+        );
       saveRecentFolder(recentFolder);
       renderRootOptions();
       updateHistoryEntry(entryId, {
-        status: "success",
-        destination_path: String(done.destination_path || ""),
+        status: 'success',
+        destination_path: String(done.destination_path || ''),
         bytes_written: Number(done.bytes_written || 0),
-        total_bytes: done.total_bytes == null ? null : Number(done.total_bytes || 0),
+        total_bytes:
+          done.total_bytes == null ? null : Number(done.total_bytes || 0),
         progress_percent: 100,
-        error: ""
+        error: '',
       });
       const refreshResult = await triggerNodeDefinitionsRefresh();
-      const refreshSuffix = refreshResult ? " Node definitions refreshed." : " Download complete. Press R to refresh node definitions.";
+      const refreshSuffix = refreshResult
+        ? ' Node definitions refreshed.'
+        : ' Download complete. Press R to refresh node definitions.';
       setStatus(
         `Saved to ${done.destination_path} (${mb.toFixed(2)} MB).${refreshSuffix}`,
-        "success"
+        'success',
       );
     } catch (err) {
       const message = maybeFormatHuggingFaceAuthError(
         attempt.url,
-        err?.message || String(err)
+        err?.message || String(err),
       );
-      setStatus(message, "error");
+      setStatus(message, 'error');
       if (trackedJobId) {
         updateHistoryEntry(historyTargetId || trackedJobId, {
-          status: "failed",
-          error: message
+          status: 'failed',
+          error: message,
         });
       }
       if (!trackedJobId && !historyTargetId) {
         addHistoryEntry({
           ...attempt,
-          operation: "download",
-          status: "failed",
-          error: message
+          operation: 'download',
+          status: 'failed',
+          error: message,
         });
       }
     } finally {
     }
   }
   async function handleUpload(files, options = {}) {
-    const selectedFiles = Array.isArray(files) ? files.filter((file) => file instanceof File) : files instanceof File ? [files] : [];
+    const selectedFiles = Array.isArray(files)
+      ? files.filter((file) => file instanceof File)
+      : files instanceof File
+        ? [files]
+        : [];
     if (selectedFiles.length === 0) {
-      setStatus("Choose a file to upload.", "error");
+      setStatus('Choose a file to upload.', 'error');
       return;
     }
     const baseAttempt = readDownloadFormValues();
-    const uploadFolderOverride = options && typeof options === "object" ? String(options.uploadFolder || "").trim() : "";
+    const uploadFolderOverride =
+      options && typeof options === 'object'
+        ? String(options.uploadFolder || '').trim()
+        : '';
     const attempt = {
       ...baseAttempt,
       folder: uploadFolderOverride || baseAttempt.folder,
-      subdirectory: "",
-      root_key: uploadFolderOverride ? "" : baseAttempt.root_key,
-      selected_root_value: uploadFolderOverride ? "" : baseAttempt.selected_root_value
+      subdirectory: '',
+      root_key: uploadFolderOverride ? '' : baseAttempt.root_key,
+      selected_root_value: uploadFolderOverride
+        ? ''
+        : baseAttempt.selected_root_value,
     };
     if (!attempt.root_key && !attempt.folder) {
-      setStatus("Destination is required.", "error");
+      setStatus('Destination is required.', 'error');
       return;
     }
     if (selectedFiles.length > 1 && attempt.filename) {
       setStatus(
-        "Filename override is only supported for single-file upload. Clear Filename or upload one file.",
-        "error"
+        'Filename override is only supported for single-file upload. Clear Filename or upload one file.',
+        'error',
       );
       return;
     }
@@ -2171,7 +2336,7 @@ Reinstall source: ${installTarget}`,
     const totalFiles = selectedFiles.length;
     let successCount = 0;
     let failCount = 0;
-    let lastSuccessPath = "";
+    let lastSuccessPath = '';
     let lastSuccessBytes = 0;
     for (let index = 0; index < totalFiles; index += 1) {
       const selectedFile = selectedFiles[index];
@@ -2180,61 +2345,61 @@ Reinstall source: ${installTarget}`,
         ...attempt,
         id: entryId,
         created_at: Date.now(),
-        operation: "upload",
-        status: "running",
+        operation: 'upload',
+        status: 'running',
         file_name: selectedFile.name,
-        destination_path: "",
+        destination_path: '',
         bytes_written: 0,
         total_bytes: Number(selectedFile.size || 0),
         progress_percent: 0,
-        error: ""
+        error: '',
       });
       const payload = new FormData();
-      payload.append("file", selectedFile);
-      payload.append("root_key", attempt.root_key || "");
-      payload.append("folder", attempt.folder || "");
-      payload.append("subdirectory", attempt.subdirectory || "");
-      payload.append("filename", singleFileMode ? attempt.filename || "" : "");
-      payload.append("overwrite", attempt.overwrite ? "true" : "false");
+      payload.append('file', selectedFile);
+      payload.append('root_key', attempt.root_key || '');
+      payload.append('folder', attempt.folder || '');
+      payload.append('subdirectory', attempt.subdirectory || '');
+      payload.append('filename', singleFileMode ? attempt.filename || '' : '');
+      payload.append('overwrite', attempt.overwrite ? 'true' : 'false');
       const remainingAfterCurrent = totalFiles - (index + 1);
       setStatus(
-        `Uploading ${index + 1}/${totalFiles}: ${selectedFile.name} (${remainingAfterCurrent} remaining after this)`
+        `Uploading ${index + 1}/${totalFiles}: ${selectedFile.name} (${remainingAfterCurrent} remaining after this)`,
       );
-      const resp = await apiFetch("/download-to-dir/upload", {
-        method: "POST",
-        body: payload
+      const resp = await apiFetch('/download-to-dir/upload', {
+        method: 'POST',
+        body: payload,
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
         const message = formatApiError(
           resp.status,
           data,
-          `Upload failed (${resp.status})`
+          `Upload failed (${resp.status})`,
         );
         updateHistoryEntry(entryId, {
-          status: "failed",
-          error: message
+          status: 'failed',
+          error: message,
         });
         failCount += 1;
         const processed2 = successCount + failCount;
         const remaining2 = totalFiles - processed2;
         if (remaining2 > 0) {
           setStatus(
-            `Uploaded ${processed2}/${totalFiles}. ${remaining2} remaining...`
+            `Uploaded ${processed2}/${totalFiles}. ${remaining2} remaining...`,
           );
         }
         continue;
       }
       const writtenBytes = Number(data.bytes_written || selectedFile.size || 0);
-      const destinationPath = String(data.destination_path || "").trim();
+      const destinationPath = String(data.destination_path || '').trim();
       updateHistoryEntry(entryId, {
-        status: "success",
+        status: 'success',
         destination_path: destinationPath,
         path: destinationPath,
         bytes_written: writtenBytes,
         total_bytes: writtenBytes,
         progress_percent: 100,
-        error: ""
+        error: '',
       });
       successCount += 1;
       lastSuccessPath = destinationPath;
@@ -2243,54 +2408,58 @@ Reinstall source: ${installTarget}`,
       const remaining = totalFiles - processed;
       if (remaining > 0) {
         setStatus(
-          `Uploaded ${processed}/${totalFiles}. ${remaining} remaining...`
+          `Uploaded ${processed}/${totalFiles}. ${remaining} remaining...`,
         );
       }
     }
-    const recentFolder = normalizeFolderValue(attempt.folder) || normalizeFolderValue(
-      `${attempt.root_key}${attempt.subdirectory ? `/${attempt.subdirectory}` : ""}`
-    );
+    const recentFolder =
+      normalizeFolderValue(attempt.folder) ||
+      normalizeFolderValue(
+        `${attempt.root_key}${attempt.subdirectory ? `/${attempt.subdirectory}` : ''}`,
+      );
     saveRecentFolder(recentFolder);
     renderRootOptions();
-    let refreshSuffix = "";
+    let refreshSuffix = '';
     if (successCount > 0) {
       const refreshResult = await triggerNodeDefinitionsRefresh();
-      refreshSuffix = refreshResult ? " Node definitions refreshed." : " Upload complete. Press R to refresh node definitions.";
+      refreshSuffix = refreshResult
+        ? ' Node definitions refreshed.'
+        : ' Upload complete. Press R to refresh node definitions.';
     }
     if (successCount === 1 && failCount === 0 && singleFileMode) {
       setStatus(
         `Saved to ${lastSuccessPath} (${formatBytes(lastSuccessBytes)}).${refreshSuffix}`,
-        "success"
+        'success',
       );
       return;
     }
     if (failCount === 0) {
       setStatus(
         `Uploaded ${successCount} files successfully.${refreshSuffix}`,
-        "success"
+        'success',
       );
       return;
     }
     if (successCount === 0) {
-      setStatus(`Upload failed for all ${failCount} files.`, "error");
+      setStatus(`Upload failed for all ${failCount} files.`, 'error');
       return;
     }
     setStatus(
       `Uploaded ${successCount}/${selectedFiles.length} files. ${failCount} failed.${refreshSuffix}`,
-      "error"
+      'error',
     );
   }
   async function handleExport(pathValue) {
-    const exportPath = String(pathValue || "").trim();
+    const exportPath = String(pathValue || '').trim();
     if (!exportPath) {
-      setStatus("Export path is required.", "error");
+      setStatus('Export path is required.', 'error');
       return;
     }
-    setStatus("Preparing export zip...");
-    const resp = await apiFetch("/download-to-dir/export", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: exportPath })
+    setStatus('Preparing export zip...');
+    const resp = await apiFetch('/download-to-dir/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: exportPath }),
     });
     if (!resp.ok) {
       let data = null;
@@ -2302,37 +2471,37 @@ Reinstall source: ${installTarget}`,
       const message = formatApiError(
         resp.status,
         data,
-        `Export failed (${resp.status})`
+        `Export failed (${resp.status})`,
       );
-      setStatus(message, "error");
+      setStatus(message, 'error');
       return;
     }
     const blob = await resp.blob();
-    const disposition = String(resp.headers.get("content-disposition") || "");
+    const disposition = String(resp.headers.get('content-disposition') || '');
     const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
-    const filename = String(filenameMatch?.[1] || "").trim() || "export.zip";
+    const filename = String(filenameMatch?.[1] || '').trim() || 'export.zip';
     const objectUrl = window.URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
+    const anchor = document.createElement('a');
     anchor.href = objectUrl;
     anchor.download = filename;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
     window.URL.revokeObjectURL(objectUrl);
-    setStatus(`Exported ${filename}`, "success");
+    setStatus(`Exported ${filename}`, 'success');
   }
   async function callRestartEndpoint() {
     const routes = [
-      "/download-to-dir/restart",
-      "/api/download-to-dir/restart",
-      "/manager/reboot",
-      "/api/manager/reboot"
+      '/download-to-dir/restart',
+      '/api/download-to-dir/restart',
+      '/manager/reboot',
+      '/api/manager/reboot',
     ];
     let lastError = null;
     let lastResponse = null;
     for (const route of routes) {
       try {
-        const resp = await fetch(route, { method: "GET" });
+        const resp = await fetch(route, { method: 'GET' });
         if (resp.status === 404) {
           lastResponse = resp;
           continue;
@@ -2346,7 +2515,7 @@ Reinstall source: ${installTarget}`,
     return lastResponse;
   }
   function closeConfirmModal(confirmed) {
-    const modal = document.getElementById("dtd-confirm-modal");
+    const modal = document.getElementById('dtd-confirm-modal');
     if (modal) modal.hidden = true;
     if (restartConfirmResolver) {
       restartConfirmResolver(Boolean(confirmed));
@@ -2354,7 +2523,7 @@ Reinstall source: ${installTarget}`,
     }
   }
   function closeUploadPathModal(pathValue) {
-    const modal = document.getElementById("dtd-upload-path-modal");
+    const modal = document.getElementById('dtd-upload-path-modal');
     if (modal) modal.hidden = true;
     if (!uploadPathResolver) return;
     const resolver = uploadPathResolver;
@@ -2362,12 +2531,12 @@ Reinstall source: ${installTarget}`,
     resolver(pathValue);
   }
   function dismissUploadPathModal() {
-    const modal = document.getElementById("dtd-upload-path-modal");
+    const modal = document.getElementById('dtd-upload-path-modal');
     if (modal) modal.hidden = true;
     uploadPathResolver = null;
   }
   function closeExportPathModal(pathValue) {
-    const modal = document.getElementById("dtd-export-path-modal");
+    const modal = document.getElementById('dtd-export-path-modal');
     if (modal) modal.hidden = true;
     if (!exportPathResolver) return;
     const resolver = exportPathResolver;
@@ -2375,13 +2544,13 @@ Reinstall source: ${installTarget}`,
     resolver(pathValue);
   }
   function requestUploadPath() {
-    const modal = document.getElementById("dtd-upload-path-modal");
-    const input = document.getElementById("dtd-upload-path-input");
+    const modal = document.getElementById('dtd-upload-path-modal');
+    const input = document.getElementById('dtd-upload-path-input');
     if (!modal || !(input instanceof HTMLInputElement)) {
       return Promise.resolve(null);
     }
     if (uploadPathResolver) closeUploadPathModal(null);
-    input.value = String(state.uploadFolder || "output").trim();
+    input.value = String(state.uploadFolder || 'output').trim();
     modal.hidden = false;
     window.setTimeout(() => {
       input.focus();
@@ -2392,13 +2561,13 @@ Reinstall source: ${installTarget}`,
     });
   }
   function requestExportPath() {
-    const modal = document.getElementById("dtd-export-path-modal");
-    const input = document.getElementById("dtd-export-path-input");
+    const modal = document.getElementById('dtd-export-path-modal');
+    const input = document.getElementById('dtd-export-path-input');
     if (!modal || !(input instanceof HTMLInputElement)) {
       return Promise.resolve(null);
     }
     if (exportPathResolver) closeExportPathModal(null);
-    input.value = String(input.value || "").trim();
+    input.value = String(input.value || '').trim();
     modal.hidden = false;
     window.setTimeout(() => {
       input.focus();
@@ -2409,24 +2578,28 @@ Reinstall source: ${installTarget}`,
     });
   }
   function requestActionConfirmation({
-    title = "Are you sure?",
-    copy = "",
-    confirmLabel = "Confirm"
+    title = 'Are you sure?',
+    copy = '',
+    confirmLabel = 'Confirm',
   } = {}) {
-    const modal = document.getElementById("dtd-confirm-modal");
+    const modal = document.getElementById('dtd-confirm-modal');
     if (!modal) {
-      return Promise.resolve(window.confirm(`${title}
+      return Promise.resolve(
+        window.confirm(
+          `${title}
 
-${copy}`.trim()));
+${copy}`.trim(),
+        ),
+      );
     }
-    const titleEl = document.getElementById("dtd-confirm-title");
-    const copyEl = document.getElementById("dtd-confirm-copy");
-    const confirmEl = document.getElementById("dtd-confirm-confirm");
+    const titleEl = document.getElementById('dtd-confirm-title');
+    const copyEl = document.getElementById('dtd-confirm-copy');
+    const confirmEl = document.getElementById('dtd-confirm-confirm');
     if (titleEl)
-      titleEl.textContent = String(title || "").trim() || "Are you sure?";
-    if (copyEl) copyEl.textContent = String(copy || "").trim();
+      titleEl.textContent = String(title || '').trim() || 'Are you sure?';
+    if (copyEl) copyEl.textContent = String(copy || '').trim();
     if (confirmEl) {
-      confirmEl.textContent = String(confirmLabel || "").trim() || "Confirm";
+      confirmEl.textContent = String(confirmLabel || '').trim() || 'Confirm';
     }
     if (restartConfirmResolver) {
       restartConfirmResolver(false);
@@ -2441,175 +2614,174 @@ ${copy}`.trim()));
     const requireConfirm = options?.confirm !== false;
     if (requireConfirm) {
       const confirmed = await requestActionConfirmation({
-        title: "Restart ComfyUI?",
-        copy: "Running tasks may be interrupted. Continue?",
-        confirmLabel: "Restart"
+        title: 'Restart ComfyUI?',
+        copy: 'Running tasks may be interrupted. Continue?',
+        confirmLabel: 'Restart',
       });
       if (!confirmed) return;
     }
-    setStatus("Restarting ComfyUI...");
+    setStatus('Restarting ComfyUI...');
     try {
       const response = await callRestartEndpoint();
       if (!response || response.status === 404) {
-        setStatus("Restart endpoint is unavailable.", "error");
+        setStatus('Restart endpoint is unavailable.', 'error');
         return;
       }
       if (response.status === 403) {
         setStatus(
-          "Restart was blocked by ComfyUI-Manager security settings.",
-          "error"
+          'Restart was blocked by ComfyUI-Manager security settings.',
+          'error',
         );
         return;
       }
       if (!response.ok) {
-        setStatus(`Restart failed (${response.status}).`, "error");
+        setStatus(`Restart failed (${response.status}).`, 'error');
         return;
       }
-      setStatus("Restart requested. Waiting for reconnect...", "success");
+      setStatus('Restart requested. Waiting for reconnect...', 'success');
       const apiObj = window.api;
       let finished = false;
       const finish = async (message) => {
         if (finished) return;
         finished = true;
-        let suffix = "";
+        let suffix = '';
         try {
           const refreshed = await triggerNodeDefinitionsRefresh();
-          suffix = refreshed ? " Node definitions refreshed." : "";
-        } catch {
-        }
+          suffix = refreshed ? ' Node definitions refreshed.' : '';
+        } catch {}
         try {
           await refreshMissingNodes({ silent: true });
-        } catch {
-        }
-        setStatus(`${message}${suffix}`.trim(), "success");
+        } catch {}
+        setStatus(`${message}${suffix}`.trim(), 'success');
         window.setTimeout(() => {
-          setStatus("Ready.");
+          setStatus('Ready.');
         }, 4e3);
       };
       if (apiObj?.addEventListener) {
         const onReconnected = () => {
-          finish("Restart complete. Reconnected to ComfyUI.");
+          finish('Restart complete. Reconnected to ComfyUI.');
         };
-        apiObj.addEventListener("reconnected", onReconnected);
+        apiObj.addEventListener('reconnected', onReconnected);
         window.setTimeout(() => {
           finish(
-            "Restart complete. If the UI did not refresh yet, wait a moment or refresh the page."
+            'Restart complete. If the UI did not refresh yet, wait a moment or refresh the page.',
           );
         }, 7e3);
       } else {
         window.setTimeout(() => {
           finish(
-            "Restart complete. If the UI did not refresh yet, wait a moment or refresh the page."
+            'Restart complete. If the UI did not refresh yet, wait a moment or refresh the page.',
           );
         }, 2500);
       }
     } catch (err) {
-      setStatus(err?.message || String(err), "error");
+      setStatus(err?.message || String(err), 'error');
     }
   }
   function retryHistoryEntry(entry) {
     if (!entry) return;
     const retryAttempt = buildRetryAttemptFromEntry(entry);
     if (!retryAttempt.url || !retryAttempt.folder) {
-      setStatus("Retry requires a URL and destination path.", "error");
+      setStatus('Retry requires a URL and destination path.', 'error');
       return;
     }
     updateHistoryEntry(entry.id, {
       created_at: Date.now(),
-      status: "queued",
+      status: 'queued',
       bytes_written: 0,
       total_bytes: null,
       progress_percent: 0,
-      error: ""
+      error: '',
     });
     handleDownload({
       attempt: retryAttempt,
-      existingEntryId: entry.id
-    }).catch((err) => setStatus(err?.message || String(err), "error"));
+      existingEntryId: entry.id,
+    }).catch((err) => setStatus(err?.message || String(err), 'error'));
   }
   async function loadRoots() {
-    const select = document.getElementById("dtd-root");
+    const select = document.getElementById('dtd-root');
     if (!select) return;
-    setStatus("Loading destinations...");
-    const resp = await apiFetch("/download-to-dir/roots", { method: "GET" });
+    setStatus('Loading destinations...');
+    const resp = await apiFetch('/download-to-dir/roots', { method: 'GET' });
     const data = await resp.json();
     if (!resp.ok) {
       throw new Error(
         formatApiError(
           resp.status,
           data,
-          `Could not load destination folders (${resp.status})`
-        )
+          `Could not load destination folders (${resp.status})`,
+        ),
       );
     }
     state.roots = Array.isArray(data.roots) ? data.roots : [];
     renderRootOptions();
     if (select.options.length === 0) {
-      setStatus("No writable roots available", "error");
+      setStatus('No writable roots available', 'error');
     } else {
-      setStatus("Ready.");
+      setStatus('Ready.');
     }
   }
   async function triggerNodeDefinitionsRefresh() {
-    const commandId = "Comfy.RefreshNodeDefinitions";
+    const commandId = 'Comfy.RefreshNodeDefinitions';
     const appObj = window.app;
     const attempts = [
       () => appObj?.extensionManager?.command?.execute?.(commandId),
       () => appObj?.extensionManager?.commands?.execute?.(commandId),
       () => appObj?.commands?.execute?.(commandId),
-      () => appObj?.refreshComboInNodes?.()
+      () => appObj?.refreshComboInNodes?.(),
     ];
     for (const run of attempts) {
       try {
         const result = run();
-        if (result && typeof result.then === "function") {
+        if (result && typeof result.then === 'function') {
           await result;
         }
         if (result !== void 0 || run === attempts[attempts.length - 1]) {
           return true;
         }
-      } catch {
-      }
+      } catch {}
     }
     try {
-      const event = new KeyboardEvent("keydown", {
-        key: "r",
-        code: "KeyR",
+      const event = new KeyboardEvent('keydown', {
+        key: 'r',
+        code: 'KeyR',
         bubbles: true,
-        cancelable: true
+        cancelable: true,
       });
-      const accepted = document.dispatchEvent(event) || window.dispatchEvent(event);
+      const accepted =
+        document.dispatchEvent(event) || window.dispatchEvent(event);
       return Boolean(accepted);
     } catch {
       return false;
     }
   }
   function closeDialogAnimated(dialog) {
-    if (!dialog?.open || dialog.classList.contains("dtd-closing")) return;
-    dialog.classList.add("dtd-closing");
+    if (!dialog?.open || dialog.classList.contains('dtd-closing')) return;
+    dialog.classList.add('dtd-closing');
     const onAnimEnd = (event) => {
-      if (event.target !== dialog || event.animationName !== "dtd-dialog-out") {
+      if (event.target !== dialog || event.animationName !== 'dtd-dialog-out') {
         return;
       }
-      dialog.removeEventListener("animationend", onAnimEnd);
-      dialog.classList.remove("dtd-closing");
+      dialog.removeEventListener('animationend', onAnimEnd);
+      dialog.classList.remove('dtd-closing');
       dialog.close();
     };
-    dialog.addEventListener("animationend", onAnimEnd);
+    dialog.addEventListener('animationend', onAnimEnd);
   }
   function renderUi() {
     ensureStyles2();
     writeHistoryEntries(readHistoryEntries());
     if (!state.toggleEl) {
-      const toggle2 = document.createElement("button");
+      const toggle2 = document.createElement('button');
       toggle2.id = BUTTON_ID;
-      toggle2.type = "button";
-      toggle2.innerHTML = '<i class="icon-[lucide--download]"></i><span>Downloader</span>';
+      toggle2.type = 'button';
+      toggle2.innerHTML =
+        '<i class="icon-[lucide--download]"></i><span>Downloader</span>';
       state.toggleEl = toggle2;
     }
     const toggle = state.toggleEl;
     if (!state.dialogEl) {
-      const dialog2 = document.createElement("dialog");
+      const dialog2 = document.createElement('dialog');
       dialog2.id = DIALOG_ID;
       dialog2.innerHTML = `
       <div class="body row">
@@ -2744,208 +2916,212 @@ ${copy}`.trim()));
       state.dialogEl = dialog2;
     }
     const dialog = state.dialogEl;
-    toggle.addEventListener("click", () => {
+    toggle.addEventListener('click', () => {
       if (!dialog.open) {
-        dialog.classList.remove("dtd-closing");
+        dialog.classList.remove('dtd-closing');
         dialog.showModal();
-        refreshMissingNodes({ silent: true }).catch(() => {
-        });
+        refreshMissingNodes({ silent: true }).catch(() => {});
       }
       if (state.roots.length === 0) {
-        loadRoots().catch(
-          (err) => setStatus(err.message || String(err), "error")
+        loadRoots().catch((err) =>
+          setStatus(err.message || String(err), 'error'),
         );
       }
     });
     ensureButtonMounted();
-    const advanced = document.getElementById("dtd-advanced");
+    const advanced = document.getElementById('dtd-advanced');
     if (advanced instanceof HTMLDetailsElement) {
       advanced.open = readSessionBoolean(ADVANCED_OPEN_KEY, false);
-      advanced.addEventListener("toggle", () => {
+      advanced.addEventListener('toggle', () => {
         writeSessionBoolean(ADVANCED_OPEN_KEY, advanced.open);
       });
     }
-    const hfTokenInput = document.getElementById("dtd-hf-token");
+    const hfTokenInput = document.getElementById('dtd-hf-token');
     if (hfTokenInput instanceof HTMLInputElement) {
-      const savedToken = String(readSessionJson(HF_TOKEN_KEY, "") || "");
+      const savedToken = String(readSessionJson(HF_TOKEN_KEY, '') || '');
       hfTokenInput.value = savedToken;
-      hfTokenInput.addEventListener("input", () => {
-        writeSessionJson(HF_TOKEN_KEY, String(hfTokenInput.value || "").trim());
+      hfTokenInput.addEventListener('input', () => {
+        writeSessionJson(HF_TOKEN_KEY, String(hfTokenInput.value || '').trim());
       });
     }
     renderHistory();
     updateMissingWarningVisibility();
-    const rootSelect = document.getElementById("dtd-root");
-    const folderInput = document.getElementById("dtd-folder");
+    const rootSelect = document.getElementById('dtd-root');
+    const folderInput = document.getElementById('dtd-folder');
     if (rootSelect && folderInput) {
-      rootSelect.addEventListener("change", () => {
-        const selected = rootSelect.value || "";
-        if (selected.startsWith("recent:")) {
-          folderInput.value = selected.slice("recent:".length);
+      rootSelect.addEventListener('change', () => {
+        const selected = rootSelect.value || '';
+        if (selected.startsWith('recent:')) {
+          folderInput.value = selected.slice('recent:'.length);
         }
       });
     }
-    const historyList = document.getElementById("dtd-history-list");
+    const historyList = document.getElementById('dtd-history-list');
     if (historyList) {
-      historyList.addEventListener("input", (event) => {
-        const input = event.target instanceof Element ? event.target.closest('input[data-action="edit-path"][data-id]') : null;
+      historyList.addEventListener('input', (event) => {
+        const input =
+          event.target instanceof Element
+            ? event.target.closest('input[data-action="edit-path"][data-id]')
+            : null;
         if (!(input instanceof HTMLInputElement)) return;
-        const entryId = input.dataset.id || "";
-        const updatedPath = String(input.value || "").trim();
+        const entryId = input.dataset.id || '';
+        const updatedPath = String(input.value || '').trim();
         writeHistoryEntries(
           state.historyEntries.map((entry) => {
             if (entry.id !== entryId) return entry;
             return { ...entry, path: updatedPath };
-          })
+          }),
         );
       });
-      historyList.addEventListener("click", (event) => {
-        const button = event.target instanceof Element ? event.target.closest("button[data-action][data-id]") : null;
+      historyList.addEventListener('click', (event) => {
+        const button =
+          event.target instanceof Element
+            ? event.target.closest('button[data-action][data-id]')
+            : null;
         if (!button) return;
-        const action = button.getAttribute("data-action") || "";
-        const entryId = button.getAttribute("data-id") || "";
+        const action = button.getAttribute('data-action') || '';
+        const entryId = button.getAttribute('data-id') || '';
         const entry = getHistoryEntry(entryId);
         if (!entry) return;
-        if (action === "remove-entry") {
+        if (action === 'remove-entry') {
           removeHistoryEntry(entryId);
           return;
         }
-        if (action === "retry-entry") {
+        if (action === 'retry-entry') {
           retryHistoryEntry(entry);
           return;
         }
-        if (action === "delete-file") {
+        if (action === 'delete-file') {
           deleteFileFromHistory(entry).catch((err) => {
-            setStatus(err.message || String(err), "error");
+            setStatus(err.message || String(err), 'error');
           });
           return;
         }
-        if (action === "update-custom-node") {
+        if (action === 'update-custom-node') {
           updateCustomNodeFromHistory(entry).catch((err) => {
-            setStatus(err.message || String(err), "error");
+            setStatus(err.message || String(err), 'error');
           });
         }
       });
     }
-    const submit = document.getElementById("dtd-submit");
+    const submit = document.getElementById('dtd-submit');
     if (submit) {
-      submit.addEventListener("click", () => {
-        handleDownload().catch(
-          (err) => setStatus(err.message || String(err), "error")
+      submit.addEventListener('click', () => {
+        handleDownload().catch((err) =>
+          setStatus(err.message || String(err), 'error'),
         );
       });
     }
-    const missingWarning = document.getElementById("dtd-missing-warning");
+    const missingWarning = document.getElementById('dtd-missing-warning');
     if (missingWarning) {
-      missingWarning.addEventListener("click", () => {
+      missingWarning.addEventListener('click', () => {
         openMissingNodesModal();
-        refreshMissingNodes({ silent: true }).catch(() => {
-        });
+        refreshMissingNodes({ silent: true }).catch(() => {});
       });
     }
-    const upload = document.getElementById("dtd-upload");
-    const exportBtn = document.getElementById("dtd-export");
-    const fileInput = document.getElementById("dtd-file");
+    const upload = document.getElementById('dtd-upload');
+    const exportBtn = document.getElementById('dtd-export');
+    const fileInput = document.getElementById('dtd-file');
     if (upload && fileInput instanceof HTMLInputElement) {
-      upload.addEventListener("click", async () => {
+      upload.addEventListener('click', async () => {
         const chosenPath = await requestUploadPath();
         if (chosenPath == null) return;
-        const normalizedPath = String(chosenPath || "").trim();
-        state.uploadFolder = normalizedPath || "output";
+        const normalizedPath = String(chosenPath || '').trim();
+        state.uploadFolder = normalizedPath || 'output';
         fileInput.click();
       });
-      fileInput.addEventListener("change", () => {
+      fileInput.addEventListener('change', () => {
         const files = Array.from(fileInput.files || []);
-        fileInput.value = "";
+        fileInput.value = '';
         if (files.length === 0) return;
-        handleUpload(files, { uploadFolder: state.uploadFolder }).catch(
-          (err) => setStatus(err.message || String(err), "error")
+        handleUpload(files, { uploadFolder: state.uploadFolder }).catch((err) =>
+          setStatus(err.message || String(err), 'error'),
         );
       });
     }
     if (exportBtn) {
-      exportBtn.addEventListener("click", async () => {
+      exportBtn.addEventListener('click', async () => {
         const chosenPath = await requestExportPath();
         if (chosenPath == null) return;
-        handleExport(chosenPath).catch(
-          (err) => setStatus(err.message || String(err), "error")
+        handleExport(chosenPath).catch((err) =>
+          setStatus(err.message || String(err), 'error'),
         );
       });
     }
-    const restart = document.getElementById("dtd-restart");
+    const restart = document.getElementById('dtd-restart');
     if (restart) {
-      restart.addEventListener("click", () => {
-        handleRestart().catch(
-          (err) => setStatus(err.message || String(err), "error")
+      restart.addEventListener('click', () => {
+        handleRestart().catch((err) =>
+          setStatus(err.message || String(err), 'error'),
         );
       });
     }
-    const confirmModal = document.getElementById("dtd-confirm-modal");
-    const confirmCancel = document.getElementById("dtd-confirm-cancel");
-    const confirmConfirm = document.getElementById("dtd-confirm-confirm");
+    const confirmModal = document.getElementById('dtd-confirm-modal');
+    const confirmCancel = document.getElementById('dtd-confirm-cancel');
+    const confirmConfirm = document.getElementById('dtd-confirm-confirm');
     if (confirmModal) {
-      confirmModal.addEventListener("click", (event) => {
+      confirmModal.addEventListener('click', (event) => {
         if (event.target === confirmModal) closeConfirmModal(false);
       });
-      confirmModal.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
+      confirmModal.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
           event.preventDefault();
           closeConfirmModal(false);
         }
       });
     }
     if (confirmCancel) {
-      confirmCancel.addEventListener("click", () => closeConfirmModal(false));
+      confirmCancel.addEventListener('click', () => closeConfirmModal(false));
     }
     if (confirmConfirm) {
-      confirmConfirm.addEventListener("click", () => closeConfirmModal(true));
+      confirmConfirm.addEventListener('click', () => closeConfirmModal(true));
     }
-    const uploadPathModal = document.getElementById("dtd-upload-path-modal");
-    const uploadPathInput = document.getElementById("dtd-upload-path-input");
-    const uploadPathCancel = document.getElementById("dtd-upload-path-cancel");
+    const uploadPathModal = document.getElementById('dtd-upload-path-modal');
+    const uploadPathInput = document.getElementById('dtd-upload-path-input');
+    const uploadPathCancel = document.getElementById('dtd-upload-path-cancel');
     const uploadPathConfirm = document.getElementById(
-      "dtd-upload-path-confirm"
+      'dtd-upload-path-confirm',
     );
-    const uploadDropzone = document.getElementById("dtd-upload-dropzone");
+    const uploadDropzone = document.getElementById('dtd-upload-dropzone');
     if (uploadPathModal) {
       const consumeModalDragEvent = (event) => {
-        const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+        const path =
+          typeof event.composedPath === 'function' ? event.composedPath() : [];
         const isInDropzone = path.includes(uploadDropzone);
         if (isInDropzone) return;
         event.preventDefault();
         event.stopPropagation();
       };
-      for (const eventName of ["dragenter", "dragover", "drop"]) {
+      for (const eventName of ['dragenter', 'dragover', 'drop']) {
         uploadPathModal.addEventListener(
           eventName,
           consumeModalDragEvent,
-          true
+          true,
         );
       }
-      uploadPathModal.addEventListener("click", (event) => {
+      uploadPathModal.addEventListener('click', (event) => {
         if (event.target === uploadPathModal) closeUploadPathModal(null);
       });
-      uploadPathModal.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
+      uploadPathModal.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
           event.preventDefault();
           closeUploadPathModal(null);
           return;
         }
-        if (event.key === "Enter") {
-          const currentValue = String(uploadPathInput?.value || "").trim();
+        if (event.key === 'Enter') {
+          const currentValue = String(uploadPathInput?.value || '').trim();
           closeUploadPathModal(currentValue);
         }
       });
     }
     if (uploadPathCancel) {
-      uploadPathCancel.addEventListener(
-        "click",
-        () => closeUploadPathModal(null)
+      uploadPathCancel.addEventListener('click', () =>
+        closeUploadPathModal(null),
       );
     }
     if (uploadPathConfirm) {
-      uploadPathConfirm.addEventListener("click", () => {
-        const currentValue = String(uploadPathInput?.value || "").trim();
+      uploadPathConfirm.addEventListener('click', () => {
+        const currentValue = String(uploadPathInput?.value || '').trim();
         closeUploadPathModal(currentValue);
       });
     }
@@ -2957,139 +3133,141 @@ ${copy}`.trim()));
       const uploadDroppedFiles = (files) => {
         const selectedFiles = Array.from(files || []);
         if (selectedFiles.length === 0) return;
-        const currentValue = String(uploadPathInput?.value || "").trim();
-        state.uploadFolder = currentValue || "output";
+        const currentValue = String(uploadPathInput?.value || '').trim();
+        state.uploadFolder = currentValue || 'output';
         dismissUploadPathModal();
         handleUpload(selectedFiles, { uploadFolder: state.uploadFolder }).catch(
-          (err) => setStatus(err.message || String(err), "error")
+          (err) => setStatus(err.message || String(err), 'error'),
         );
       };
-      uploadDropzone.addEventListener("click", () => {
-        const currentValue = String(uploadPathInput?.value || "").trim();
+      uploadDropzone.addEventListener('click', () => {
+        const currentValue = String(uploadPathInput?.value || '').trim();
         closeUploadPathModal(currentValue);
       });
-      uploadDropzone.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
+      uploadDropzone.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          const currentValue = String(uploadPathInput?.value || "").trim();
+          const currentValue = String(uploadPathInput?.value || '').trim();
           closeUploadPathModal(currentValue);
         }
       });
-      for (const eventName of ["dragenter", "dragover"]) {
+      for (const eventName of ['dragenter', 'dragover']) {
         uploadDropzone.addEventListener(eventName, consumeDragEvent, true);
       }
       uploadDropzone.addEventListener(
-        "drop",
+        'drop',
         (event) => {
           consumeDragEvent(event);
-          uploadDropzone.classList.remove("drag-active");
+          uploadDropzone.classList.remove('drag-active');
           uploadDroppedFiles(event.dataTransfer?.files || []);
         },
-        true
+        true,
       );
-      uploadDropzone.addEventListener("dragenter", (event) => {
+      uploadDropzone.addEventListener('dragenter', (event) => {
         consumeDragEvent(event);
-        uploadDropzone.classList.add("drag-active");
+        uploadDropzone.classList.add('drag-active');
       });
-      uploadDropzone.addEventListener("dragover", (event) => {
+      uploadDropzone.addEventListener('dragover', (event) => {
         consumeDragEvent(event);
-        uploadDropzone.classList.add("drag-active");
+        uploadDropzone.classList.add('drag-active');
       });
-      uploadDropzone.addEventListener("dragleave", (event) => {
+      uploadDropzone.addEventListener('dragleave', (event) => {
         event.stopPropagation();
         if (!uploadDropzone.contains(event.relatedTarget)) {
-          uploadDropzone.classList.remove("drag-active");
+          uploadDropzone.classList.remove('drag-active');
         }
       });
     }
-    const exportPathModal = document.getElementById("dtd-export-path-modal");
-    const exportPathInput = document.getElementById("dtd-export-path-input");
-    const exportPathCancel = document.getElementById("dtd-export-path-cancel");
+    const exportPathModal = document.getElementById('dtd-export-path-modal');
+    const exportPathInput = document.getElementById('dtd-export-path-input');
+    const exportPathCancel = document.getElementById('dtd-export-path-cancel');
     const exportPathConfirm = document.getElementById(
-      "dtd-export-path-confirm"
+      'dtd-export-path-confirm',
     );
     if (exportPathModal) {
-      exportPathModal.addEventListener("click", (event) => {
+      exportPathModal.addEventListener('click', (event) => {
         if (event.target === exportPathModal) closeExportPathModal(null);
       });
-      exportPathModal.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
+      exportPathModal.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
           event.preventDefault();
           closeExportPathModal(null);
           return;
         }
-        if (event.key === "Enter") {
-          const currentValue = String(exportPathInput?.value || "").trim();
+        if (event.key === 'Enter') {
+          const currentValue = String(exportPathInput?.value || '').trim();
           closeExportPathModal(currentValue);
         }
       });
     }
     if (exportPathCancel) {
-      exportPathCancel.addEventListener(
-        "click",
-        () => closeExportPathModal(null)
+      exportPathCancel.addEventListener('click', () =>
+        closeExportPathModal(null),
       );
     }
     if (exportPathConfirm) {
-      exportPathConfirm.addEventListener("click", () => {
-        const currentValue = String(exportPathInput?.value || "").trim();
+      exportPathConfirm.addEventListener('click', () => {
+        const currentValue = String(exportPathInput?.value || '').trim();
         closeExportPathModal(currentValue);
       });
     }
-    const missingModal = document.getElementById("dtd-missing-modal");
-    const missingClose = document.getElementById("dtd-missing-close");
-    const missingRestart = document.getElementById("dtd-missing-restart");
-    const missingInstall = document.getElementById("dtd-missing-install");
+    const missingModal = document.getElementById('dtd-missing-modal');
+    const missingClose = document.getElementById('dtd-missing-close');
+    const missingRestart = document.getElementById('dtd-missing-restart');
+    const missingInstall = document.getElementById('dtd-missing-install');
     if (missingModal) {
-      missingModal.addEventListener("click", (event) => {
+      missingModal.addEventListener('click', (event) => {
         if (event.target === missingModal) closeMissingNodesModal();
       });
-      missingModal.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
+      missingModal.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
           event.preventDefault();
           closeMissingNodesModal();
         }
       });
-      missingModal.addEventListener("input", (event) => {
-        const input = event.target instanceof Element ? event.target.closest(
-          'input[data-action="manual-source"][data-key]'
-        ) : null;
+      missingModal.addEventListener('input', (event) => {
+        const input =
+          event.target instanceof Element
+            ? event.target.closest(
+                'input[data-action="manual-source"][data-key]',
+              )
+            : null;
         if (!(input instanceof HTMLInputElement)) return;
-        const key = String(input.dataset.key || "").trim();
+        const key = String(input.dataset.key || '').trim();
         if (!key) return;
-        state.manualSourceOverrides[key] = String(input.value || "").trim();
+        state.manualSourceOverrides[key] = String(input.value || '').trim();
         refreshMissingActionButtons();
       });
     }
     if (missingClose) {
-      missingClose.addEventListener("click", () => closeMissingNodesModal());
+      missingClose.addEventListener('click', () => closeMissingNodesModal());
     }
     if (missingRestart) {
-      missingRestart.addEventListener("click", () => {
-        handleRestart({ confirm: false }).catch(
-          (err) => setStatus(err.message || String(err), "error")
+      missingRestart.addEventListener('click', () => {
+        handleRestart({ confirm: false }).catch((err) =>
+          setStatus(err.message || String(err), 'error'),
         );
       });
     }
     if (missingInstall) {
-      missingInstall.addEventListener("click", () => {
-        handleInstallMissingNodes().catch(
-          (err) => setStatus(err.message || String(err), "error")
+      missingInstall.addEventListener('click', () => {
+        handleInstallMissingNodes().catch((err) =>
+          setStatus(err.message || String(err), 'error'),
         );
       });
     }
-    const close = document.getElementById("dtd-close-icon");
+    const close = document.getElementById('dtd-close-icon');
     if (close) {
-      close.addEventListener("click", () => closeDialogAnimated(dialog));
+      close.addEventListener('click', () => closeDialogAnimated(dialog));
     }
-    dialog.addEventListener("click", (event) => {
+    dialog.addEventListener('click', (event) => {
       if (event.target === dialog) {
         closeMissingNodesModal();
         closeConfirmModal(false);
         closeDialogAnimated(dialog);
       }
     });
-    dialog.addEventListener("cancel", (event) => {
+    dialog.addEventListener('cancel', (event) => {
       event.preventDefault();
       closeMissingNodesModal();
       closeConfirmModal(false);
@@ -3106,24 +3284,24 @@ ${copy}`.trim()));
     renderUi();
     startHotReloadWatcher();
   }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
 })();
 
 // web-src/group_bypasser.ts
-import { app } from "../../scripts/app.js";
-var NODE_NAME = "ComfyUI-Group-Bypasser";
-var NODE_DISPLAY_NAME = "Group Bypasser";
+import { app } from '../../scripts/app.js';
+var NODE_NAME = 'ComfyUI-Group-Bypasser';
+var NODE_DISPLAY_NAME = 'Group Bypasser';
 var MODE_ACTIVE = LiteGraph.ALWAYS;
 var MODE_BYPASS = 4;
-var STATE_KEY = "group_bypasser_states";
+var STATE_KEY = 'group_bypasser_states';
 var REFRESH_MS = 400;
 var ALPHABETICAL_COLLATOR = new Intl.Collator(void 0, {
-  sensitivity: "base",
-  numeric: true
+  sensitivity: 'base',
+  numeric: true,
 });
 function queueRefresh(node, force = false) {
   if (force) {
@@ -3139,28 +3317,28 @@ function queueRefresh(node, force = false) {
   }, 0);
 }
 function isTargetNodeDef(nodeData) {
-  return String(nodeData?.name || "") === NODE_NAME;
+  return String(nodeData?.name || '') === NODE_NAME;
 }
 function isTargetNodeInstance(node) {
   const candidates = [
     node?.type,
     node?.comfyClass,
     node?.constructor?.type,
-    node?.constructor?.title
-  ].map((value) => String(value || ""));
+    node?.constructor?.title,
+  ].map((value) => String(value || ''));
   return candidates.includes(NODE_NAME);
 }
 function syncNodeTitle(node) {
   if (!node) {
     return;
   }
-  const title = String(node.title || "").trim();
-  if (!title || title === NODE_NAME || title === "ComfyUI-Group-Bypasser") {
+  const title = String(node.title || '').trim();
+  if (!title || title === NODE_NAME || title === 'ComfyUI-Group-Bypasser') {
     node.title = NODE_DISPLAY_NAME;
   }
 }
 function normalizeTitle(title) {
-  return String(title || "").trim();
+  return String(title || '').trim();
 }
 function keyForTitle(title) {
   return normalizeTitle(title).toLowerCase();
@@ -3203,13 +3381,12 @@ function getGroupNodes(group, graph) {
     return [];
   }
   try {
-    if (typeof group.recomputeInsideNodes === "function") {
+    if (typeof group.recomputeInsideNodes === 'function') {
       group.recomputeInsideNodes();
     }
-  } catch (_error) {
-  }
+  } catch (_error) {}
   const fromChildren = Array.from(group?._children || []).filter(
-    (node) => typeof node?.id === "number"
+    (node) => typeof node?.id === 'number',
   );
   if (fromChildren.length) {
     return fromChildren;
@@ -3220,14 +3397,16 @@ function getGroupNodes(group, graph) {
   }
   const [gx, gy, gw, gh] = bounds;
   return (graph._nodes || []).filter((graphNode) => {
-    if (typeof graphNode?.id !== "number") {
+    if (typeof graphNode?.id !== 'number') {
       return false;
     }
     const pos = graphNode.pos || [0, 0];
     const size = Array.isArray(graphNode.size) ? graphNode.size : [140, 80];
     const centerX = Number(pos[0] || 0) + Number(size[0] || 0) * 0.5;
     const centerY = Number(pos[1] || 0) + Number(size[1] || 0) * 0.5;
-    return centerX >= gx && centerX < gx + gw && centerY >= gy && centerY < gy + gh;
+    return (
+      centerX >= gx && centerX < gx + gw && centerY >= gy && centerY < gy + gh
+    );
   });
 }
 function collectGroupsByTitle(node) {
@@ -3237,7 +3416,11 @@ function collectGroupsByTitle(node) {
   }
   const deduped = /* @__PURE__ */ new Map();
   for (const graph of collectNestedGraphs(rootGraph)) {
-    const sourceGroups = Array.isArray(graph._groups) ? graph._groups : Array.isArray(graph.groups) ? graph.groups : [];
+    const sourceGroups = Array.isArray(graph._groups)
+      ? graph._groups
+      : Array.isArray(graph.groups)
+        ? graph.groups
+        : [];
     for (const group of sourceGroups) {
       const title = normalizeTitle(group?.title);
       if (!title) {
@@ -3248,21 +3431,26 @@ function collectGroupsByTitle(node) {
         deduped.set(key, {
           key,
           title,
-          groups: []
+          groups: [],
         });
       }
       deduped.get(key).groups.push({ group, graph });
     }
   }
   return Array.from(deduped.values()).sort(
-    (a, b) => ALPHABETICAL_COLLATOR.compare(a.title, b.title) || a.key.localeCompare(b.key)
+    (a, b) =>
+      ALPHABETICAL_COLLATOR.compare(a.title, b.title) ||
+      a.key.localeCompare(b.key),
   );
 }
 function ensureStateStore(node) {
-  if (!node.properties || typeof node.properties !== "object") {
+  if (!node.properties || typeof node.properties !== 'object') {
     node.properties = {};
   }
-  if (!node.properties[STATE_KEY] || typeof node.properties[STATE_KEY] !== "object") {
+  if (
+    !node.properties[STATE_KEY] ||
+    typeof node.properties[STATE_KEY] !== 'object'
+  ) {
     node.properties[STATE_KEY] = {};
   }
   return node.properties[STATE_KEY];
@@ -3286,7 +3474,9 @@ function applyModeToGroupTitle(_node, groupEntry, bypassed) {
       seenNodeIds.set(graph, graphSeenIds);
     }
     for (const targetNode of getGroupNodes(group, graph)) {
-      if (!(targetNode && Number.isInteger(targetNode.id) && targetNode.id >= 0)) {
+      if (
+        !(targetNode && Number.isInteger(targetNode.id) && targetNode.id >= 0)
+      ) {
         continue;
       }
       if (graphSeenIds.has(targetNode.id)) {
@@ -3315,7 +3505,9 @@ function resolveBypassFromGroups(_node, groupEntry) {
       seenNodeIds.set(graph, graphSeenIds);
     }
     for (const targetNode of getGroupNodes(group, graph)) {
-      if (!(targetNode && Number.isInteger(targetNode.id) && targetNode.id >= 0)) {
+      if (
+        !(targetNode && Number.isInteger(targetNode.id) && targetNode.id >= 0)
+      ) {
         continue;
       }
       if (graphSeenIds.has(targetNode.id)) {
@@ -3337,7 +3529,7 @@ function getEntryByKey(node, key) {
   return collectGroupsByTitle(node).find((entry) => entry.key === key) || null;
 }
 function computeSignature(groupsByTitle) {
-  return groupsByTitle.map((entry) => entry.key).join("|");
+  return groupsByTitle.map((entry) => entry.key).join('|');
 }
 function hasStoredState(stateStore, key) {
   return Object.hasOwn(stateStore, key);
@@ -3351,7 +3543,9 @@ function syncWidgets(node, groupsByTitle, stateStore) {
     }
     const hasSavedState = hasStoredState(stateStore, entry.key);
     const actualBypassed = resolveBypassFromGroups(node, entry);
-    const targetBypassed = hasSavedState ? Boolean(stateStore[entry.key]) : actualBypassed;
+    const targetBypassed = hasSavedState
+      ? Boolean(stateStore[entry.key])
+      : actualBypassed;
     if (!hasSavedState) {
       stateStore[entry.key] = targetBypassed;
     }
@@ -3401,12 +3595,14 @@ function refreshNode(node) {
   for (const entry of groupsByTitle) {
     const widgetName = entry.title;
     const actualBypassed = resolveBypassFromGroups(node, entry);
-    const isBypassed = hasStoredState(stateStore, entry.key) ? Boolean(stateStore[entry.key]) : actualBypassed;
+    const isBypassed = hasStoredState(stateStore, entry.key)
+      ? Boolean(stateStore[entry.key])
+      : actualBypassed;
     stateStore[entry.key] = isBypassed;
     if (actualBypassed !== isBypassed) {
       applyModeToGroupTitle(node, entry, isBypassed);
     }
-    const widget = node.addWidget("toggle", widgetName, isBypassed, (value) => {
+    const widget = node.addWidget('toggle', widgetName, isBypassed, (value) => {
       const bypassed = Boolean(value);
       const latestEntry = getEntryByKey(node, entry.key);
       if (!latestEntry) {
@@ -3429,7 +3625,7 @@ function bindNode(node) {
   node.__groupBypasserBound = true;
   syncNodeTitle(node);
   const originalOnRemoved = node.onRemoved;
-  node.onRemoved = function(...args) {
+  node.onRemoved = function (...args) {
     if (this.__groupBypasserRefreshTimer) {
       clearInterval(this.__groupBypasserRefreshTimer);
       this.__groupBypasserRefreshTimer = null;
@@ -3450,14 +3646,14 @@ function bindNode(node) {
   }, REFRESH_MS);
 }
 app.registerExtension({
-  name: "comfy.group.bypasser",
+  name: 'comfy.group.bypasser',
   async beforeRegisterNodeDef(nodeType, nodeData) {
     if (!isTargetNodeDef(nodeData)) {
       return;
     }
     const originalOnNodeCreated = nodeType.prototype.onNodeCreated;
     const originalOnConfigure = nodeType.prototype.onConfigure;
-    nodeType.prototype.onNodeCreated = function(...args) {
+    nodeType.prototype.onNodeCreated = function (...args) {
       const result = originalOnNodeCreated?.apply(this, args);
       bindNode(this);
       queueRefresh(this, true);
@@ -3465,7 +3661,7 @@ app.registerExtension({
       setTimeout(() => queueRefresh(this, true), 250);
       return result;
     };
-    nodeType.prototype.onConfigure = function(...args) {
+    nodeType.prototype.onConfigure = function (...args) {
       const result = originalOnConfigure?.apply(this, args);
       bindNode(this);
       queueRefresh(this, true);
@@ -3480,53 +3676,53 @@ app.registerExtension({
     bindNode(node);
     queueRefresh(node, true);
     setTimeout(() => queueRefresh(node, true), 80);
-  }
+  },
 });
 
 // web-src/switch/index.ts
-import { app as app2 } from "/scripts/app.js";
+import { app as app2 } from '/scripts/app.js';
 
 // web-src/components/textfield.ts
 function createTextfield({
-  value = "",
-  placeholder = "",
+  value = '',
+  placeholder = '',
   disabled = false,
-  title = "",
-  className = "",
-  onChange
+  title = '',
+  className = '',
+  onChange,
 }) {
-  const input = document.createElement("input");
-  input.type = "text";
+  const input = document.createElement('input');
+  input.type = 'text';
   const comfyClasses = [
     // Mirrors ComfyUI_frontend widget input conventions.
-    "w-full",
-    "min-w-0",
-    "h-7",
-    "rounded-lg",
-    "border-none",
-    "bg-component-node-widget-background",
-    "text-component-node-foreground",
-    "px-4",
-    "text-xs",
-    "outline-none",
-    "transition-colors",
-    "hover:bg-component-node-widget-background-hovered",
-    "focus:bg-component-node-widget-background-hovered"
-  ].join(" ");
+    'w-full',
+    'min-w-0',
+    'h-7',
+    'rounded-lg',
+    'border-none',
+    'bg-component-node-widget-background',
+    'text-component-node-foreground',
+    'px-4',
+    'text-xs',
+    'outline-none',
+    'transition-colors',
+    'hover:bg-component-node-widget-background-hovered',
+    'focus:bg-component-node-widget-background-hovered',
+  ].join(' ');
   input.className = `${comfyClasses} ${className}`.trim();
   input.value = value;
   input.placeholder = placeholder;
   input.disabled = disabled;
   if (title) input.title = title;
-  input.addEventListener("change", () => onChange?.(input.value));
+  input.addEventListener('change', () => onChange?.(input.value));
   return input;
 }
 
 // web-src/components/toggle.ts
-var TOGGLE_STYLE_ID = "avatary-switch-toggle-styles";
+var TOGGLE_STYLE_ID = 'avatary-switch-toggle-styles';
 function ensureToggleStyles() {
   if (document.getElementById(TOGGLE_STYLE_ID)) return;
-  const style = document.createElement("style");
+  const style = document.createElement('style');
   style.id = TOGGLE_STYLE_ID;
   style.textContent = `
     .avatary-switch-toggle {
@@ -3579,17 +3775,17 @@ function ensureToggleStyles() {
   document.head.appendChild(style);
 }
 function createToggle({ active, disabled, title, onToggle }) {
-  const toggle = document.createElement("div");
-  toggle.setAttribute("role", "switch");
-  toggle.setAttribute("aria-checked", active ? "true" : "false");
+  const toggle = document.createElement('div');
+  toggle.setAttribute('role', 'switch');
+  toggle.setAttribute('aria-checked', active ? 'true' : 'false');
   if (title) toggle.title = title;
-  toggle.className = "avatary-switch-toggle";
-  if (active) toggle.classList.add("active");
-  if (disabled) toggle.classList.add("disabled");
-  const knob = document.createElement("span");
-  knob.className = "knob";
+  toggle.className = 'avatary-switch-toggle';
+  if (active) toggle.classList.add('active');
+  if (disabled) toggle.classList.add('disabled');
+  const knob = document.createElement('span');
+  knob.className = 'knob';
   toggle.appendChild(knob);
-  toggle.addEventListener("click", () => {
+  toggle.addEventListener('click', () => {
     if (disabled) return;
     onToggle?.();
   });
@@ -3597,17 +3793,17 @@ function createToggle({ active, disabled, title, onToggle }) {
 }
 
 // web-src/switch/index.ts
-var NODE_CLASS = "AvatarySwitch";
-var STATE_KEY2 = "switchState";
-var HIDDEN_INPUT_NAME = "SwitchState";
+var NODE_CLASS = 'AvatarySwitch';
+var STATE_KEY2 = 'switchState';
+var HIDDEN_INPUT_NAME = 'SwitchState';
 var MAX_INPUTS = 32;
 var DEFAULT_W = 340;
 var PANEL_HEIGHT = 220;
-var STYLE_ID = "avatary-switch-panel-styles";
-var TOGGLE_STYLE_ID_FALLBACK = "avatary-switch-toggle-styles-fallback";
+var STYLE_ID = 'avatary-switch-panel-styles';
+var TOGGLE_STYLE_ID_FALLBACK = 'avatary-switch-toggle-styles-fallback';
 function ensureToggleStylesFallback() {
   if (document.getElementById(TOGGLE_STYLE_ID_FALLBACK)) return;
-  const style = document.createElement("style");
+  const style = document.createElement('style');
   style.id = TOGGLE_STYLE_ID_FALLBACK;
   style.textContent = `
     .avatary-switch-toggle {
@@ -3646,17 +3842,17 @@ function ensureToggleStylesFallback() {
   document.head.appendChild(style);
 }
 function createToggleFallback({ active, disabled, title, onToggle }) {
-  const toggle = document.createElement("div");
-  toggle.setAttribute("role", "switch");
-  toggle.setAttribute("aria-checked", active ? "true" : "false");
+  const toggle = document.createElement('div');
+  toggle.setAttribute('role', 'switch');
+  toggle.setAttribute('aria-checked', active ? 'true' : 'false');
   if (title) toggle.title = title;
-  toggle.className = "avatary-switch-toggle";
-  if (active) toggle.classList.add("active");
-  if (disabled) toggle.classList.add("disabled");
-  const knob = document.createElement("span");
-  knob.className = "knob";
+  toggle.className = 'avatary-switch-toggle';
+  if (active) toggle.classList.add('active');
+  if (disabled) toggle.classList.add('disabled');
+  const knob = document.createElement('span');
+  knob.className = 'knob';
   toggle.appendChild(knob);
-  toggle.addEventListener("click", () => {
+  toggle.addEventListener('click', () => {
     if (disabled) return;
     onToggle?.();
   });
@@ -3664,7 +3860,7 @@ function createToggleFallback({ active, disabled, title, onToggle }) {
 }
 var _toggleApi = {
   ensureToggleStyles: ensureToggleStyles || ensureToggleStylesFallback,
-  createToggle: createToggle || createToggleFallback
+  createToggle: createToggle || createToggleFallback,
 };
 function rowName(i) {
   return `input_${i}`;
@@ -3675,7 +3871,7 @@ function getState(node) {
     node.properties[STATE_KEY2] = {
       activeIndex: 1,
       labels: {},
-      visibleCount: 1
+      visibleCount: 1,
     };
   }
   return node.properties[STATE_KEY2];
@@ -3683,7 +3879,7 @@ function getState(node) {
 function _iterGraphLinks(graph) {
   const links = graph?.links;
   if (!links) return [];
-  if (typeof links.values === "function") {
+  if (typeof links.values === 'function') {
     return Array.from(links.values());
   }
   return Object.values(links);
@@ -3712,9 +3908,9 @@ function connectionSignature(node) {
   const inputs = node.inputs || [];
   for (let i = 0; i < inputs.length; i++) {
     const link = inputs[i]?.link;
-    parts.push(`${i + 1}:${link == null ? "x" : String(link)}`);
+    parts.push(`${i + 1}:${link == null ? 'x' : String(link)}`);
   }
-  return parts.join("|");
+  return parts.join('|');
 }
 function forEachSwitchNode(fn) {
   const seen = /* @__PURE__ */ new Set();
@@ -3737,7 +3933,7 @@ function normalizeInputs(node) {
   const connected = connectedCount(node);
   const target = Math.min(
     Math.max(connected + (connected < MAX_INPUTS ? 1 : 0), 1),
-    MAX_INPUTS
+    MAX_INPUTS,
   );
   while (node.inputs.length > target) {
     const lastIdx = node.inputs.length - 1;
@@ -3745,18 +3941,18 @@ function normalizeInputs(node) {
     node.removeInput(node.inputs.length - 1);
   }
   while (node.inputs.length < target) {
-    node.addInput(rowName(node.inputs.length + 1), "*");
+    node.addInput(rowName(node.inputs.length + 1), '*');
   }
   for (let i = 0; i < node.inputs.length; i++) {
     const slot = node.inputs[i];
     slot.name = rowName(i + 1);
-    slot.type = "*";
-    slot.label = "\u200B";
+    slot.type = '*';
+    slot.label = '\u200B';
   }
   state.visibleCount = node.inputs.length;
   if (state.activeIndex < 1 || state.activeIndex > node.inputs.length) {
-    const firstConnected = (node.inputs || []).findIndex(
-      (_, idx) => isInputConnected(node, idx)
+    const firstConnected = (node.inputs || []).findIndex((_, idx) =>
+      isInputConnected(node, idx),
     );
     state.activeIndex = firstConnected >= 0 ? firstConnected + 1 : 1;
   }
@@ -3769,13 +3965,13 @@ function normalizeInputs(node) {
 function upstreamType(node, idx1) {
   const slot = node.inputs?.[idx1 - 1];
   const linkId = slot?.link;
-  if (linkId == null) return "";
+  if (linkId == null) return '';
   let link = node.graph?.links?.[linkId];
-  if (!link && typeof node.graph?.links?.get === "function")
+  if (!link && typeof node.graph?.links?.get === 'function')
     link = node.graph.links.get(linkId);
-  if (!link) return "";
+  if (!link) return '';
   const up = node.graph?.getNodeById?.(link.origin_id);
-  return up?.outputs?.[link.origin_slot]?.type || "";
+  return up?.outputs?.[link.origin_slot]?.type || '';
 }
 function getRows(node) {
   const state = getState(node);
@@ -3783,45 +3979,48 @@ function getRows(node) {
   for (let i = 1; i <= (node.inputs?.length || 0); i++) {
     const connected = isInputConnected(node, i - 1);
     const trailing = !connected && i === node.inputs.length;
-    const upType = upstreamType(node, i) || "";
+    const upType = upstreamType(node, i) || '';
     if (trailing) continue;
     rows.push({
       i,
       connected,
       trailing,
       active: state.activeIndex === i,
-      label: state.labels[i] || "",
-      type: upType
+      label: state.labels[i] || '',
+      type: upType,
     });
   }
   return rows;
 }
 function ensurePanelWidget(node) {
-  if (node._avatarySwitchPanel && node.widgets?.some((w) => w?._avatarySwitchPanelWidget)) {
+  if (
+    node._avatarySwitchPanel &&
+    node.widgets?.some((w) => w?._avatarySwitchPanelWidget)
+  ) {
     return node._avatarySwitchPanel;
   }
   if (node.widgets) {
     node.widgets = node.widgets.filter((w) => !w?._avatarySwitchPanelWidget);
   }
   node._avatarySwitchPanel = null;
-  const panel = document.createElement("div");
-  panel.className = "avatary-switch-panel";
+  const panel = document.createElement('div');
+  panel.className = 'avatary-switch-panel';
   panel.style.cssText = [
-    "display:flex",
-    "flex-direction:column",
-    "gap:8px",
-    "padding:8px",
-    "height:100%",
-    "overflow:auto",
-    "box-sizing:border-box",
-    "font:12px Inter, system-ui, sans-serif"
-  ].join(";");
+    'display:flex',
+    'flex-direction:column',
+    'gap:8px',
+    'padding:1px',
+    'height:100%',
+    'overflow:auto',
+    'box-sizing:border-box',
+    'font:12px Inter, system-ui, sans-serif',
+  ].join(';');
   node._avatarySwitchPanel = panel;
-  if (typeof node.addDOMWidget === "function") {
-    const w = node.addDOMWidget("Switch", "switch_panel", panel, {
+  if (typeof node.addDOMWidget === 'function') {
+    const w = node.addDOMWidget('Switch', 'switch_panel', panel, {
       serialize: false,
       hideOnZoom: false,
-      getMinHeight: () => PANEL_HEIGHT
+      getMinHeight: () => PANEL_HEIGHT,
     });
     if (w) {
       w._avatarySwitchPanelWidget = true;
@@ -3835,7 +4034,7 @@ function ensurePanelWidget(node) {
 }
 function ensureStyles() {
   if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement("style");
+  const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
     .avatary-switch-panel { font-family: Inter, system-ui, sans-serif; }
@@ -3865,29 +4064,30 @@ function renderPanel(node) {
     return;
   }
   clearFallbackWidgets(node);
-  panel.innerHTML = "";
+  panel.innerHTML = '';
   if (rows.length === 0) {
-    const empty = document.createElement("div");
-    empty.textContent = "Connect an input to start";
-    empty.style.cssText = "color:#8d95a8;font-size:12px;padding:6px 2px;user-select:none;";
+    const empty = document.createElement('div');
+    empty.textContent = 'Connect an input to start';
+    empty.style.cssText =
+      'color:#8d95a8;font-size:12px;padding:6px 2px;user-select:none;';
     panel.appendChild(empty);
     return;
   }
   for (const row of rows) {
-    const wrap = document.createElement("div");
-    wrap.className = "avatary-switch-row";
+    const wrap = document.createElement('div');
+    wrap.className = 'avatary-switch-row';
     const input = createTextfield({
       value: row.label,
-      placeholder: row.type || "Label",
+      placeholder: row.type || 'Label',
       disabled: row.trailing,
-      className: "avatary-switch-input",
+      className: 'avatary-switch-input',
       onChange: (nextValue) => {
-        const v = String(nextValue || "").trim();
+        const v = String(nextValue || '').trim();
         if (!v) delete state.labels[row.i];
         else state.labels[row.i] = v;
         app2.graph?.setDirtyCanvas?.(true, true);
         renderPanel(node);
-      }
+      },
     });
     const disabled = row.trailing || !row.connected;
     const toggle = _toggleApi.createToggle({
@@ -3898,7 +4098,7 @@ function renderPanel(node) {
         state.activeIndex = row.i;
         app2.graph?.setDirtyCanvas?.(true, true);
         renderPanel(node);
-      }
+      },
     });
     wrap.appendChild(input);
     wrap.appendChild(toggle);
@@ -3914,28 +4114,32 @@ function renderFallbackWidgets(node, rows, state) {
   for (const row of rows) {
     const disabled = row.trailing || !row.connected;
     const label = node.addWidget(
-      "text",
+      'text',
       `Label ${row.i}`,
-      row.label || "",
+      row.label || '',
       (v) => {
-        const s = String(v || "").trim();
+        const s = String(v || '').trim();
         if (!s) delete state.labels[row.i];
         else state.labels[row.i] = s;
       },
-      { placeholder: row.type || "Label", disabled }
+      { placeholder: row.type || 'Label', disabled },
     );
     label._avatarySwitchFallbackWidget = true;
     label.serialize = false;
-    const btnText = disabled ? "Waiting" : state.activeIndex === row.i ? "ON" : "OFF";
+    const btnText = disabled
+      ? 'Waiting'
+      : state.activeIndex === row.i
+        ? 'ON'
+        : 'OFF';
     const btn = node.addWidget(
-      "button",
+      'button',
       `Switch ${row.i}: ${btnText}`,
       null,
       () => {
         if (disabled) return;
         state.activeIndex = row.i;
         renderPanel(node);
-      }
+      },
     );
     btn._avatarySwitchFallbackWidget = true;
     btn.serialize = false;
@@ -3944,7 +4148,7 @@ function renderFallbackWidgets(node, rows, state) {
 function clearLegacySwitchWidgets(node) {
   if (!node.widgets) return;
   node.widgets = node.widgets.filter(
-    (w) => !w?._avatarySwitchLegacyWidget && !w?._avatarySwitchFallbackWidget
+    (w) => !w?._avatarySwitchLegacyWidget && !w?._avatarySwitchFallbackWidget,
   );
 }
 function refreshNode2(node) {
@@ -3957,63 +4161,60 @@ function refreshNode2(node) {
   app2.graph?.setDirtyCanvas?.(true, true);
 }
 app2.registerExtension({
-  name: "Avatary.Switch.Nodes2CustomPanel",
+  name: 'Avatary.Switch.Nodes2CustomPanel',
   async beforeRegisterNodeDef(nodeType, nodeData) {
     if (nodeData.name !== NODE_CLASS) return;
     const _origCreated = nodeType.prototype.onNodeCreated;
-    nodeType.prototype.onNodeCreated = function(...args) {
+    nodeType.prototype.onNodeCreated = function (...args) {
       _origCreated?.apply(this, args);
       refreshNode2(this);
       setTimeout(() => {
         try {
           refreshNode2(this);
-        } catch (_e) {
-        }
+        } catch (_e) {}
       }, 0);
       setTimeout(() => {
         try {
           refreshNode2(this);
-        } catch (_e) {
-        }
+        } catch (_e) {}
       }, 200);
     };
     const _origConfigure = nodeType.prototype.onConfigure;
-    nodeType.prototype.onConfigure = function(...args) {
+    nodeType.prototype.onConfigure = function (...args) {
       const r = _origConfigure?.apply(this, args);
       refreshNode2(this);
       return r;
     };
     const _origConn = nodeType.prototype.onConnectionsChange;
-    nodeType.prototype.onConnectionsChange = function(...args) {
+    nodeType.prototype.onConnectionsChange = function (...args) {
       const r = _origConn?.apply(this, args);
       refreshNode2(this);
       return r;
     };
     const _origDraw = nodeType.prototype.onDrawForeground;
-    nodeType.prototype.onDrawForeground = function(...args) {
+    nodeType.prototype.onDrawForeground = function (...args) {
       const r = _origDraw?.apply(this, args);
       const sig = connectionSignature(this);
       if (sig !== this._avatarySwitchConnSig) {
         try {
           refreshNode2(this);
-        } catch (_e) {
-        }
+        } catch (_e) {}
       }
       return r;
     };
     const _origRemoved = nodeType.prototype.onRemoved;
-    nodeType.prototype.onRemoved = function(...args) {
+    nodeType.prototype.onRemoved = function (...args) {
       if (this._avatarySwitchPanel?.isConnected)
         this._avatarySwitchPanel.remove();
       this._avatarySwitchPanel = null;
       if (this.widgets) {
         this.widgets = this.widgets.filter(
-          (w) => !w?._avatarySwitchPanelWidget
+          (w) => !w?._avatarySwitchPanelWidget,
         );
       }
       return _origRemoved?.apply(this, args);
     };
-  }
+  },
 });
 if (app2?.loadGraphData && !app2._avatarySwitchLoadGraphWrapped) {
   app2._avatarySwitchLoadGraphWrapped = true;
@@ -4025,16 +4226,14 @@ if (app2?.loadGraphData && !app2._avatarySwitchLoadGraphWrapped) {
         forEachSwitchNode((node) => {
           try {
             refreshNode2(node);
-          } catch (_e) {
-          }
+          } catch (_e) {}
         });
       }, 250);
       setTimeout(() => {
         forEachSwitchNode((node) => {
           try {
             refreshNode2(node);
-          } catch (_e) {
-          }
+          } catch (_e) {}
         });
       }, 900);
     });
@@ -4060,7 +4259,7 @@ function buildNodeIndex() {
 function resolveNode(map, promptId) {
   const id = String(promptId);
   if (map.has(id)) return map.get(id);
-  const tail = id.includes(":") ? id.slice(id.lastIndexOf(":") + 1) : null;
+  const tail = id.includes(':') ? id.slice(id.lastIndexOf(':') + 1) : null;
   if (tail && map.has(tail)) return map.get(tail);
   return null;
 }
