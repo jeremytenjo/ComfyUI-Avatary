@@ -16,7 +16,7 @@
 //   Opening another editor auto-commits the previous one.
 
 import { app } from '/scripts/app.js';
-import theme from '../components/theme.mjs';
+import { theme } from '../components/theme.mjs';
 
 const STATE_PROP = 'switchState';
 

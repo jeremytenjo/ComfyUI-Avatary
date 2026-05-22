@@ -1,5 +1,5 @@
 import { app } from '/scripts/app.js';
-import theme from '../components/theme.mjs';
+import { theme } from '../components/theme.mjs';
 
 const NODE_CLASS = 'AvatarySwitch';
 const STATE_KEY = 'switchState';

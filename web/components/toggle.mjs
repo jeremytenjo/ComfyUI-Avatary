@@ -1,4 +1,4 @@
-import theme from './theme.mjs';
+import { theme } from './theme.mjs';
 
 const TOGGLE_STYLE_ID = 'avatary-switch-toggle-styles';
 

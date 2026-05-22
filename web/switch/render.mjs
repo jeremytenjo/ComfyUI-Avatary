@@ -11,7 +11,7 @@
 // same horizontal band as the slot dot.
 
 import { app } from '/scripts/app.js';
-import theme from '../components/theme.mjs';
+import { theme } from '../components/theme.mjs';
 // Cyclic with core.mjs (which imports ROW_H/TOP_PAD from here). Safe in ESM
 // because both sides only consume the binding inside functions, never at
 // module top level - if you ever move usage to top level, this will silently
