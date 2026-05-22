@@ -3489,7 +3489,7 @@ import { app as app2 } from "/scripts/app.js";
 // web-src/components/theme.ts
 var theme = {
   colors: {
-    primary: "#076a23"
+    primary: "#60A5FA"
   }
 };
 
