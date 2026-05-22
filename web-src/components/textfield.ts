@@ -8,27 +8,37 @@ export function ensureTextfieldStyles() {
 	style.textContent = `
     .avatary-textfield {
       width: 100%;
-      min-height: 40px;
-      border-radius: 24px;
-      border: 3px solid #4c5c86;
-      background: #222b3f;
-      color: #b6bfd8;
-      padding: 0 24px;
-      font-size: 46px;
+      min-height: 30px;
+      height: 30px;
+      border-radius: 10px;
+      border: 1px solid var(--p-form-field-border-color, transparent);
+      background: var(--component-node-widget-background, #3a3d48);
+      color: var(--component-node-foreground, #d9dce4);
+      padding: 0 10px;
+      font-size: 12px;
       line-height: 1;
-      letter-spacing: .03em;
-      text-transform: uppercase;
+      letter-spacing: 0;
+      text-transform: none;
       box-sizing: border-box;
       outline: none;
-      transition: border-color .16s ease, box-shadow .16s ease;
+      transition: background .12s ease, box-shadow .12s ease, border-color .12s ease;
     }
-    .avatary-textfield::placeholder { color: #99a2ba; }
+    .avatary-textfield:hover {
+      background: var(--component-node-widget-background-hovered, #4a4e5e);
+    }
+    .avatary-textfield::placeholder {
+      color: var(--component-node-foreground-secondary, #8d95a8);
+      opacity: 1;
+    }
     .avatary-textfield:focus {
-      border-color: #6a7fb5;
-      box-shadow: 0 0 0 2px rgba(106,127,181,.22);
+      border-color: var(--p-form-field-border-color, transparent);
+      background: var(--component-node-widget-background-hovered, #4a4e5e);
+      box-shadow: 0 0 0 1px var(--component-node-widget-background-highlighted, #4b5563);
     }
     .avatary-textfield:disabled {
-      opacity: .55;
+      background: var(--component-node-widget-background-disabled, #2a2d36);
+      color: var(--component-node-foreground-secondary, #8d95a8);
+      opacity: .75;
       cursor: default;
     }
   `;

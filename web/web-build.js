@@ -3486,73 +3486,6 @@ app.registerExtension({
 // web-src/switch/index.ts
 import { app as app2 } from "/scripts/app.js";
 
-// web-src/components/theme.ts
-var theme = {
-  colors: {
-    primary: "#60A5FA"
-  }
-};
-
-// web-src/components/toggle.ts
-var TOGGLE_STYLE_ID = "avatary-switch-toggle-styles";
-function ensureToggleStyles() {
-  if (document.getElementById(TOGGLE_STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = TOGGLE_STYLE_ID;
-  style.textContent = `
-    .avatary-switch-toggle {
-      flex: 0 0 auto;
-      width: 44px;
-      height: 24px;
-      border-radius: 999px;
-      border: 1px solid #555d71;
-      background: #2e3442;
-      position: relative;
-      cursor: pointer;
-      box-sizing: border-box;
-      transition: background .15s ease, border-color .15s ease;
-    }
-    .avatary-switch-toggle .knob {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 18px;
-      height: 18px;
-      border-radius: 999px;
-      background: #f1f3f7;
-      box-shadow: 0 1px 2px rgba(0,0,0,.35);
-      transition: left .15s ease;
-    }
-    .avatary-switch-toggle.active {
-      background: ${theme.colors.primary};
-      border-color: ${theme.colors.primary};
-    }
-    .avatary-switch-toggle.active .knob { left: 22px; }
-    .avatary-switch-toggle.disabled {
-      opacity: .4;
-      cursor: default;
-    }
-  `;
-  document.head.appendChild(style);
-}
-function createToggle({ active, disabled, title, onToggle }) {
-  const toggle = document.createElement("div");
-  toggle.setAttribute("role", "switch");
-  toggle.setAttribute("aria-checked", active ? "true" : "false");
-  if (title) toggle.title = title;
-  toggle.className = "avatary-switch-toggle";
-  if (active) toggle.classList.add("active");
-  if (disabled) toggle.classList.add("disabled");
-  const knob = document.createElement("span");
-  knob.className = "knob";
-  toggle.appendChild(knob);
-  toggle.addEventListener("click", () => {
-    if (disabled) return;
-    onToggle?.();
-  });
-  return toggle;
-}
-
 // web-src/components/textfield.ts
 var TEXTFIELD_STYLE_ID = "avatary-textfield-styles";
 function ensureTextfieldStyles() {
@@ -3562,27 +3495,37 @@ function ensureTextfieldStyles() {
   style.textContent = `
     .avatary-textfield {
       width: 100%;
-      min-height: 40px;
-      border-radius: 24px;
-      border: 3px solid #4c5c86;
-      background: #222b3f;
-      color: #b6bfd8;
-      padding: 0 24px;
-      font-size: 46px;
+      min-height: 30px;
+      height: 30px;
+      border-radius: 10px;
+      border: 1px solid var(--p-form-field-border-color, transparent);
+      background: var(--component-node-widget-background, #3a3d48);
+      color: var(--component-node-foreground, #d9dce4);
+      padding: 0 10px;
+      font-size: 12px;
       line-height: 1;
-      letter-spacing: .03em;
-      text-transform: uppercase;
+      letter-spacing: 0;
+      text-transform: none;
       box-sizing: border-box;
       outline: none;
-      transition: border-color .16s ease, box-shadow .16s ease;
+      transition: background .12s ease, box-shadow .12s ease, border-color .12s ease;
     }
-    .avatary-textfield::placeholder { color: #99a2ba; }
+    .avatary-textfield:hover {
+      background: var(--component-node-widget-background-hovered, #4a4e5e);
+    }
+    .avatary-textfield::placeholder {
+      color: var(--component-node-foreground-secondary, #8d95a8);
+      opacity: 1;
+    }
     .avatary-textfield:focus {
-      border-color: #6a7fb5;
-      box-shadow: 0 0 0 2px rgba(106,127,181,.22);
+      border-color: var(--p-form-field-border-color, transparent);
+      background: var(--component-node-widget-background-hovered, #4a4e5e);
+      box-shadow: 0 0 0 1px var(--component-node-widget-background-highlighted, #4b5563);
     }
     .avatary-textfield:disabled {
-      opacity: .55;
+      background: var(--component-node-widget-background-disabled, #2a2d36);
+      color: var(--component-node-foreground-secondary, #8d95a8);
+      opacity: .75;
       cursor: default;
     }
   `;
@@ -3606,6 +3549,81 @@ function createTextfield({
   if (title) input.title = title;
   input.addEventListener("change", () => onChange?.(input.value));
   return input;
+}
+
+// web-src/components/theme.ts
+var theme = {
+  colors: {
+    primary: "#60A5FA"
+  }
+};
+
+// web-src/components/toggle.ts
+var TOGGLE_STYLE_ID = "avatary-switch-toggle-styles";
+function ensureToggleStyles() {
+  if (document.getElementById(TOGGLE_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = TOGGLE_STYLE_ID;
+  style.textContent = `
+    .avatary-switch-toggle {
+      flex: 0 0 auto;
+      width: 38px;
+      height: 22px;
+      border-radius: 999px;
+      border: 1px solid var(--p-form-field-border-color, transparent);
+      background: var(--component-node-widget-background, #3a3d48);
+      position: relative;
+      cursor: pointer;
+      box-sizing: border-box;
+      transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+    .avatary-switch-toggle:hover {
+      background: var(--component-node-widget-background-hovered, #4a4e5e);
+    }
+    .avatary-switch-toggle .knob {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: var(--component-node-foreground-secondary, #aeb2be);
+      box-shadow: 0 1px 2px rgba(0,0,0,.35);
+      transition: left .15s ease;
+    }
+    .avatary-switch-toggle.active {
+      background: var(--p-primary-color, ${theme.colors.primary});
+      border-color: var(--p-form-field-border-color, transparent);
+      box-shadow: 0 0 0 1px var(--component-node-widget-background-highlighted, #4b5563);
+    }
+    .avatary-switch-toggle.active .knob {
+      left: 19px;
+      background: var(--p-primary-contrast-color, #1f232c);
+      box-shadow: 0 1px 2px rgba(0,0,0,.4);
+    }
+    .avatary-switch-toggle.disabled {
+      opacity: .4;
+      cursor: default;
+    }
+  `;
+  document.head.appendChild(style);
+}
+function createToggle({ active, disabled, title, onToggle }) {
+  const toggle = document.createElement("div");
+  toggle.setAttribute("role", "switch");
+  toggle.setAttribute("aria-checked", active ? "true" : "false");
+  if (title) toggle.title = title;
+  toggle.className = "avatary-switch-toggle";
+  if (active) toggle.classList.add("active");
+  if (disabled) toggle.classList.add("disabled");
+  const knob = document.createElement("span");
+  knob.className = "knob";
+  toggle.appendChild(knob);
+  toggle.addEventListener("click", () => {
+    if (disabled) return;
+    onToggle?.();
+  });
+  return toggle;
 }
 
 // web-src/switch/index.ts

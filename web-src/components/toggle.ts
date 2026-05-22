@@ -10,32 +10,40 @@ export function ensureToggleStyles() {
 	style.textContent = `
     .avatary-switch-toggle {
       flex: 0 0 auto;
-      width: 44px;
-      height: 24px;
+      width: 38px;
+      height: 22px;
       border-radius: 999px;
-      border: 1px solid #555d71;
-      background: #2e3442;
+      border: 1px solid var(--p-form-field-border-color, transparent);
+      background: var(--component-node-widget-background, #3a3d48);
       position: relative;
       cursor: pointer;
       box-sizing: border-box;
-      transition: background .15s ease, border-color .15s ease;
+      transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+    .avatary-switch-toggle:hover {
+      background: var(--component-node-widget-background-hovered, #4a4e5e);
     }
     .avatary-switch-toggle .knob {
       position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 18px;
-      height: 18px;
+      top: 3px;
+      left: 3px;
+      width: 14px;
+      height: 14px;
       border-radius: 999px;
-      background: #f1f3f7;
+      background: var(--component-node-foreground-secondary, #aeb2be);
       box-shadow: 0 1px 2px rgba(0,0,0,.35);
       transition: left .15s ease;
     }
     .avatary-switch-toggle.active {
-      background: ${theme.colors.primary};
-      border-color: ${theme.colors.primary};
+      background: var(--p-primary-color, ${theme.colors.primary});
+      border-color: var(--p-form-field-border-color, transparent);
+      box-shadow: 0 0 0 1px var(--component-node-widget-background-highlighted, #4b5563);
     }
-    .avatary-switch-toggle.active .knob { left: 22px; }
+    .avatary-switch-toggle.active .knob {
+      left: 19px;
+      background: var(--p-primary-contrast-color, #1f232c);
+      box-shadow: 0 1px 2px rgba(0,0,0,.4);
+    }
     .avatary-switch-toggle.disabled {
       opacity: .4;
       cursor: default;
