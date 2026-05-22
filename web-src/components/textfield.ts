@@ -6,6 +6,7 @@ export function createTextfield({
 	disabled = false,
 	title = "",
 	className = "",
+	onInput,
 	onChange,
 }) {
 	const input = document.createElement("input");
@@ -33,6 +34,7 @@ export function createTextfield({
 	input.placeholder = placeholder;
 	input.disabled = disabled;
 	if (title) input.title = title;
+	input.addEventListener("input", () => onInput?.(input.value));
 	input.addEventListener("change", () => onChange?.(input.value));
 	return input;
 }

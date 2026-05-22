@@ -3493,6 +3493,7 @@ function createTextfield({
   disabled = false,
   title = "",
   className = "",
+  onInput,
   onChange
 }) {
   const input = document.createElement("input");
@@ -3518,6 +3519,7 @@ function createTextfield({
   input.placeholder = placeholder;
   input.disabled = disabled;
   if (title) input.title = title;
+  input.addEventListener("input", () => onInput?.(input.value));
   input.addEventListener("change", () => onChange?.(input.value));
   return input;
 }
@@ -3881,6 +3883,11 @@ function renderPanel(node) {
       placeholder: row.type || "Label",
       disabled: row.trailing,
       className: "avatary-switch-input",
+      onInput: (nextValue) => {
+        const v = String(nextValue || "").trim();
+        if (!v) delete state.labels[row.i];
+        else state.labels[row.i] = v;
+      },
       onChange: (nextValue) => {
         const v = String(nextValue || "").trim();
         if (!v) delete state.labels[row.i];
