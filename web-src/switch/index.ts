@@ -287,7 +287,7 @@ function ensureStyles() {
   style.id = STYLE_ID;
   style.textContent = `
     .avatary-switch-panel { font-family: Inter, system-ui, sans-serif; }
-    .avatary-switch-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .avatary-switch-row { display:flex; align-items:center; gap:10px; margin-bottom:0px; }
     .avatary-switch-input {
       flex: 1 1 auto;
       min-width: 0;
