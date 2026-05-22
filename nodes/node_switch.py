@@ -23,6 +23,7 @@ class AvatarySwitch:
                 ANY,
                 {
                     "forceInput": True,
+                    "lazy": True,
                     "tooltip": "Optional source input slot.",
                 },
             )
@@ -41,6 +42,15 @@ class AvatarySwitch:
     OUTPUT_TOOLTIPS = ("The selected input value, passed through unchanged.",)
     FUNCTION = "pick"
     CATEGORY = "👑 Avatary/Utilities"
+
+    def check_lazy_status(self, SwitchState="1", **kwargs):
+        try:
+            idx = int(SwitchState)
+        except (TypeError, ValueError):
+            idx = 1
+        if idx < 1 or idx > MAX_INPUTS:
+            idx = 1
+        return [f"input_{idx}"]
 
     def pick(self, SwitchState="1", **kwargs):
         try:
