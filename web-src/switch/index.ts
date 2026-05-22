@@ -88,6 +88,7 @@ function getState(node) {
 	if (!node.properties[STATE_KEY]) {
 		node.properties[STATE_KEY] = {
 			activeIndex: 1,
+			activeLinkId: null,
 			labels: {},
 			visibleCount: 1,
 		};
@@ -178,6 +179,18 @@ function normalizeInputs(node) {
 		slot.label = "\u200b";
 	}
 
+	// Preserve active selection by link id first; slot indices can shift when
+	// rows are added/removed during connection changes.
+	if (state.activeLinkId != null) {
+		const byLink = (node.inputs || []).findIndex(
+			(slot) =>
+				slot?.link != null && String(slot.link) === String(state.activeLinkId),
+		);
+		if (byLink >= 0) {
+			state.activeIndex = byLink + 1;
+		}
+	}
+
 	state.visibleCount = node.inputs.length;
 	if (state.activeIndex < 1 || state.activeIndex > node.inputs.length) {
 		const firstConnected = (node.inputs || []).findIndex((_, idx) =>
@@ -185,6 +198,10 @@ function normalizeInputs(node) {
 		);
 		state.activeIndex = firstConnected >= 0 ? firstConnected + 1 : 1;
 	}
+
+	// Keep activeLinkId in sync with activeIndex whenever possible.
+	const activeSlot = node.inputs?.[state.activeIndex - 1];
+	state.activeLinkId = activeSlot?.link ?? null;
 
 	for (const key of Object.keys(state.labels || {})) {
 		const idx = Number(key);
@@ -357,6 +374,7 @@ function renderPanel(node) {
 			title: row.label || row.type || `Row ${row.i}`,
 			onToggle: () => {
 				state.activeIndex = row.i;
+				state.activeLinkId = node.inputs?.[row.i - 1]?.link ?? null;
 				app.graph?.setDirtyCanvas?.(true, true);
 				renderPanel(node);
 			},
@@ -403,6 +421,7 @@ function renderFallbackWidgets(node, rows, state) {
 			() => {
 				if (disabled) return;
 				state.activeIndex = row.i;
+				state.activeLinkId = node.inputs?.[row.i - 1]?.link ?? null;
 				renderPanel(node);
 			},
 		);

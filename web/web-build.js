@@ -3676,6 +3676,7 @@ function getState(node) {
   if (!node.properties[STATE_KEY2]) {
     node.properties[STATE_KEY2] = {
       activeIndex: 1,
+      activeLinkId: null,
       labels: {},
       visibleCount: 1
     };
@@ -3755,6 +3756,14 @@ function normalizeInputs(node) {
     slot.type = "*";
     slot.label = "\u200B";
   }
+  if (state.activeLinkId != null) {
+    const byLink = (node.inputs || []).findIndex(
+      (slot) => slot?.link != null && String(slot.link) === String(state.activeLinkId)
+    );
+    if (byLink >= 0) {
+      state.activeIndex = byLink + 1;
+    }
+  }
   state.visibleCount = node.inputs.length;
   if (state.activeIndex < 1 || state.activeIndex > node.inputs.length) {
     const firstConnected = (node.inputs || []).findIndex(
@@ -3762,6 +3771,8 @@ function normalizeInputs(node) {
     );
     state.activeIndex = firstConnected >= 0 ? firstConnected + 1 : 1;
   }
+  const activeSlot = node.inputs?.[state.activeIndex - 1];
+  state.activeLinkId = activeSlot?.link ?? null;
   for (const key of Object.keys(state.labels || {})) {
     const idx = Number(key);
     if (!Number.isFinite(idx) || idx < 1 || idx > node.inputs.length)
@@ -3903,6 +3914,7 @@ function renderPanel(node) {
       title: row.label || row.type || `Row ${row.i}`,
       onToggle: () => {
         state.activeIndex = row.i;
+        state.activeLinkId = node.inputs?.[row.i - 1]?.link ?? null;
         app2.graph?.setDirtyCanvas?.(true, true);
         renderPanel(node);
       }
@@ -3941,6 +3953,7 @@ function renderFallbackWidgets(node, rows, state) {
       () => {
         if (disabled) return;
         state.activeIndex = row.i;
+        state.activeLinkId = node.inputs?.[row.i - 1]?.link ?? null;
         renderPanel(node);
       }
     );
