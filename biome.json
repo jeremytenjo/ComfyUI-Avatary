@@ -1,6 +1,6 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
 	"files": {
-		"includes": ["**", "!web", "!node_modules", "!__pycache__"]
+		"includes": ["**", "!web", "!packs", "!node_modules", "!__pycache__"]
 	}
 }

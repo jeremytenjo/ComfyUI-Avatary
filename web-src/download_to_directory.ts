@@ -1864,10 +1864,6 @@
 		return `${size.toFixed(exp >= 2 ? 2 : 1)} ${units[exp]}`;
 	}
 
-	function sleep(ms) {
-		return new Promise((resolve) => setTimeout(resolve, ms));
-	}
-
 	function createHistoryItemElement(entry) {
 		const item = document.createElement("div");
 		item.className = `history-item ${entry.status}`;

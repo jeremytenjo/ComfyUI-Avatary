@@ -176,7 +176,8 @@ function drawLabel(ctx, nodeWidth, slotIdx0, text, dim, placeholderType) {
 	// to the user, so we fall through to the generic placeholder instead.
 	const usefulType =
 		placeholderType && placeholderType !== "*" ? placeholderType : null;
-	let display, color;
+	let display = "Label...";
+	let color = "#5a5a5a";
 	if (hasUserText) {
 		display = text;
 		color = "#d8d8d8";
@@ -190,9 +191,6 @@ function drawLabel(ctx, nodeWidth, slotIdx0, text, dim, placeholderType) {
 	} else if (usefulType) {
 		display = usefulType;
 		color = "#d8d8d8"; // normal text color - reads like a real label
-	} else {
-		display = "Label...";
-		color = "#5a5a5a"; // last-resort placeholder grey
 	}
 
 	ctx.fillStyle = color;

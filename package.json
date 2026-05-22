@@ -1,17 +1,17 @@
 {
-  "name": "comfyui-avatary",
-  "private": true,
-  "scripts": {
-    "dev": "cd ../.. && COMFYUI_DTD_HOT_RELOAD=1 python3 main.py --enable-manager && npm run dev:ts",
-    "build:web": "esbuild web-src/web-build.ts --bundle --format=esm --target=es2022 --outfile=web/web-build.js --external:/scripts/app.js --external:../../scripts/app.js",
-    "dev:ts": "esbuild web-src/web-build.ts --bundle --format=esm --target=es2022 --outfile=web/web-build.js --sourcemap --watch --servedir=web --serve=4173 --external:/scripts/app.js --external:../../scripts/app.js",
-    "check-types": "tsgo -p tsconfig.web.json",
-    "prettify": "biome format --write && biome check --write --unsafe",
-    "lint": "biome lint --write && biome check --write"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.4.15",
-    "@typescript/native-preview": "beta",
-    "esbuild": "0.28.0"
-  }
+	"name": "comfyui-avatary",
+	"private": true,
+	"scripts": {
+		"dev": "cd ../.. && COMFYUI_DTD_HOT_RELOAD=1 python3 main.py --enable-manager && npm run dev:ts",
+		"build:web": "esbuild web-src/web-build.ts --bundle --format=esm --target=es2022 --outfile=web/web-build.js --external:/scripts/app.js --external:../../scripts/app.js",
+		"dev:ts": "esbuild web-src/web-build.ts --bundle --format=esm --target=es2022 --outfile=web/web-build.js --sourcemap --watch --servedir=web --serve=4173 --external:/scripts/app.js --external:../../scripts/app.js",
+		"check-types": "tsgo -p tsconfig.web.json",
+		"prettify": "biome format --write && biome check --write --unsafe",
+		"lint": "biome lint --write && biome check --write"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.15",
+		"@typescript/native-preview": "beta",
+		"esbuild": "0.28.0"
+	}
 }

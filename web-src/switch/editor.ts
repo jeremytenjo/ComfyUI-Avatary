@@ -32,7 +32,11 @@ function commit(state) {
 		return;
 	}
 	const value = input.value.trim();
-	const sw = node.properties[STATE_PROP] || (node.properties[STATE_PROP] = {});
+	let sw = node.properties[STATE_PROP];
+	if (!sw) {
+		sw = {};
+		node.properties[STATE_PROP] = sw;
+	}
 	if (!sw.labels) sw.labels = {};
 	if (value) sw.labels[slotIdx] = value;
 	else delete sw.labels[slotIdx];

@@ -385,12 +385,12 @@ function bindNode(node) {
 	syncNodeTitle(node);
 
 	const originalOnRemoved = node.onRemoved;
-	node.onRemoved = function () {
+	node.onRemoved = function (...args) {
 		if (this.__groupBypasserRefreshTimer) {
 			clearInterval(this.__groupBypasserRefreshTimer);
 			this.__groupBypasserRefreshTimer = null;
 		}
-		return originalOnRemoved?.apply(this, arguments);
+		return originalOnRemoved?.apply(this, args);
 	};
 
 	// Keep frame list up-to-date while preserving saved states by title key.
@@ -419,8 +419,8 @@ app.registerExtension({
 		const originalOnNodeCreated = nodeType.prototype.onNodeCreated;
 		const originalOnConfigure = nodeType.prototype.onConfigure;
 
-		nodeType.prototype.onNodeCreated = function () {
-			const result = originalOnNodeCreated?.apply(this, arguments);
+		nodeType.prototype.onNodeCreated = function (...args) {
+			const result = originalOnNodeCreated?.apply(this, args);
 			bindNode(this);
 			queueRefresh(this, true);
 			setTimeout(() => queueRefresh(this, true), 80);
@@ -428,8 +428,8 @@ app.registerExtension({
 			return result;
 		};
 
-		nodeType.prototype.onConfigure = function () {
-			const result = originalOnConfigure?.apply(this, arguments);
+		nodeType.prototype.onConfigure = function (...args) {
+			const result = originalOnConfigure?.apply(this, args);
 			bindNode(this);
 			queueRefresh(this, true);
 			setTimeout(() => queueRefresh(this, true), 80);

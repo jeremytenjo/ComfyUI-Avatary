@@ -431,8 +431,8 @@ app.registerExtension({
 		if (nodeData.name !== NODE_CLASS) return;
 
 		const _origCreated = nodeType.prototype.onNodeCreated;
-		nodeType.prototype.onNodeCreated = function () {
-			_origCreated?.apply(this, arguments);
+		nodeType.prototype.onNodeCreated = function (...args) {
+			_origCreated?.apply(this, args);
 			refreshNode(this);
 			// Some builds restore links after node creation; refresh again shortly.
 			setTimeout(() => {
@@ -448,15 +448,15 @@ app.registerExtension({
 		};
 
 		const _origConfigure = nodeType.prototype.onConfigure;
-		nodeType.prototype.onConfigure = function () {
-			const r = _origConfigure?.apply(this, arguments);
+		nodeType.prototype.onConfigure = function (...args) {
+			const r = _origConfigure?.apply(this, args);
 			refreshNode(this);
 			return r;
 		};
 
 		const _origConn = nodeType.prototype.onConnectionsChange;
-		nodeType.prototype.onConnectionsChange = function () {
-			const r = _origConn?.apply(this, arguments);
+		nodeType.prototype.onConnectionsChange = function (...args) {
+			const r = _origConn?.apply(this, args);
 			refreshNode(this);
 			return r;
 		};
@@ -464,8 +464,8 @@ app.registerExtension({
 		// Fallback watcher: if a Comfy build skips onConnectionsChange for this
 		// node type, detect connection changes during draw and refresh.
 		const _origDraw = nodeType.prototype.onDrawForeground;
-		nodeType.prototype.onDrawForeground = function () {
-			const r = _origDraw?.apply(this, arguments);
+		nodeType.prototype.onDrawForeground = function (...args) {
+			const r = _origDraw?.apply(this, args);
 			const sig = connectionSignature(this);
 			if (sig !== this._avatarySwitchConnSig) {
 				try {
@@ -476,7 +476,7 @@ app.registerExtension({
 		};
 
 		const _origRemoved = nodeType.prototype.onRemoved;
-		nodeType.prototype.onRemoved = function () {
+		nodeType.prototype.onRemoved = function (...args) {
 			if (this._avatarySwitchPanel?.isConnected)
 				this._avatarySwitchPanel.remove();
 			this._avatarySwitchPanel = null;
@@ -487,7 +487,7 @@ app.registerExtension({
 					(w) => !w?._avatarySwitchPanelWidget,
 				);
 			}
-			return _origRemoved?.apply(this, arguments);
+			return _origRemoved?.apply(this, args);
 		};
 	},
 });
