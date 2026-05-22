@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { app } from "/scripts/app.js";
+import { createTextfield } from "../components/textfield.js";
 import { theme } from "../components/theme.js";
 import { createToggle, ensureToggleStyles } from "../components/toggle.js";
 
@@ -291,14 +292,16 @@ function ensureStyles() {
     .avatary-switch-input {
       flex: 1 1 auto;
       min-width: 0;
+      min-height: 30px;
       height: 30px;
       border-radius: 10px;
       border: 1px solid #4b5266;
       background: #272d3b;
       color: #d9dce4;
+      font-size: 12px;
+      letter-spacing: 0;
+      text-transform: none;
       padding: 0 10px;
-      outline: none;
-      box-sizing: border-box;
     }
     .avatary-switch-input::placeholder { color: #8d95a8; }
   `;
@@ -333,18 +336,18 @@ function renderPanel(node) {
 		const wrap = document.createElement("div");
 		wrap.className = "avatary-switch-row";
 
-		const input = document.createElement("input");
-		input.type = "text";
-		input.value = row.label;
-		input.placeholder = row.type || "Label";
-		input.disabled = row.trailing;
-		input.className = "avatary-switch-input";
-		input.addEventListener("change", () => {
-			const v = String(input.value || "").trim();
-			if (!v) delete state.labels[row.i];
-			else state.labels[row.i] = v;
-			app.graph?.setDirtyCanvas?.(true, true);
-			renderPanel(node);
+		const input = createTextfield({
+			value: row.label,
+			placeholder: row.type || "Label",
+			disabled: row.trailing,
+			className: "avatary-switch-input",
+			onChange: (nextValue) => {
+				const v = String(nextValue || "").trim();
+				if (!v) delete state.labels[row.i];
+				else state.labels[row.i] = v;
+				app.graph?.setDirtyCanvas?.(true, true);
+				renderPanel(node);
+			},
 		});
 
 		const disabled = row.trailing || !row.connected;

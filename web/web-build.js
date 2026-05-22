@@ -3553,6 +3553,61 @@ function createToggle({ active, disabled, title, onToggle }) {
   return toggle;
 }
 
+// web-src/components/textfield.ts
+var TEXTFIELD_STYLE_ID = "avatary-textfield-styles";
+function ensureTextfieldStyles() {
+  if (document.getElementById(TEXTFIELD_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = TEXTFIELD_STYLE_ID;
+  style.textContent = `
+    .avatary-textfield {
+      width: 100%;
+      min-height: 40px;
+      border-radius: 24px;
+      border: 3px solid #4c5c86;
+      background: #222b3f;
+      color: #b6bfd8;
+      padding: 0 24px;
+      font-size: 46px;
+      line-height: 1;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color .16s ease, box-shadow .16s ease;
+    }
+    .avatary-textfield::placeholder { color: #99a2ba; }
+    .avatary-textfield:focus {
+      border-color: #6a7fb5;
+      box-shadow: 0 0 0 2px rgba(106,127,181,.22);
+    }
+    .avatary-textfield:disabled {
+      opacity: .55;
+      cursor: default;
+    }
+  `;
+  document.head.appendChild(style);
+}
+function createTextfield({
+  value = "",
+  placeholder = "",
+  disabled = false,
+  title = "",
+  className = "",
+  onChange
+}) {
+  ensureTextfieldStyles();
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = `avatary-textfield ${className}`.trim();
+  input.value = value;
+  input.placeholder = placeholder;
+  input.disabled = disabled;
+  if (title) input.title = title;
+  input.addEventListener("change", () => onChange?.(input.value));
+  return input;
+}
+
 // web-src/switch/index.ts
 var NODE_CLASS = "AvatarySwitch";
 var STATE_KEY2 = "switchState";
@@ -3800,14 +3855,16 @@ function ensureStyles() {
     .avatary-switch-input {
       flex: 1 1 auto;
       min-width: 0;
+      min-height: 30px;
       height: 30px;
       border-radius: 10px;
       border: 1px solid #4b5266;
       background: #272d3b;
       color: #d9dce4;
+      font-size: 12px;
+      letter-spacing: 0;
+      text-transform: none;
       padding: 0 10px;
-      outline: none;
-      box-sizing: border-box;
     }
     .avatary-switch-input::placeholder { color: #8d95a8; }
   `;
@@ -3835,18 +3892,18 @@ function renderPanel(node) {
   for (const row of rows) {
     const wrap = document.createElement("div");
     wrap.className = "avatary-switch-row";
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = row.label;
-    input.placeholder = row.type || "Label";
-    input.disabled = row.trailing;
-    input.className = "avatary-switch-input";
-    input.addEventListener("change", () => {
-      const v = String(input.value || "").trim();
-      if (!v) delete state.labels[row.i];
-      else state.labels[row.i] = v;
-      app2.graph?.setDirtyCanvas?.(true, true);
-      renderPanel(node);
+    const input = createTextfield({
+      value: row.label,
+      placeholder: row.type || "Label",
+      disabled: row.trailing,
+      className: "avatary-switch-input",
+      onChange: (nextValue) => {
+        const v = String(nextValue || "").trim();
+        if (!v) delete state.labels[row.i];
+        else state.labels[row.i] = v;
+        app2.graph?.setDirtyCanvas?.(true, true);
+        renderPanel(node);
+      }
     });
     const disabled = row.trailing || !row.connected;
     const toggle = _toggleApi.createToggle({
