@@ -33,8 +33,6 @@ const DOT_GUTTER = 28; // left space reserved for the input dot AND
 // (clicks within ~20-25 px of the dot are intercepted
 // by LG before reaching node.onMouseDown).
 
-const _TOGGLE_RIGHT_PAD = PAD_RIGHT; // reserved for future use; not exported
-
 // Row Y center in node-body-local coordinates (0-based slot index).
 export function rowCenterY(slotIdx0) {
 	return TOP_PAD + slotIdx0 * ROW_H + ROW_H / 2;

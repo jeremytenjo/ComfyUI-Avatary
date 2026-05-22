@@ -1623,9 +1623,6 @@
     const size = value / 1024 ** exp;
     return `${size.toFixed(exp >= 2 ? 2 : 1)} ${units[exp]}`;
   }
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
   function createHistoryItemElement(entry) {
     const item = document.createElement("div");
     item.className = `history-item ${entry.status}`;
@@ -3432,12 +3429,12 @@ function bindNode(node) {
   node.__groupBypasserBound = true;
   syncNodeTitle(node);
   const originalOnRemoved = node.onRemoved;
-  node.onRemoved = function() {
+  node.onRemoved = function(...args) {
     if (this.__groupBypasserRefreshTimer) {
       clearInterval(this.__groupBypasserRefreshTimer);
       this.__groupBypasserRefreshTimer = null;
     }
-    return originalOnRemoved?.apply(this, arguments);
+    return originalOnRemoved?.apply(this, args);
   };
   node.__groupBypasserRefreshTimer = setInterval(() => {
     const graph = getCurrentGraph(node);
@@ -3460,16 +3457,16 @@ app.registerExtension({
     }
     const originalOnNodeCreated = nodeType.prototype.onNodeCreated;
     const originalOnConfigure = nodeType.prototype.onConfigure;
-    nodeType.prototype.onNodeCreated = function() {
-      const result = originalOnNodeCreated?.apply(this, arguments);
+    nodeType.prototype.onNodeCreated = function(...args) {
+      const result = originalOnNodeCreated?.apply(this, args);
       bindNode(this);
       queueRefresh(this, true);
       setTimeout(() => queueRefresh(this, true), 80);
       setTimeout(() => queueRefresh(this, true), 250);
       return result;
     };
-    nodeType.prototype.onConfigure = function() {
-      const result = originalOnConfigure?.apply(this, arguments);
+    nodeType.prototype.onConfigure = function(...args) {
+      const result = originalOnConfigure?.apply(this, args);
       bindNode(this);
       queueRefresh(this, true);
       setTimeout(() => queueRefresh(this, true), 80);
@@ -3923,8 +3920,8 @@ app2.registerExtension({
   async beforeRegisterNodeDef(nodeType, nodeData) {
     if (nodeData.name !== NODE_CLASS) return;
     const _origCreated = nodeType.prototype.onNodeCreated;
-    nodeType.prototype.onNodeCreated = function() {
-      _origCreated?.apply(this, arguments);
+    nodeType.prototype.onNodeCreated = function(...args) {
+      _origCreated?.apply(this, args);
       refreshNode2(this);
       setTimeout(() => {
         try {
@@ -3940,20 +3937,20 @@ app2.registerExtension({
       }, 200);
     };
     const _origConfigure = nodeType.prototype.onConfigure;
-    nodeType.prototype.onConfigure = function() {
-      const r = _origConfigure?.apply(this, arguments);
+    nodeType.prototype.onConfigure = function(...args) {
+      const r = _origConfigure?.apply(this, args);
       refreshNode2(this);
       return r;
     };
     const _origConn = nodeType.prototype.onConnectionsChange;
-    nodeType.prototype.onConnectionsChange = function() {
-      const r = _origConn?.apply(this, arguments);
+    nodeType.prototype.onConnectionsChange = function(...args) {
+      const r = _origConn?.apply(this, args);
       refreshNode2(this);
       return r;
     };
     const _origDraw = nodeType.prototype.onDrawForeground;
-    nodeType.prototype.onDrawForeground = function() {
-      const r = _origDraw?.apply(this, arguments);
+    nodeType.prototype.onDrawForeground = function(...args) {
+      const r = _origDraw?.apply(this, args);
       const sig = connectionSignature(this);
       if (sig !== this._avatarySwitchConnSig) {
         try {
@@ -3964,7 +3961,7 @@ app2.registerExtension({
       return r;
     };
     const _origRemoved = nodeType.prototype.onRemoved;
-    nodeType.prototype.onRemoved = function() {
+    nodeType.prototype.onRemoved = function(...args) {
       if (this._avatarySwitchPanel?.isConnected)
         this._avatarySwitchPanel.remove();
       this._avatarySwitchPanel = null;
@@ -3973,7 +3970,7 @@ app2.registerExtension({
           (w) => !w?._avatarySwitchPanelWidget
         );
       }
-      return _origRemoved?.apply(this, arguments);
+      return _origRemoved?.apply(this, args);
     };
   }
 });
