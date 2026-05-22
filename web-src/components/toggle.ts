@@ -1,12 +1,12 @@
 // @ts-nocheck
 
-const TOGGLE_STYLE_ID = 'avatary-switch-toggle-styles';
+const TOGGLE_STYLE_ID = "avatary-switch-toggle-styles";
 
 export function ensureToggleStyles() {
-  if (document.getElementById(TOGGLE_STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = TOGGLE_STYLE_ID;
-  style.textContent = `
+	if (document.getElementById(TOGGLE_STYLE_ID)) return;
+	const style = document.createElement("style");
+	style.id = TOGGLE_STYLE_ID;
+	style.textContent = `
     .avatary-switch-toggle {
       flex: 0 0 auto;
       width: 38px;
@@ -54,26 +54,26 @@ export function ensureToggleStyles() {
       cursor: default;
     }
   `;
-  document.head.appendChild(style);
+	document.head.appendChild(style);
 }
 
 export function createToggle({ active, disabled, title, onToggle }) {
-  const toggle = document.createElement('div');
-  toggle.setAttribute('role', 'switch');
-  toggle.setAttribute('aria-checked', active ? 'true' : 'false');
-  if (title) toggle.title = title;
-  toggle.className = 'avatary-switch-toggle';
-  if (active) toggle.classList.add('active');
-  if (disabled) toggle.classList.add('disabled');
+	const toggle = document.createElement("div");
+	toggle.setAttribute("role", "switch");
+	toggle.setAttribute("aria-checked", active ? "true" : "false");
+	if (title) toggle.title = title;
+	toggle.className = "avatary-switch-toggle";
+	if (active) toggle.classList.add("active");
+	if (disabled) toggle.classList.add("disabled");
 
-  const knob = document.createElement('span');
-  knob.className = 'knob';
-  toggle.appendChild(knob);
+	const knob = document.createElement("span");
+	knob.className = "knob";
+	toggle.appendChild(knob);
 
-  toggle.addEventListener('click', () => {
-    if (disabled) return;
-    onToggle?.();
-  });
+	toggle.addEventListener("click", () => {
+		if (disabled) return;
+		onToggle?.();
+	});
 
-  return toggle;
+	return toggle;
 }

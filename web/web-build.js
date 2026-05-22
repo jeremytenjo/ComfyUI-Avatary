@@ -3487,55 +3487,6 @@ app.registerExtension({
 import { app as app2 } from "/scripts/app.js";
 
 // web-src/components/textfield.ts
-var TEXTFIELD_STYLE_ID = "avatary-textfield-styles";
-function ensureTextfieldStyles() {
-  if (document.getElementById(TEXTFIELD_STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = TEXTFIELD_STYLE_ID;
-  style.textContent = `
-    .avatary-textfield {
-      width: 100%;
-      min-height: 30px;
-      height: 30px;
-      border-radius: 10px;
-      border: 1px solid var(--p-form-field-border-color, transparent);
-      background: var(--component-node-widget-background, #3a3d48);
-      color: var(--component-node-foreground, #d9dce4);
-      padding: 0 10px;
-      font-size: 12px;
-      line-height: 1;
-      letter-spacing: 0;
-      text-transform: none;
-      box-sizing: border-box;
-      outline: none;
-      transition: background .12s ease, box-shadow .12s ease, border-color .12s ease;
-    }
-    .avatary-textfield:not(:disabled):hover {
-      background: red;
-      border-color: color-mix(in srgb, var(--p-primary-color, #60A5FA) 50%, transparent);
-    }
-    .avatary-textfield::placeholder {
-      color: var(--component-node-foreground-secondary, #8d95a8);
-      opacity: 1;
-    }
-    .avatary-textfield:not(:disabled):focus {
-      border-color: var(--p-primary-color, #60A5FA);
-      background: red;
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary-color, #60A5FA) 25%, transparent);
-    }
-    .avatary-textfield:not(:disabled):active {
-      background: red;
-      border-color: var(--p-primary-color, #60A5FA);
-    }
-    .avatary-textfield:disabled {
-      background: var(--component-node-widget-background-disabled, #2a2d36);
-      color: var(--component-node-foreground-secondary, #8d95a8);
-      opacity: .75;
-      cursor: default;
-    }
-  `;
-  document.head.appendChild(style);
-}
 function createTextfield({
   value = "",
   placeholder = "",
@@ -3544,10 +3495,25 @@ function createTextfield({
   className = "",
   onChange
 }) {
-  ensureTextfieldStyles();
   const input = document.createElement("input");
   input.type = "text";
-  input.className = `avatary-textfield ${className}`.trim();
+  const comfyClasses = [
+    // Mirrors ComfyUI_frontend widget input conventions.
+    "w-full",
+    "min-w-0",
+    "h-7",
+    "rounded-lg",
+    "border-none",
+    "bg-component-node-widget-background",
+    "text-component-node-foreground",
+    "px-4",
+    "text-xs",
+    "outline-none",
+    "transition-colors",
+    "hover:bg-component-node-widget-background-hovered",
+    "focus:bg-component-node-widget-background-hovered"
+  ].join(" ");
+  input.className = `${comfyClasses} ${className}`.trim();
   input.value = value;
   input.placeholder = placeholder;
   input.disabled = disabled;

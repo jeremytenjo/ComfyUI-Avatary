@@ -48,10 +48,12 @@ Use Avatary-branded categories and names:
 
 ## UI Component Reuse Rules
 - Reuse existing UI components before creating new UI markup/styles for similar behavior.
-- For frontend UI work, check shared components in `web/components/` first and extend existing components when possible.
-- If a new UI primitive is needed, create it as a reusable module under `web/components/`, not inside feature-specific folders unless it is truly feature-only.
+- For frontend UI work, check shared components in `web-src/components/` first and extend existing components when possible.
+- If a new UI primitive is needed, create it as a reusable module under `web-src/components/`, not inside feature-specific folders unless it is truly feature-only.
 - Component modules should expose a small API (factory/setup functions) and keep their own scoped style injection.
 - Avoid duplicating component CSS across files; centralize style ownership in the component module.
+- For ComfyUI Nodes 2.0 controls, prefer ComfyUI frontend utility/token classes (for example `bg-component-node-widget-background`, `text-component-node-foreground`, `hover:bg-component-node-widget-background-hovered`) over custom hardcoded colors.
+- Do not add fallback style blocks for these controls; treat ComfyUI frontend classes/tokens as the single source of truth.
 
 ## Testing Expectations
 Before finalizing changes, run targeted tests:
