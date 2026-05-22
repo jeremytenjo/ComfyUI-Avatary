@@ -3510,17 +3510,22 @@ function ensureTextfieldStyles() {
       outline: none;
       transition: background .12s ease, box-shadow .12s ease, border-color .12s ease;
     }
-    .avatary-textfield:hover {
+    .avatary-textfield:not(:disabled):hover {
       background: var(--component-node-widget-background-hovered, #4a4e5e);
+      border-color: color-mix(in srgb, var(--p-primary-color, #60A5FA) 50%, transparent);
     }
     .avatary-textfield::placeholder {
       color: var(--component-node-foreground-secondary, #8d95a8);
       opacity: 1;
     }
-    .avatary-textfield:focus {
-      border-color: var(--p-form-field-border-color, transparent);
+    .avatary-textfield:not(:disabled):focus {
+      border-color: var(--p-primary-color, #60A5FA);
       background: var(--component-node-widget-background-hovered, #4a4e5e);
-      box-shadow: 0 0 0 1px var(--component-node-widget-background-highlighted, #4b5563);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary-color, #60A5FA) 25%, transparent);
+    }
+    .avatary-textfield:not(:disabled):active {
+      background: var(--component-node-widget-background-selected, #555a69);
+      border-color: var(--p-primary-color, #60A5FA);
     }
     .avatary-textfield:disabled {
       background: var(--component-node-widget-background-disabled, #2a2d36);
@@ -3551,13 +3556,6 @@ function createTextfield({
   return input;
 }
 
-// web-src/components/theme.ts
-var theme = {
-  colors: {
-    primary: "#60A5FA"
-  }
-};
-
 // web-src/components/toggle.ts
 var TOGGLE_STYLE_ID = "avatary-switch-toggle-styles";
 function ensureToggleStyles() {
@@ -3577,8 +3575,11 @@ function ensureToggleStyles() {
       box-sizing: border-box;
       transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
     }
-    .avatary-switch-toggle:hover {
+    .avatary-switch-toggle:not(.disabled):hover {
       background: var(--component-node-widget-background-hovered, #4a4e5e);
+    }
+    .avatary-switch-toggle:not(.disabled):active {
+      box-shadow: 0 0 0 1px var(--component-node-widget-background-highlighted, #4b5563);
     }
     .avatary-switch-toggle .knob {
       position: absolute;
@@ -3592,9 +3593,12 @@ function ensureToggleStyles() {
       transition: left .15s ease;
     }
     .avatary-switch-toggle.active {
-      background: var(--p-primary-color, ${theme.colors.primary});
+      background: var(--p-primary-color, #60A5FA);
       border-color: var(--p-form-field-border-color, transparent);
       box-shadow: 0 0 0 1px var(--component-node-widget-background-highlighted, #4b5563);
+    }
+    .avatary-switch-toggle.active:not(.disabled):hover {
+      background: color-mix(in srgb, var(--p-primary-color, #60A5FA) 88%, white);
     }
     .avatary-switch-toggle.active .knob {
       left: 19px;
@@ -3664,8 +3668,8 @@ function ensureToggleStylesFallback() {
       transition: left .15s ease;
     }
     .avatary-switch-toggle.active {
-      background: ${theme.colors.primary};
-      border-color: ${theme.colors.primary};
+      background: var(--p-primary-color, #60A5FA);
+      border-color: var(--p-primary-color, #60A5FA);
     }
     .avatary-switch-toggle.active .knob { left: 22px; }
     .avatary-switch-toggle.disabled {
@@ -3876,15 +3880,11 @@ function ensureStyles() {
       min-height: 30px;
       height: 30px;
       border-radius: 10px;
-      border: 1px solid #4b5266;
-      background: #272d3b;
-      color: #d9dce4;
       font-size: 12px;
       letter-spacing: 0;
       text-transform: none;
       padding: 0 10px;
     }
-    .avatary-switch-input::placeholder { color: #8d95a8; }
   `;
   document.head.appendChild(style);
 }

@@ -1,11 +1,12 @@
 // @ts-nocheck
-const TEXTFIELD_STYLE_ID = "avatary-textfield-styles";
+
+const TEXTFIELD_STYLE_ID = 'avatary-textfield-styles';
 
 export function ensureTextfieldStyles() {
-	if (document.getElementById(TEXTFIELD_STYLE_ID)) return;
-	const style = document.createElement("style");
-	style.id = TEXTFIELD_STYLE_ID;
-	style.textContent = `
+  if (document.getElementById(TEXTFIELD_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = TEXTFIELD_STYLE_ID;
+  style.textContent = `
     .avatary-textfield {
       width: 100%;
       min-height: 30px;
@@ -23,17 +24,22 @@ export function ensureTextfieldStyles() {
       outline: none;
       transition: background .12s ease, box-shadow .12s ease, border-color .12s ease;
     }
-    .avatary-textfield:hover {
+    .avatary-textfield:not(:disabled):hover {
       background: var(--component-node-widget-background-hovered, #4a4e5e);
+      border-color: color-mix(in srgb, var(--p-primary-color, #60A5FA) 50%, transparent);
     }
     .avatary-textfield::placeholder {
       color: var(--component-node-foreground-secondary, #8d95a8);
       opacity: 1;
     }
-    .avatary-textfield:focus {
-      border-color: var(--p-form-field-border-color, transparent);
+    .avatary-textfield:not(:disabled):focus {
+      border-color: var(--p-primary-color, #60A5FA);
       background: var(--component-node-widget-background-hovered, #4a4e5e);
-      box-shadow: 0 0 0 1px var(--component-node-widget-background-highlighted, #4b5563);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-primary-color, #60A5FA) 25%, transparent);
+    }
+    .avatary-textfield:not(:disabled):active {
+      background: var(--component-node-widget-background-selected, #555a69);
+      border-color: var(--p-primary-color, #60A5FA);
     }
     .avatary-textfield:disabled {
       background: var(--component-node-widget-background-disabled, #2a2d36);
@@ -42,25 +48,25 @@ export function ensureTextfieldStyles() {
       cursor: default;
     }
   `;
-	document.head.appendChild(style);
+  document.head.appendChild(style);
 }
 
 export function createTextfield({
-	value = "",
-	placeholder = "",
-	disabled = false,
-	title = "",
-	className = "",
-	onChange,
+  value = '',
+  placeholder = '',
+  disabled = false,
+  title = '',
+  className = '',
+  onChange,
 }) {
-	ensureTextfieldStyles();
-	const input = document.createElement("input");
-	input.type = "text";
-	input.className = `avatary-textfield ${className}`.trim();
-	input.value = value;
-	input.placeholder = placeholder;
-	input.disabled = disabled;
-	if (title) input.title = title;
-	input.addEventListener("change", () => onChange?.(input.value));
-	return input;
+  ensureTextfieldStyles();
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = `avatary-textfield ${className}`.trim();
+  input.value = value;
+  input.placeholder = placeholder;
+  input.disabled = disabled;
+  if (title) input.title = title;
+  input.addEventListener('change', () => onChange?.(input.value));
+  return input;
 }
