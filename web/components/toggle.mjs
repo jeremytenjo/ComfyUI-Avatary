@@ -1,8 +1,10 @@
-const TOGGLE_STYLE_ID = "avatary-switch-toggle-styles";
+import theme from './theme.mjs';
+
+const TOGGLE_STYLE_ID = 'avatary-switch-toggle-styles';
 
 export function ensureToggleStyles() {
   if (document.getElementById(TOGGLE_STYLE_ID)) return;
-  const style = document.createElement("style");
+  const style = document.createElement('style');
   style.id = TOGGLE_STYLE_ID;
   style.textContent = `
     .avatary-switch-toggle {
@@ -29,8 +31,8 @@ export function ensureToggleStyles() {
       transition: left .15s ease;
     }
     .avatary-switch-toggle.active {
-      background: #f66744;
-      border-color: #f66744;
+      background: ${theme.colors.primary};
+      border-color: ${theme.colors.primary};
     }
     .avatary-switch-toggle.active .knob { left: 22px; }
     .avatary-switch-toggle.disabled {
@@ -42,19 +44,19 @@ export function ensureToggleStyles() {
 }
 
 export function createToggle({ active, disabled, title, onToggle }) {
-  const toggle = document.createElement("div");
-  toggle.setAttribute("role", "switch");
-  toggle.setAttribute("aria-checked", active ? "true" : "false");
+  const toggle = document.createElement('div');
+  toggle.setAttribute('role', 'switch');
+  toggle.setAttribute('aria-checked', active ? 'true' : 'false');
   if (title) toggle.title = title;
-  toggle.className = "avatary-switch-toggle";
-  if (active) toggle.classList.add("active");
-  if (disabled) toggle.classList.add("disabled");
+  toggle.className = 'avatary-switch-toggle';
+  if (active) toggle.classList.add('active');
+  if (disabled) toggle.classList.add('disabled');
 
-  const knob = document.createElement("span");
-  knob.className = "knob";
+  const knob = document.createElement('span');
+  knob.className = 'knob';
   toggle.appendChild(knob);
 
-  toggle.addEventListener("click", () => {
+  toggle.addEventListener('click', () => {
     if (disabled) return;
     onToggle?.();
   });

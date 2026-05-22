@@ -1,4 +1,5 @@
 import { app } from '/scripts/app.js';
+import theme from '../components/theme.mjs';
 
 const NODE_CLASS = 'AvatarySwitch';
 const STATE_KEY = 'switchState';
@@ -38,8 +39,8 @@ function ensureToggleStylesFallback() {
       transition: left .15s ease;
     }
     .avatary-switch-toggle.active {
-      background: #f66744;
-      border-color: #f66744;
+      background: ${theme.colors.primary};
+      border-color: ${theme.colors.primary};
     }
     .avatary-switch-toggle.active .knob { left: 22px; }
     .avatary-switch-toggle.disabled {

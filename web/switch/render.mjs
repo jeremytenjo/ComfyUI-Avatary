@@ -10,27 +10,27 @@
 // Our row paintings use the same formula so labels/toggles sit on the
 // same horizontal band as the slot dot.
 
-import { app } from "/scripts/app.js";
+import { app } from '/scripts/app.js';
+import theme from '../components/theme.mjs';
 // Cyclic with core.mjs (which imports ROW_H/TOP_PAD from here). Safe in ESM
 // because both sides only consume the binding inside functions, never at
 // module top level - if you ever move usage to top level, this will silently
 // resolve to undefined.
-import { getUpstreamType } from "./core.mjs";
+import { getUpstreamType } from './core.mjs';
 
-export const BRAND = "#f66744";
-export const ROW_H = 20;          // matches LiteGraph NODE_SLOT_HEIGHT
-export const TOP_PAD = 4;         // matches LiteGraph body top-padding
+export const ROW_H = 20; // matches LiteGraph NODE_SLOT_HEIGHT
+export const TOP_PAD = 4; // matches LiteGraph body top-padding
 
 const TOGGLE_W = 28;
 const TOGGLE_H = 14;
-const TOGGLE_R = 7;   // pill corner radius
-const KNOB_R = 4;     // inner knob radius
+const TOGGLE_R = 7; // pill corner radius
+const KNOB_R = 4; // inner knob radius
 const PAD_RIGHT = 70; // right-edge margin before toggle - wide enough to clear
-                      // LG's output column on row 1 (output label + dot ~70 px)
+// LG's output column on row 1 (output label + dot ~70 px)
 const DOT_GUTTER = 28; // left space reserved for the input dot AND
-                        // clearance past LiteGraph's slot-drag hit zone
-                        // (clicks within ~20-25 px of the dot are intercepted
-                        // by LG before reaching node.onMouseDown).
+// clearance past LiteGraph's slot-drag hit zone
+// (clicks within ~20-25 px of the dot are intercepted
+// by LG before reaching node.onMouseDown).
 
 const TOGGLE_RIGHT_PAD = PAD_RIGHT; // reserved for future use; not exported
 
@@ -53,8 +53,7 @@ export function toggleRect(nodeWidth, slotIdx0) {
 
 function inside(pos, r) {
   return (
-    pos[0] >= r.x && pos[0] <= r.x + r.w &&
-    pos[1] >= r.y && pos[1] <= r.y + r.h
+    pos[0] >= r.x && pos[0] <= r.x + r.w && pos[1] >= r.y && pos[1] <= r.y + r.h
   );
 }
 
@@ -103,7 +102,9 @@ export function labelScreenRect(node, slotIdx1) {
   const offsetX = ds?.offset?.[0] || 0;
   const offsetY = ds?.offset?.[1] || 0;
   const canvasEl = app.canvas?.canvas;
-  const canvasRect = canvasEl ? canvasEl.getBoundingClientRect() : { left: 0, top: 0 };
+  const canvasRect = canvasEl
+    ? canvasEl.getBoundingClientRect()
+    : { left: 0, top: 0 };
   // LiteGraph node.pos is the body top-left (title bar sits above it).
   const baseLeft = canvasRect.left + offsetX * scale;
   const baseTop = canvasRect.top + offsetY * scale;
@@ -124,16 +125,19 @@ function drawToggle(ctx, nodeWidth, slotIdx0, on, disabled) {
   // Pill background. OFF state uses semi-transparent white overlay so the
   // toggle adapts when the user picks a custom node colour via right-click
   // -> Colors (matches Text Pixaroma and Switch WH adaptive style). ON
-  // stays opaque BRAND orange so the active toggle is unambiguous on any
+  // stays opaque brand orange so the active toggle is unambiguous on any
   // node colour. Slightly higher opacity than Text Pixaroma's action
   // buttons since the pill is smaller and needs to read as an interactive
   // toggle, not a passive label.
   ctx.beginPath();
-  ctx.fillStyle = on ? BRAND : "rgba(255,255,255,0.06)";
-  ctx.strokeStyle = on ? BRAND : "rgba(255,255,255,0.18)";
+  ctx.fillStyle = on ? theme.colors.primary : 'rgba(255,255,255,0.06)';
+  ctx.strokeStyle = on ? theme.colors.primary : 'rgba(255,255,255,0.18)';
   ctx.lineWidth = 1;
   const rad = TOGGLE_R;
-  const t = r.y, b = r.y + r.h, l = r.x, ri = r.x + r.w;
+  const t = r.y,
+    b = r.y + r.h,
+    l = r.x,
+    ri = r.x + r.w;
   ctx.moveTo(l + rad, t);
   ctx.arcTo(ri, t, ri, b, rad);
   ctx.arcTo(ri, b, l, b, rad);
@@ -145,8 +149,8 @@ function drawToggle(ctx, nodeWidth, slotIdx0, on, disabled) {
 
   // Knob
   ctx.beginPath();
-  ctx.fillStyle = on ? "#fff" : "#ccc";
-  const knobX = on ? (ri - TOGGLE_R) : (l + TOGGLE_R);
+  ctx.fillStyle = on ? '#fff' : '#ccc';
+  const knobX = on ? ri - TOGGLE_R : l + TOGGLE_R;
   const knobY = r.y + r.h / 2;
   ctx.arc(knobX, knobY, KNOB_R, 0, Math.PI * 2);
   ctx.fill();
@@ -170,37 +174,40 @@ function drawLabel(ctx, nodeWidth, slotIdx0, text, dim, placeholderType) {
   // "*" upstream is the LiteGraph wildcard - shows as "*" which means nothing
   // to the user, so we fall through to the generic placeholder instead.
   const usefulType =
-    placeholderType && placeholderType !== "*" ? placeholderType : null;
+    placeholderType && placeholderType !== '*' ? placeholderType : null;
   let display, color;
   if (hasUserText) {
     display = text;
-    color = "#d8d8d8";
+    color = '#d8d8d8';
   } else if (dim) {
-    display = "(empty)";
+    display = '(empty)';
     // Trailing rows get a globalAlpha 0.45 dim above. Stack that with too
     // dark a base colour and the text turns into a smudge. #aaa keeps the
     // placeholder feel (dimmer than an active label) but stays readable
     // after the alpha multiplication.
-    color = "#aaa";
+    color = '#aaa';
   } else if (usefulType) {
     display = usefulType;
-    color = "#d8d8d8"; // normal text color - reads like a real label
+    color = '#d8d8d8'; // normal text color - reads like a real label
   } else {
-    display = "Label...";
-    color = "#5a5a5a"; // last-resort placeholder grey
+    display = 'Label...';
+    color = '#5a5a5a'; // last-resort placeholder grey
   }
 
   ctx.fillStyle = color;
   ctx.font = "12px 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
 
   let painted = display;
   if (ctx.measureText(painted).width > maxW) {
-    while (painted.length > 1 && ctx.measureText(painted + "...").width > maxW) {
+    while (
+      painted.length > 1 &&
+      ctx.measureText(painted + '...').width > maxW
+    ) {
       painted = painted.slice(0, -1);
     }
-    painted += "...";
+    painted += '...';
   }
   ctx.fillText(painted, lx, cy);
   ctx.restore();
@@ -223,7 +230,7 @@ export function drawSwitchRows(node, ctx) {
     const isTrailing = !connected && slotIdx1 === inputs.length;
     const on = connected && activeIndex === slotIdx1;
 
-    const labelTxt = labels[slotIdx1] || "";
+    const labelTxt = labels[slotIdx1] || '';
     const placeholderType = connected ? getUpstreamType(node, slotIdx1) : null;
     drawLabel(ctx, w, i, labelTxt, isTrailing, placeholderType);
     drawToggle(ctx, w, i, on, isTrailing);

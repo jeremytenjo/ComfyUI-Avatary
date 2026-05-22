@@ -15,10 +15,10 @@
 //   Esc          -> cancel: no change.
 //   Opening another editor auto-commits the previous one.
 
-import { app } from "/scripts/app.js";
+import { app } from '/scripts/app.js';
+import theme from '../components/theme.mjs';
 
-const STATE_PROP = "switchState";
-const BRAND = "#f66744";
+const STATE_PROP = 'switchState';
 
 let activeEditor = null; // module-level singleton
 
@@ -26,7 +26,10 @@ function commit(state) {
   if (!state || state._committed) return;
   state._committed = true;
   const { node, slotIdx, input } = state;
-  if (!input.isConnected) { cleanup(state); return; }
+  if (!input.isConnected) {
+    cleanup(state);
+    return;
+  }
   const value = input.value.trim();
   const sw = node.properties[STATE_PROP] || (node.properties[STATE_PROP] = {});
   if (!sw.labels) sw.labels = {};
@@ -45,9 +48,10 @@ function cancel(state) {
 function cleanup(state) {
   if (!state) return;
   if (state.windowKeyHandler) {
-    window.removeEventListener("keydown", state.windowKeyHandler, true);
+    window.removeEventListener('keydown', state.windowKeyHandler, true);
   }
-  if (state.blurHandler) state.input.removeEventListener("blur", state.blurHandler);
+  if (state.blurHandler)
+    state.input.removeEventListener('blur', state.blurHandler);
   state.input.remove();
   if (activeEditor === state) activeEditor = null;
 }
@@ -57,7 +61,7 @@ export function openLabelEditor(node, slotIdx /* 1-based */, rect) {
   // Close any previously open editor with an implicit commit.
   if (activeEditor) commit(activeEditor);
 
-  const initial = node.properties?.[STATE_PROP]?.labels?.[slotIdx] || "";
+  const initial = node.properties?.[STATE_PROP]?.labels?.[slotIdx] || '';
 
   // Match the DOM input's typography to the canvas-painted label.
   // The canvas paints at 12px in graph units, which becomes (12 * scale) px on
@@ -69,27 +73,27 @@ export function openLabelEditor(node, slotIdx /* 1-based */, rect) {
   const padX = 6 * scale;
   const borderPx = Math.max(1, 2 * scale);
 
-  const input = document.createElement("input");
-  input.type = "text";
+  const input = document.createElement('input');
+  input.type = 'text';
   input.value = initial;
-  input.placeholder = "Label";
+  input.placeholder = 'Label';
   input.style.cssText = [
-    "position: fixed",
+    'position: fixed',
     `left: ${rect.x}px`,
     `top: ${rect.y}px`,
     `width: ${rect.w}px`,
     `height: ${rect.h}px`,
-    "z-index: 10000",
-    "background: #1f1f1f",
-    "color: #d8d8d8",
-    `border: ${borderPx}px solid ${BRAND}`,
-    "border-radius: 3px",
+    'z-index: 10000',
+    'background: #1f1f1f',
+    'color: #d8d8d8',
+    `border: ${borderPx}px solid ${theme.colors.primary}`,
+    'border-radius: 3px',
     `padding: 0 ${padX}px`,
     `font: ${fontPx}px 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif`,
-    "outline: none",
-    "box-sizing: border-box",
-    "line-height: 1",
-  ].join("; ");
+    'outline: none',
+    'box-sizing: border-box',
+    'line-height: 1',
+  ].join('; ');
 
   document.body.appendChild(input);
 
@@ -103,10 +107,10 @@ export function openLabelEditor(node, slotIdx /* 1-based */, rect) {
   state.windowKeyHandler = (e) => {
     if (e.target !== input) return;
     e.stopImmediatePropagation();
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       commit(state);
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       e.preventDefault();
       cancel(state);
     }
@@ -117,7 +121,7 @@ export function openLabelEditor(node, slotIdx /* 1-based */, rect) {
 
   // The window-level capture handler attaches immediately so Ctrl+Z and other
   // canvas shortcuts are blocked from the very first keystroke.
-  window.addEventListener("keydown", state.windowKeyHandler, true); // capture phase
+  window.addEventListener('keydown', state.windowKeyHandler, true); // capture phase
 
   activeEditor = state;
 
@@ -136,7 +140,7 @@ export function openLabelEditor(node, slotIdx /* 1-based */, rect) {
     if (!input.isConnected) return; // commit/cancel already removed us
     input.focus();
     input.select();
-    input.addEventListener("blur", state.blurHandler);
+    input.addEventListener('blur', state.blurHandler);
   }, 0);
 }
 
