@@ -25,11 +25,7 @@ def test_switch_returns_active_input():
     assert out == "b"
 
 
-def test_switch_raises_on_unconnected_selected_input():
+def test_switch_returns_none_for_unconnected_selected_input():
     node = AvatarySwitch()
-    try:
-        node.pick(SwitchState="3", input_1="a", input_2="b")
-    except ValueError as exc:
-        assert "selected input_3 is not connected" in str(exc)
-    else:
-        raise AssertionError("Expected ValueError when selected input is not connected")
+    (out,) = node.pick(SwitchState="3", input_1="a", input_2="b")
+    assert out is None

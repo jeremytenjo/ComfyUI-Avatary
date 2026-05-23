@@ -63,11 +63,6 @@ class AvatarySwitch:
 
         key = f"input_{idx}"
         val = kwargs.get(key)
-        if val is None:
-            raise ValueError(
-                f"Switch Avatary: selected input_{idx} is not connected. "
-                "Connect that row or select another active row."
-            )
         return (val,)
 
 
