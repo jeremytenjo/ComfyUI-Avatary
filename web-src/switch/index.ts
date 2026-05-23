@@ -216,6 +216,31 @@ function upstreamType(node, idx1) {
   return up?.outputs?.[link.origin_slot]?.type || '';
 }
 
+function getUpstreamNode(node, idx1) {
+  const slot = node.inputs?.[idx1 - 1];
+  const linkId = slot?.link;
+  if (linkId == null) return null;
+
+  let link = node.graph?.links?.[linkId];
+  if (!link && typeof node.graph?.links?.get === 'function')
+    link = node.graph.links.get(linkId);
+  if (!link) return null;
+
+  return node.graph?.getNodeById?.(link.origin_id) || null;
+}
+
+// Set mode=0 (active) for the upstream node on the active slot,
+// mode=4 (bypass) for all other connected upstream nodes.
+function syncUpstreamBypass(node, activeIdx) {
+  const inputs = node.inputs || [];
+  for (let i = 0; i < inputs.length; i++) {
+    const up = getUpstreamNode(node, i + 1);
+    if (!up) continue;
+    up.mode = i + 1 === activeIdx ? 0 : 4;
+  }
+  app.graph?.setDirtyCanvas?.(true, true);
+}
+
 function getRows(node) {
   const state = getState(node);
   const rows = [];
@@ -366,6 +391,7 @@ function renderPanel(node) {
       title: row.label || row.type || `Row ${row.i}`,
       onToggle: () => {
         state.activeIndex = row.i;
+        syncUpstreamBypass(node, row.i);
         syncSwitchStateWidget(node);
         app.graph?.setDirtyCanvas?.(true, true);
         renderPanel(node);
@@ -413,6 +439,7 @@ function renderFallbackWidgets(node, rows, state) {
       () => {
         if (disabled) return;
         state.activeIndex = row.i;
+        syncUpstreamBypass(node, row.i);
         syncSwitchStateWidget(node);
         renderPanel(node);
       },
