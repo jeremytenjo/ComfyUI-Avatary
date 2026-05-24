@@ -6,7 +6,7 @@ All notable changes to internal packs are documented in this file.
 
 ### 2026-05-24
 
-- Upgraded `Load Images Avatary` with drag-and-drop upload support right on the node.
+- Added new `Load Images Avatary` node with built-in drag-and-drop uploads.
 - Added clear drag-hover visual feedback so drops feel instant and obvious.
 - New uploads are now sorted latest-first automatically.
 - Locked the node to a stable fixed size and restored the 4-image viewport cap for a cleaner, predictable layout.
