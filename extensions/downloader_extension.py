@@ -146,6 +146,18 @@ def _sanitize_filename(name: str) -> str:
     return cleaned
 
 
+def _resolve_managed_avatary_upload_path(filename: str) -> str:
+    safe_name = _sanitize_filename(filename)
+    managed_root = os.path.abspath(
+        os.path.join(folder_paths.get_input_directory(), "avatary_load_image_batch")
+    )
+    os.makedirs(managed_root, exist_ok=True)
+    target = os.path.abspath(os.path.join(managed_root, safe_name))
+    if not _is_within_root(target, managed_root):
+        raise web.HTTPBadRequest(reason="Invalid managed upload path")
+    return target
+
+
 def _filename_from_url(download_url: str) -> str:
     parsed = urllib.parse.urlparse(download_url)
     inferred = Path(parsed.path).name
@@ -1265,6 +1277,50 @@ async def upload_file_to_directory(request: web.Request) -> web.Response:
             "destination_path": destination_path,
             "root_key": prepared["root_key"],
             "bytes_written": bytes_written,
+        }
+    )
+
+
+@PromptServer.instance.routes.post("/avatary/load-images/delete")
+async def delete_avatary_managed_uploads(request: web.Request) -> web.Response:
+    body = await request.json()
+    raw_files = body.get("files")
+    if isinstance(raw_files, str):
+        raw_files = [raw_files]
+    if not isinstance(raw_files, list) or not raw_files:
+        raise web.HTTPBadRequest(reason="Missing files")
+
+    deleted: list[str] = []
+    missing: list[str] = []
+    errors: list[dict[str, str]] = []
+
+    for raw_name in raw_files:
+        try:
+            target = _resolve_managed_avatary_upload_path(str(raw_name or ""))
+        except web.HTTPException:
+            errors.append({"file": str(raw_name or ""), "error": "invalid filename"})
+            continue
+
+        try:
+            if os.path.isfile(target):
+                os.remove(target)
+                deleted.append(os.path.basename(target))
+            else:
+                missing.append(os.path.basename(target))
+        except OSError as exc:
+            errors.append(
+                {
+                    "file": os.path.basename(target),
+                    "error": _sanitize_http_reason(exc, fallback="delete failed"),
+                }
+            )
+
+    return web.json_response(
+        {
+            "ok": True,
+            "deleted": deleted,
+            "missing": missing,
+            "errors": errors,
         }
     )
 

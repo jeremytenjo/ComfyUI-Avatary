@@ -122,6 +122,20 @@ async function uploadSingle(file) {
   return await response.json();
 }
 
+async function deleteFilesFromDisk(files) {
+  if (!Array.isArray(files) || files.length === 0) return { deleted: [], errors: [] };
+  const response = await fetch('/avatary/load-images/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ files }),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Delete failed (${response.status})`);
+  }
+  return await response.json();
+}
+
 async function handleUpload(node) {
   const picker = document.createElement('input');
   picker.type = 'file';
@@ -147,16 +161,27 @@ async function handleUpload(node) {
   picker.click();
 }
 
-function removeFile(node, name) {
+async function removeFile(node, name) {
   const state = getState(node);
+  try {
+    await deleteFilesFromDisk([name]);
+  } catch (err) {
+    console.error('[AvataryLoadImageBatch] delete failed', err);
+  }
   state.files = state.files.filter((file) => file !== name);
   syncUploadState(node);
   renderPanel(node);
   app.graph?.setDirtyCanvas?.(true, true);
 }
 
-function clearAll(node) {
+async function clearAll(node) {
   const state = getState(node);
+  const filesToDelete = [...state.files];
+  try {
+    await deleteFilesFromDisk(filesToDelete);
+  } catch (err) {
+    console.error('[AvataryLoadImageBatch] clear delete failed', err);
+  }
   state.files = [];
   syncUploadState(node);
   renderPanel(node);
@@ -245,7 +270,7 @@ function renderPanel(node) {
   clearBtn.className = 'avatary-lb-btn secondary';
   clearBtn.textContent = 'Clear';
   clearBtn.disabled = state.files.length === 0;
-  clearBtn.onclick = () => clearAll(node);
+  clearBtn.onclick = async () => clearAll(node);
 
   actions.appendChild(uploadBtn);
   actions.appendChild(clearBtn);
@@ -288,7 +313,7 @@ function renderPanel(node) {
       const removeBtn = document.createElement('button');
       removeBtn.className = 'avatary-lb-remove';
       removeBtn.textContent = 'Remove';
-      removeBtn.onclick = () => removeFile(node, name);
+      removeBtn.onclick = async () => removeFile(node, name);
 
       meta.appendChild(label);
       meta.appendChild(removeBtn);
