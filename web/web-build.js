@@ -4518,3 +4518,50 @@ app3.registerExtension({
     renderPanel2(node);
   }
 });
+function buildNodeIndex2() {
+  const map = /* @__PURE__ */ new Map();
+  const visit = (graph) => {
+    if (!graph) return;
+    const nodes = graph._nodes || graph.nodes || [];
+    for (const n of nodes) {
+      if (!n) continue;
+      if (n.comfyClass === NODE_CLASS2 || n.type === NODE_CLASS2) {
+        map.set(String(n.id), n);
+      }
+      const inner = n.subgraph || n.graph || n._graph;
+      if (inner && inner !== graph) visit(inner);
+    }
+  };
+  visit(app3.graph);
+  return map;
+}
+function resolveNode2(map, promptId) {
+  const id = String(promptId);
+  if (map.has(id)) return map.get(id);
+  const tail = id.includes(":") ? id.slice(id.lastIndexOf(":") + 1) : null;
+  if (tail && map.has(tail)) return map.get(tail);
+  return null;
+}
+if (!app3._avataryLoadImagesGraphToPromptWrapped) {
+  app3._avataryLoadImagesGraphToPromptWrapped = true;
+  const _origGraphToPrompt2 = app3.graphToPrompt.bind(app3);
+  app3.graphToPrompt = async (...args) => {
+    const result = await _origGraphToPrompt2(...args);
+    const out = result?.output;
+    if (!out) return result;
+    let index = null;
+    for (const id in out) {
+      const entry = out[id];
+      if (!entry || entry.class_type !== NODE_CLASS2) continue;
+      if (!index) index = buildNodeIndex2();
+      const node = resolveNode2(index, id);
+      const state = node?.properties?.[STATE_KEY3] || {};
+      entry.inputs = entry.inputs || {};
+      entry.inputs[HIDDEN_INPUT_NAME2] = JSON.stringify({
+        subfolder: state.subfolder || MANAGED_SUBFOLDER,
+        files: Array.isArray(state.files) ? state.files : []
+      });
+    }
+    return result;
+  };
+}
