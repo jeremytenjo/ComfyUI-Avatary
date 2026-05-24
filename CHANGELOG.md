@@ -2,6 +2,25 @@
 
 All notable changes to internal packs are documented in this file.
 
+## Avatary Core
+
+### 2026-05-24
+
+- Upgraded `Load Images Avatary` with drag-and-drop upload support right on the node.
+- Added clear drag-hover visual feedback so drops feel instant and obvious.
+- New uploads are now sorted latest-first automatically.
+- Locked the node to a stable fixed size and restored the 4-image viewport cap for a cleaner, predictable layout.
+- Kept quick actions simple: upload, preview, remove, and clear all in one place.
+
+### 2026-05-21
+
+- Added `Switch Avatary`, ported from Pixaroma's dynamic Switch (Python + frontend JS modules) and wired into the explicit Avatary registry.
+- Refactored root loader from dynamic pack import to explicit Pixaroma-style node registry.
+- Added unified `nodes/` namespace and migrated node-bearing modules into normalized node files.
+- Added `extensions/` namespace and wired Downloader as an explicit side-effect extension import.
+- Consolidated frontend web assets under top-level `web/` and switched root `WEB_DIRECTORY` to `./web`.
+- Unified node branding with Avatary-prefixed display names and `👑 Avatary/...` category taxonomy.
+
 ## Downloader
 
 ### 2026-05-19
@@ -65,14 +84,3 @@ All notable changes to internal packs are documented in this file.
 #### Changed
 
 - Node now skips API calls and returns cached output when the same image size, prompt, size, and resolution are provided.
-
-## Avatary Core
-
-### 2026-05-21
-
-- Added `Switch Avatary`, ported from Pixaroma's dynamic Switch (Python + frontend JS modules) and wired into the explicit Avatary registry.
-- Refactored root loader from dynamic pack import to explicit Pixaroma-style node registry.
-- Added unified `nodes/` namespace and migrated node-bearing modules into normalized node files.
-- Added `extensions/` namespace and wired Downloader as an explicit side-effect extension import.
-- Consolidated frontend web assets under top-level `web/` and switched root `WEB_DIRECTORY` to `./web`.
-- Unified node branding with Avatary-prefixed display names and `👑 Avatary/...` category taxonomy.
