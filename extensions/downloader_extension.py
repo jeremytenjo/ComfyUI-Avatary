@@ -30,6 +30,8 @@ NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 DOWNLOAD_JOBS: dict[str, dict] = {}
 DOWNLOAD_JOBS_LOCK = threading.Lock()
+EXPORT_JOBS: dict[str, dict] = {}
+EXPORT_JOBS_LOCK = threading.Lock()
 MISSING_INSTALL_JOBS: dict[str, dict] = {}
 MISSING_INSTALL_JOBS_LOCK = threading.Lock()
 
@@ -572,7 +574,19 @@ def _resolve_exportable_path(path_value: str, roots: dict[str, str]) -> str:
     return export_path
 
 
-def _create_export_zip_archive(export_path: str) -> tuple[str, str]:
+def _count_export_files(export_path: str) -> int:
+    if os.path.isdir(export_path):
+        total = 0
+        for _dirpath, _dirnames, filenames in os.walk(export_path):
+            total += len(filenames)
+        return total
+    return 1
+
+
+def _create_export_zip_archive(
+    export_path: str,
+    progress_callback: Callable[[int, int, str], None] | None = None,
+) -> tuple[str, str]:
     base_name = os.path.basename(export_path.rstrip(os.sep)) or "export"
     safe_base_name = _sanitize_filename(base_name)
     archive_name = f"{safe_base_name}.zip"
@@ -582,6 +596,8 @@ def _create_export_zip_archive(export_path: str) -> tuple[str, str]:
 
     try:
         with zipfile.ZipFile(archive_path, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+            completed_files = 0
+            total_files = max(1, _count_export_files(export_path))
             if os.path.isdir(export_path):
                 parent_dir = os.path.dirname(export_path)
                 for dirpath, _dirnames, filenames in os.walk(export_path):
@@ -591,9 +607,18 @@ def _create_export_zip_archive(export_path: str) -> tuple[str, str]:
                     for filename in filenames:
                         source_file = os.path.join(dirpath, filename)
                         rel_file = os.path.relpath(source_file, parent_dir).replace(os.sep, "/")
+                        if progress_callback is not None:
+                            progress_callback(completed_files, total_files, rel_file)
                         archive.write(source_file, arcname=rel_file)
+                        completed_files += 1
+                        if progress_callback is not None:
+                            progress_callback(completed_files, total_files, rel_file)
             else:
+                if progress_callback is not None:
+                    progress_callback(0, total_files, safe_base_name)
                 archive.write(export_path, arcname=safe_base_name)
+                if progress_callback is not None:
+                    progress_callback(1, total_files, safe_base_name)
         return archive_path, archive_name
     except Exception:
         if os.path.exists(archive_path):
@@ -626,6 +651,24 @@ def _prune_old_missing_install_jobs() -> None:
         ]
         for job_id in stale_job_ids:
             MISSING_INSTALL_JOBS.pop(job_id, None)
+
+
+def _prune_old_export_jobs() -> None:
+    now = time.time()
+    with EXPORT_JOBS_LOCK:
+        stale_job_ids = [
+            job_id
+            for job_id, job in EXPORT_JOBS.items()
+            if job.get("status") in {"completed", "failed"} and now - float(job.get("updated_at", now)) > 3600
+        ]
+        for job_id in stale_job_ids:
+            archive_path = str(EXPORT_JOBS.get(job_id, {}).get("archive_path", "") or "")
+            if archive_path and os.path.exists(archive_path):
+                try:
+                    os.remove(archive_path)
+                except OSError:
+                    logging.warning("Failed to clean stale export archive: %s", archive_path)
+            EXPORT_JOBS.pop(job_id, None)
 
 
 def _build_restart_command() -> list[str]:
@@ -1226,12 +1269,103 @@ async def upload_file_to_directory(request: web.Request) -> web.Response:
     )
 
 
-@PromptServer.instance.routes.post("/download-to-dir/export")
-async def export_path_as_zip(request: web.Request) -> web.StreamResponse:
+@PromptServer.instance.routes.post("/download-to-dir/export/start")
+async def start_export_path_as_zip(request: web.Request) -> web.Response:
     body = await request.json()
     roots = _build_root_map()
     export_path = _resolve_exportable_path(body.get("path", ""), roots)
-    archive_path, archive_name = _create_export_zip_archive(export_path)
+    _prune_old_export_jobs()
+    job_id = uuid.uuid4().hex
+    now = time.time()
+    with EXPORT_JOBS_LOCK:
+        EXPORT_JOBS[job_id] = {
+            "job_id": job_id,
+            "status": "queued",
+            "source_path": export_path,
+            "archive_path": "",
+            "archive_name": "",
+            "current_file": "",
+            "completed_files": 0,
+            "total_files": max(1, _count_export_files(export_path)),
+            "error": "",
+            "created_at": now,
+            "updated_at": now,
+        }
+
+    def _worker() -> None:
+        def _on_progress(completed_files: int, total_files: int, current_file: str) -> None:
+            with EXPORT_JOBS_LOCK:
+                job = EXPORT_JOBS.get(job_id)
+                if not job:
+                    return
+                job["status"] = "running"
+                job["completed_files"] = int(completed_files)
+                job["total_files"] = max(1, int(total_files))
+                job["current_file"] = str(current_file or "")
+                job["updated_at"] = time.time()
+
+        try:
+            archive_path, archive_name = _create_export_zip_archive(
+                export_path,
+                progress_callback=_on_progress,
+            )
+            with EXPORT_JOBS_LOCK:
+                job = EXPORT_JOBS.get(job_id)
+                if not job:
+                    if os.path.exists(archive_path):
+                        os.remove(archive_path)
+                    return
+                job["status"] = "completed"
+                job["archive_path"] = archive_path
+                job["archive_name"] = archive_name
+                job["completed_files"] = int(job.get("total_files", 1))
+                job["updated_at"] = time.time()
+        except Exception as exc:
+            with EXPORT_JOBS_LOCK:
+                job = EXPORT_JOBS.get(job_id)
+                if not job:
+                    return
+                job["status"] = "failed"
+                job["error"] = _sanitize_http_reason(exc, fallback="Export failed")
+                job["updated_at"] = time.time()
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return web.json_response({"ok": True, "job_id": job_id})
+
+
+@PromptServer.instance.routes.get("/download-to-dir/export/progress/{job_id}")
+async def get_export_progress(request: web.Request) -> web.Response:
+    job_id = request.match_info.get("job_id", "").strip()
+    if not job_id:
+        raise web.HTTPBadRequest(reason="Missing job id")
+    with EXPORT_JOBS_LOCK:
+        job = EXPORT_JOBS.get(job_id)
+        if not job:
+            raise web.HTTPNotFound(reason="Unknown export job id")
+        payload = dict(job)
+    payload.pop("archive_path", None)
+    return web.json_response(payload)
+
+
+@PromptServer.instance.routes.get("/download-to-dir/export/download/{job_id}")
+async def download_export_path_as_zip(request: web.Request) -> web.StreamResponse:
+    job_id = request.match_info.get("job_id", "").strip()
+    if not job_id:
+        raise web.HTTPBadRequest(reason="Missing job id")
+    with EXPORT_JOBS_LOCK:
+        job = EXPORT_JOBS.get(job_id)
+        if not job:
+            raise web.HTTPNotFound(reason="Unknown export job id")
+        status = str(job.get("status", "")).strip().lower()
+        if status == "failed":
+            raise web.HTTPBadRequest(reason=str(job.get("error") or "Export failed"))
+        if status != "completed":
+            raise web.HTTPConflict(reason="Export is not ready yet")
+        archive_path = str(job.get("archive_path", "") or "")
+        archive_name = str(job.get("archive_name", "") or "export.zip")
+
+    if not archive_path or not os.path.exists(archive_path):
+        raise web.HTTPNotFound(reason="Export archive is no longer available")
 
     response = web.StreamResponse(
         status=200,
@@ -1240,7 +1374,6 @@ async def export_path_as_zip(request: web.Request) -> web.StreamResponse:
             "Content-Disposition": f'attachment; filename="{archive_name}"',
         },
     )
-
     try:
         stat = os.stat(archive_path)
         response.content_length = stat.st_size
@@ -1259,6 +1392,8 @@ async def export_path_as_zip(request: web.Request) -> web.StreamResponse:
                 os.remove(archive_path)
             except OSError:
                 logging.warning("Failed to clean temporary export file: %s", archive_path)
+        with EXPORT_JOBS_LOCK:
+            EXPORT_JOBS.pop(job_id, None)
 
 
 @PromptServer.instance.routes.post("/download-to-dir/missing-nodes/analyze")

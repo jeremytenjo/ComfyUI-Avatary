@@ -2279,11 +2279,72 @@ Reinstall source: ${installTarget}`,
       return;
     }
     setStatus("Preparing export zip...");
-    const resp = await apiFetch("/download-to-dir/export", {
+    const startResp = await apiFetch("/download-to-dir/export/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: exportPath })
     });
+    if (!startResp.ok) {
+      let data = null;
+      try {
+        data = await startResp.json();
+      } catch {
+        data = null;
+      }
+      const message = formatApiError(
+        startResp.status,
+        data,
+        `Export failed (${startResp.status})`
+      );
+      setStatus(message, "error");
+      return;
+    }
+    const startData = await startResp.json().catch(() => ({}));
+    const exportJobId = String(startData.job_id || "").trim();
+    if (!exportJobId) {
+      setStatus("Export failed: missing export job id.", "error");
+      return;
+    }
+    while (true) {
+      const progressResp = await apiFetch(
+        `/download-to-dir/export/progress/${encodeURIComponent(exportJobId)}`,
+        { method: "GET" }
+      );
+      const progressData = await progressResp.json().catch(() => ({}));
+      if (!progressResp.ok) {
+        const message2 = formatApiError(
+          progressResp.status,
+          progressData,
+          `Could not read export progress (${progressResp.status})`
+        );
+        setStatus(message2, "error");
+        return;
+      }
+      const statusValue = String(progressData.status || "").toLowerCase();
+      const completed = Number(progressData.completed_files || 0);
+      const total = Number(progressData.total_files || 0);
+      const current = String(progressData.current_file || "").trim();
+      if (statusValue === "completed") break;
+      if (statusValue === "failed") {
+        const reason = String(progressData.error || "").trim() || "Export failed.";
+        setStatus(reason, "error");
+        return;
+      }
+      if (total > 0) {
+        setStatus(
+          `Preparing export zip... ${completed}/${total}${current ? ` | ${current}` : ""}`
+        );
+      } else {
+        setStatus("Preparing export zip...");
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 250));
+    }
+    const resp = await apiFetch(
+      `/download-to-dir/export/download/${encodeURIComponent(exportJobId)}`,
+      {
+        method: "GET"
+      }
+    );
     if (!resp.ok) {
       let data = null;
       try {
@@ -2294,7 +2355,7 @@ Reinstall source: ${installTarget}`,
       const message = formatApiError(
         resp.status,
         data,
-        `Export failed (${resp.status})`
+        `Export download failed (${resp.status})`
       );
       setStatus(message, "error");
       return;
