@@ -4213,15 +4213,21 @@ function ensureStyles2() {
 function getState2(node) {
   if (!node.properties) node.properties = {};
   if (!node.properties[STATE_KEY3]) {
-    node.properties[STATE_KEY3] = { subfolder: MANAGED_SUBFOLDER, files: [] };
+    node.properties[STATE_KEY3] = {
+      subfolder: MANAGED_SUBFOLDER,
+      files: [],
+      isUploading: false,
+      uploadDone: 0,
+      uploadTotal: 0
+    };
   }
-  if (!Array.isArray(node.properties[STATE_KEY3].files)) {
-    node.properties[STATE_KEY3].files = [];
-  }
-  if (!node.properties[STATE_KEY3].subfolder) {
-    node.properties[STATE_KEY3].subfolder = MANAGED_SUBFOLDER;
-  }
-  return node.properties[STATE_KEY3];
+  const state = node.properties[STATE_KEY3];
+  if (!Array.isArray(state.files)) state.files = [];
+  if (!state.subfolder) state.subfolder = MANAGED_SUBFOLDER;
+  if (typeof state.isUploading !== "boolean") state.isUploading = false;
+  if (!Number.isFinite(state.uploadDone)) state.uploadDone = 0;
+  if (!Number.isFinite(state.uploadTotal)) state.uploadTotal = 0;
+  return state;
 }
 function getHiddenWidget(node) {
   return node.widgets?.find((w) => w.name === HIDDEN_INPUT_NAME2) || null;
@@ -4294,10 +4300,23 @@ async function handleUpload(node) {
     const files = Array.from(picker.files || []);
     if (!files.length) return;
     const state = getState2(node);
-    for (const file of files) {
-      const uploaded = await uploadSingle(file);
-      const name = uploaded?.name || uploaded?.filename || file.name;
-      if (!state.files.includes(name)) state.files.push(name);
+    state.isUploading = true;
+    state.uploadDone = 0;
+    state.uploadTotal = files.length;
+    renderPanel2(node);
+    app3.graph?.setDirtyCanvas?.(true, true);
+    try {
+      for (const file of files) {
+        const uploaded = await uploadSingle(file);
+        const name = uploaded?.name || uploaded?.filename || file.name;
+        if (!state.files.includes(name)) state.files.push(name);
+        state.uploadDone += 1;
+        renderPanel2(node);
+      }
+    } finally {
+      state.isUploading = false;
+      state.uploadDone = 0;
+      state.uploadTotal = 0;
     }
     syncUploadState(node);
     renderPanel2(node);
@@ -4307,6 +4326,7 @@ async function handleUpload(node) {
 }
 async function removeFile(node, name) {
   const state = getState2(node);
+  if (state.isUploading) return;
   try {
     await deleteFilesFromDisk([name]);
   } catch (err) {
@@ -4319,6 +4339,7 @@ async function removeFile(node, name) {
 }
 async function clearAll(node) {
   const state = getState2(node);
+  if (state.isUploading) return;
   const filesToDelete = [...state.files];
   try {
     await deleteFilesFromDisk(filesToDelete);
@@ -4387,8 +4408,10 @@ function renderPanel2(node) {
   actions.className = "avatary-lb-actions";
   const uploadBtn = document.createElement("button");
   uploadBtn.className = "avatary-lb-btn";
-  uploadBtn.textContent = "Upload Images";
+  uploadBtn.textContent = state.isUploading ? `Uploading ${Math.min(state.uploadDone, state.uploadTotal)}/${state.uploadTotal || 0}...` : "Upload Images";
+  uploadBtn.disabled = state.isUploading;
   uploadBtn.onclick = async () => {
+    if (state.isUploading) return;
     try {
       await handleUpload(node);
     } catch (err) {
@@ -4398,11 +4421,17 @@ function renderPanel2(node) {
   const clearBtn = document.createElement("button");
   clearBtn.className = "avatary-lb-btn secondary";
   clearBtn.textContent = "Clear";
-  clearBtn.disabled = state.files.length === 0;
+  clearBtn.disabled = state.files.length === 0 || state.isUploading;
   clearBtn.onclick = async () => clearAll(node);
   actions.appendChild(uploadBtn);
   actions.appendChild(clearBtn);
   panel.appendChild(actions);
+  if (state.isUploading) {
+    const loading = document.createElement("div");
+    loading.className = "avatary-lb-empty";
+    loading.textContent = `Uploading ${Math.min(state.uploadDone, state.uploadTotal)}/${state.uploadTotal || 0} images...`;
+    panel.appendChild(loading);
+  }
   const list = document.createElement("div");
   list.className = "avatary-lb-list";
   applyGridColumns(list, state.files.length);
@@ -4435,6 +4464,7 @@ function renderPanel2(node) {
       const removeBtn = document.createElement("button");
       removeBtn.className = "avatary-lb-remove";
       removeBtn.textContent = "Remove";
+      removeBtn.disabled = state.isUploading;
       removeBtn.onclick = async () => removeFile(node, name);
       meta.appendChild(label);
       meta.appendChild(removeBtn);
