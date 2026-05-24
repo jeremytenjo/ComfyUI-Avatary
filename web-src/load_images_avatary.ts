@@ -279,9 +279,7 @@ function renderPanel(node) {
 
   const uploadBtn = document.createElement('button');
   uploadBtn.className = 'avatary-lb-btn';
-  uploadBtn.textContent = state.isUploading
-    ? `Uploading ${Math.min(state.uploadDone, state.uploadTotal)}/${state.uploadTotal || 0}...`
-    : 'Upload Images';
+  uploadBtn.textContent = 'Upload Images';
   uploadBtn.disabled = state.isUploading;
   uploadBtn.onclick = async () => {
     if (state.isUploading) return;
