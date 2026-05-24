@@ -4353,19 +4353,19 @@ async function clearAll(node) {
 }
 function applyOverflowAfterSix(list, count) {
   if (!list) return;
-  if (count <= 6) {
+  if (count <= 4) {
     list.style.maxHeight = "";
     list.style.overflowY = "";
     return;
   }
   const cards = Array.from(list.querySelectorAll(".avatary-lb-item"));
-  const rowHeights = [0, 0, 0];
-  for (let i = 0; i < Math.min(6, cards.length); i++) {
+  const rowHeights = [0, 0];
+  for (let i = 0; i < Math.min(4, cards.length); i++) {
     const row = Math.floor(i / 2);
     rowHeights[row] = Math.max(rowHeights[row], cards[i].offsetHeight || 0);
   }
   const gapPx = 8;
-  const maxHeight = rowHeights.reduce((sum, h) => sum + h, 0) + gapPx * 2;
+  const maxHeight = rowHeights.reduce((sum, h) => sum + h, 0) + gapPx;
   if (maxHeight > 0) {
     list.style.maxHeight = `${maxHeight}px`;
     list.style.overflowY = "auto";
