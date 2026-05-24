@@ -4170,6 +4170,7 @@ var HIDDEN_INPUT_NAME2 = "UploadState";
 var MANAGED_SUBFOLDER = "avatary_load_image_batch";
 var PANEL_HEIGHT2 = 260;
 var VIEWER_ID = "avatary-lb-viewer";
+var ACCEPTED_TYPES = [".png", ".jpg", ".jpeg", ".webp", "image/*"];
 function ensureStyles2() {
   if (document.getElementById("avatary-load-image-batch-styles")) return;
   const style = document.createElement("style");
@@ -4216,6 +4217,7 @@ function getState2(node) {
     node.properties[STATE_KEY3] = {
       subfolder: MANAGED_SUBFOLDER,
       files: [],
+      uploadedAt: {},
       isUploading: false,
       uploadDone: 0,
       uploadTotal: 0
@@ -4223,11 +4225,20 @@ function getState2(node) {
   }
   const state = node.properties[STATE_KEY3];
   if (!Array.isArray(state.files)) state.files = [];
+  if (!state.uploadedAt || typeof state.uploadedAt !== "object") state.uploadedAt = {};
   if (!state.subfolder) state.subfolder = MANAGED_SUBFOLDER;
   if (typeof state.isUploading !== "boolean") state.isUploading = false;
   if (!Number.isFinite(state.uploadDone)) state.uploadDone = 0;
   if (!Number.isFinite(state.uploadTotal)) state.uploadTotal = 0;
   return state;
+}
+function getFilesLatestFirst(state) {
+  return [...state.files].sort((a, b) => {
+    const tsA = Number(state.uploadedAt?.[a] || 0);
+    const tsB = Number(state.uploadedAt?.[b] || 0);
+    if (tsA !== tsB) return tsB - tsA;
+    return String(a).localeCompare(String(b));
+  });
 }
 function getHiddenWidget(node) {
   return node.widgets?.find((w) => w.name === HIDDEN_INPUT_NAME2) || null;
@@ -4235,6 +4246,7 @@ function getHiddenWidget(node) {
 function syncUploadState(node) {
   const state = getState2(node);
   const hidden = getHiddenWidget(node);
+  state.files = getFilesLatestFirst(state);
   if (hidden) hidden.value = JSON.stringify({ subfolder: state.subfolder, files: state.files });
 }
 function previewUrl(fileName, subfolder) {
@@ -4291,36 +4303,47 @@ async function deleteFilesFromDisk(files) {
   }
   return await response.json();
 }
+function filterImageFiles(files) {
+  return Array.from(files || []).filter((file) => file?.type?.startsWith("image/"));
+}
+async function uploadFiles(node, files) {
+  const selectedFiles = filterImageFiles(files);
+  if (!selectedFiles.length) return;
+  const state = getState2(node);
+  if (state.isUploading) return;
+  state.isUploading = true;
+  state.uploadDone = 0;
+  state.uploadTotal = selectedFiles.length;
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
+  try {
+    for (const file of selectedFiles) {
+      const uploaded = await uploadSingle(file);
+      const name = uploaded?.name || uploaded?.filename || file.name;
+      if (state.files.includes(name)) {
+        state.files = state.files.filter((existing) => existing !== name);
+      }
+      state.uploadedAt[name] = Date.now();
+      state.files.unshift(name);
+      state.uploadDone += 1;
+      renderPanel2(node);
+    }
+  } finally {
+    state.isUploading = false;
+    state.uploadDone = 0;
+    state.uploadTotal = 0;
+  }
+  syncUploadState(node);
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
+}
 async function handleUpload(node) {
   const picker = document.createElement("input");
   picker.type = "file";
-  picker.accept = ".png,.jpg,.jpeg,.webp,image/*";
+  picker.accept = ACCEPTED_TYPES.join(",");
   picker.multiple = true;
   picker.onchange = async () => {
-    const files = Array.from(picker.files || []);
-    if (!files.length) return;
-    const state = getState2(node);
-    state.isUploading = true;
-    state.uploadDone = 0;
-    state.uploadTotal = files.length;
-    renderPanel2(node);
-    app3.graph?.setDirtyCanvas?.(true, true);
-    try {
-      for (const file of files) {
-        const uploaded = await uploadSingle(file);
-        const name = uploaded?.name || uploaded?.filename || file.name;
-        if (!state.files.includes(name)) state.files.push(name);
-        state.uploadDone += 1;
-        renderPanel2(node);
-      }
-    } finally {
-      state.isUploading = false;
-      state.uploadDone = 0;
-      state.uploadTotal = 0;
-    }
-    syncUploadState(node);
-    renderPanel2(node);
-    app3.graph?.setDirtyCanvas?.(true, true);
+    await uploadFiles(node, picker.files);
   };
   picker.click();
 }
@@ -4333,6 +4356,9 @@ async function removeFile(node, name) {
     console.error("[AvataryLoadImageBatch] delete failed", err);
   }
   state.files = state.files.filter((file) => file !== name);
+  if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, name)) {
+    delete state.uploadedAt[name];
+  }
   syncUploadState(node);
   renderPanel2(node);
   app3.graph?.setDirtyCanvas?.(true, true);
@@ -4347,6 +4373,7 @@ async function clearAll(node) {
     console.error("[AvataryLoadImageBatch] clear delete failed", err);
   }
   state.files = [];
+  state.uploadedAt = {};
   syncUploadState(node);
   renderPanel2(node);
   app3.graph?.setDirtyCanvas?.(true, true);
@@ -4403,9 +4430,29 @@ function renderPanel2(node) {
   const panel = ensurePanelWidget2(node);
   if (!panel) return;
   const state = getState2(node);
+  state.files = getFilesLatestFirst(state);
   panel.innerHTML = "";
   const actions = document.createElement("div");
   actions.className = "avatary-lb-actions";
+  panel.ondragenter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  panel.ondragover = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  panel.ondrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const droppedFiles = e?.dataTransfer?.files;
+    if (!droppedFiles?.length) return;
+    try {
+      await uploadFiles(node, droppedFiles);
+    } catch (err) {
+      console.error("[AvataryLoadImageBatch] drop upload failed", err);
+    }
+  };
   const uploadBtn = document.createElement("button");
   uploadBtn.className = "avatary-lb-btn";
   uploadBtn.textContent = "Upload Images";
