@@ -4169,6 +4169,7 @@ var STATE_KEY3 = "avataryLoadImageBatch";
 var HIDDEN_INPUT_NAME2 = "UploadState";
 var MANAGED_SUBFOLDER = "avatary_load_image_batch";
 var PANEL_HEIGHT2 = 260;
+var VIEWER_ID = "avatary-lb-viewer";
 function ensureStyles2() {
   if (document.getElementById("avatary-load-image-batch-styles")) return;
   const style = document.createElement("style");
@@ -4185,6 +4186,27 @@ function ensureStyles2() {
     .avatary-lb-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--input-text,#d0d6e2); }
     .avatary-lb-remove { border:none; background:transparent; color:#ff8f9d; cursor:pointer; font-size:11px; }
     .avatary-lb-empty { color:#8f97a6; padding:8px 2px; }
+    .avatary-lb-viewer {
+      position: fixed;
+      inset: 0;
+      z-index: 100000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.86);
+      cursor: zoom-out;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .avatary-lb-viewer img {
+      max-width: min(96vw, 1800px);
+      max-height: 96vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
   `;
   document.head.appendChild(style);
 }
@@ -4308,6 +4330,29 @@ function applyGridColumns(list, count) {
   if (!list) return;
   list.style.gridTemplateColumns = count === 1 ? "1fr" : "repeat(2, minmax(0, 1fr))";
 }
+function closeViewer() {
+  const existing = document.getElementById(VIEWER_ID);
+  if (existing) existing.remove();
+}
+function openViewer(src, alt = "") {
+  closeViewer();
+  const overlay = document.createElement("div");
+  overlay.id = VIEWER_ID;
+  overlay.className = "avatary-lb-viewer";
+  const img = document.createElement("img");
+  img.src = src;
+  img.alt = alt;
+  overlay.onclick = () => closeViewer();
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
+  const escHandler = (e) => {
+    if (e.key === "Escape") {
+      closeViewer();
+      window.removeEventListener("keydown", escHandler, true);
+    }
+  };
+  window.addEventListener("keydown", escHandler, true);
+}
 function renderPanel2(node) {
   ensureStyles2();
   const panel = ensurePanelWidget2(node);
@@ -4352,6 +4397,11 @@ function renderPanel2(node) {
       img.src = previewUrl(name, state.subfolder);
       img.alt = name;
       img.onload = () => applyOverflowAfterSix(list, state.files.length);
+      img.ondblclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openViewer(img.src, name);
+      };
       const meta = document.createElement("div");
       meta.className = "avatary-lb-meta";
       const label = document.createElement("div");
@@ -4366,6 +4416,10 @@ function renderPanel2(node) {
       meta.appendChild(removeBtn);
       item.appendChild(img);
       item.appendChild(meta);
+      item.ondblclick = (e) => {
+        if (e.target === removeBtn) return;
+        openViewer(img.src, name);
+      };
       list.appendChild(item);
     }
     panel.appendChild(list);
