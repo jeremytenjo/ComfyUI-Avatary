@@ -577,14 +577,6 @@
         font-size: 13px;
         font-weight: 600;
       }
-      #${DIALOG_ID} #dtd-upload-path-confirm {
-        background: var(--p-primary-color, #2587f9);
-        border-color: color-mix(in srgb, var(--p-primary-color, #2587f9) 68%, #ffffff 32%);
-        color: #ffffff;
-      }
-      #${DIALOG_ID} #dtd-upload-path-confirm:hover {
-        filter: brightness(1.08);
-      }
       #${DIALOG_ID} .missing-modal {
         position: fixed;
         inset: 0;
@@ -3105,10 +3097,9 @@
             <h3 class="confirm-title">Upload Output Path</h3>
             <p class="upload-path-copy">Choose where uploaded images should be saved (relative to ComfyUI root).</p>
             <input id="dtd-upload-path-input" type="text" placeholder="output or output/my-images" />
-            <div id="dtd-upload-dropzone" class="upload-dropzone" role="button" tabindex="0">Drop files here to upload</div>
+            <div id="dtd-upload-dropzone" class="upload-dropzone" role="button" tabindex="0">Click or drop files here to upload</div>
             <div class="upload-path-actions">
               <button id="dtd-upload-path-cancel" type="button">Cancel</button>
-              <button id="dtd-upload-path-confirm" type="button">Choose Files</button>
             </div>
           </div>
         </div>
@@ -3322,9 +3313,6 @@
 		const uploadPathModal = document.getElementById("dtd-upload-path-modal");
 		const uploadPathInput = document.getElementById("dtd-upload-path-input");
 		const uploadPathCancel = document.getElementById("dtd-upload-path-cancel");
-		const uploadPathConfirm = document.getElementById(
-			"dtd-upload-path-confirm",
-		);
 		const uploadDropzone = document.getElementById("dtd-upload-dropzone");
 		if (uploadPathModal) {
 			const consumeModalDragEvent = (event) => {
@@ -3361,12 +3349,6 @@
 			uploadPathCancel.addEventListener("click", () =>
 				closeUploadPathModal(null),
 			);
-		}
-		if (uploadPathConfirm) {
-			uploadPathConfirm.addEventListener("click", () => {
-				const currentValue = String(uploadPathInput?.value || "").trim();
-				closeUploadPathModal(currentValue);
-			});
 		}
 		if (uploadDropzone) {
 			const consumeDragEvent = (event) => {
