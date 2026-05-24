@@ -3,3 +3,4 @@
 import "./download_to_directory.js";
 import "./group_bypasser.js";
 import "./switch/index.js";
+import "./load_images_avatary.js";

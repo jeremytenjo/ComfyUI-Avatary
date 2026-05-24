@@ -31,7 +31,7 @@
   let exportPathResolver = null;
   let hotReloadTimer = null;
   let lastHotReloadStamp = null;
-  function ensureStyles2() {
+  function ensureStyles3() {
     if (document.getElementById("download-to-directory-style")) return;
     const style = document.createElement("style");
     style.id = "download-to-directory-style";
@@ -2133,7 +2133,7 @@ Reinstall source: ${installTarget}`,
     } finally {
     }
   }
-  async function handleUpload(files, options = {}) {
+  async function handleUpload2(files, options = {}) {
     const selectedFiles = Array.isArray(files) ? files.filter((file) => file instanceof File) : files instanceof File ? [files] : [];
     if (selectedFiles.length === 0) {
       setStatus("Choose a file to upload.", "error");
@@ -2312,12 +2312,12 @@ Reinstall source: ${installTarget}`,
       );
       const progressData = await progressResp.json().catch(() => ({}));
       if (!progressResp.ok) {
-        const message2 = formatApiError(
+        const message = formatApiError(
           progressResp.status,
           progressData,
           `Could not read export progress (${progressResp.status})`
         );
-        setStatus(message2, "error");
+        setStatus(message, "error");
         return;
       }
       const statusValue = String(progressData.status || "").toLowerCase();
@@ -2651,7 +2651,7 @@ ${copy}`.trim()));
     dialog.addEventListener("animationend", onAnimEnd);
   }
   function renderUi() {
-    ensureStyles2();
+    ensureStyles3();
     writeHistoryEntries(readHistoryEntries());
     if (!state.toggleEl) {
       const toggle2 = document.createElement("button");
@@ -2910,7 +2910,7 @@ ${copy}`.trim()));
         const files = Array.from(fileInput.files || []);
         fileInput.value = "";
         if (files.length === 0) return;
-        handleUpload(files, { uploadFolder: state.uploadFolder }).catch(
+        handleUpload2(files, { uploadFolder: state.uploadFolder }).catch(
           (err) => setStatus(err.message || String(err), "error")
         );
       });
@@ -3003,7 +3003,7 @@ ${copy}`.trim()));
         const currentValue = String(uploadPathInput?.value || "").trim();
         state.uploadFolder = currentValue || "output";
         dismissUploadPathModal();
-        handleUpload(selectedFiles, { uploadFolder: state.uploadFolder }).catch(
+        handleUpload2(selectedFiles, { uploadFolder: state.uploadFolder }).catch(
           (err) => setStatus(err.message || String(err), "error")
         );
       };
@@ -4161,3 +4161,252 @@ app2.graphToPrompt = async (...args) => {
   }
   return result;
 };
+
+// web-src/load_images_avatary.ts
+import { app as app3 } from "/scripts/app.js";
+var NODE_CLASS2 = "AvataryLoadImageBatch";
+var STATE_KEY3 = "avataryLoadImageBatch";
+var HIDDEN_INPUT_NAME2 = "UploadState";
+var MANAGED_SUBFOLDER = "avatary_load_image_batch";
+var PANEL_HEIGHT2 = 260;
+function ensureStyles2() {
+  if (document.getElementById("avatary-load-image-batch-styles")) return;
+  const style = document.createElement("style");
+  style.id = "avatary-load-image-batch-styles";
+  style.textContent = `
+    .avatary-lb-panel { display:flex; flex-direction:column; gap:8px; font:12px 'Segoe UI',sans-serif; height:100%; }
+    .avatary-lb-actions { display:flex; gap:8px; }
+    .avatary-lb-btn { flex:1; min-height:30px; border-radius:10px; border:1px solid var(--border-color,#434958); background:var(--comfy-input-bg,#232831); color:var(--input-text,#e6e9ef); cursor:pointer; }
+    .avatary-lb-btn.secondary { flex:0 0 auto; padding:0 10px; }
+    .avatary-lb-list { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; overflow:auto; padding-right:2px; }
+    .avatary-lb-item { border:1px solid var(--border-color,#434958); border-radius:10px; padding:6px; background:var(--comfy-menu-bg,#16191f); display:flex; flex-direction:column; gap:4px; }
+    .avatary-lb-thumb { width:100%; height:auto; object-fit:contain; border-radius:6px; background:#0f1116; display:block; }
+    .avatary-lb-meta { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+    .avatary-lb-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--input-text,#d0d6e2); }
+    .avatary-lb-remove { border:none; background:transparent; color:#ff8f9d; cursor:pointer; font-size:11px; }
+    .avatary-lb-empty { color:#8f97a6; padding:8px 2px; }
+  `;
+  document.head.appendChild(style);
+}
+function getState2(node) {
+  if (!node.properties) node.properties = {};
+  if (!node.properties[STATE_KEY3]) {
+    node.properties[STATE_KEY3] = { subfolder: MANAGED_SUBFOLDER, files: [] };
+  }
+  if (!Array.isArray(node.properties[STATE_KEY3].files)) {
+    node.properties[STATE_KEY3].files = [];
+  }
+  if (!node.properties[STATE_KEY3].subfolder) {
+    node.properties[STATE_KEY3].subfolder = MANAGED_SUBFOLDER;
+  }
+  return node.properties[STATE_KEY3];
+}
+function getHiddenWidget(node) {
+  return node.widgets?.find((w) => w.name === HIDDEN_INPUT_NAME2) || null;
+}
+function syncUploadState(node) {
+  const state = getState2(node);
+  const hidden = getHiddenWidget(node);
+  if (hidden) hidden.value = JSON.stringify({ subfolder: state.subfolder, files: state.files });
+}
+function previewUrl(fileName, subfolder) {
+  const params = new URLSearchParams({ filename: fileName, type: "input", subfolder });
+  return `/view?${params.toString()}`;
+}
+function ensurePanelWidget2(node) {
+  if (node._avataryLbPanel && node.widgets?.some((w) => w?._avataryLbPanelWidget)) return node._avataryLbPanel;
+  if (node.widgets) node.widgets = node.widgets.filter((w) => !w?._avataryLbPanelWidget);
+  node._avataryLbPanel = null;
+  const panel = document.createElement("div");
+  panel.className = "avatary-lb-panel";
+  node._avataryLbPanel = panel;
+  if (typeof node.addDOMWidget === "function") {
+    const w = node.addDOMWidget("Uploads", "upload_panel", panel, {
+      serialize: false,
+      hideOnZoom: false,
+      getMinHeight: () => PANEL_HEIGHT2
+    });
+    if (w) {
+      w._avataryLbPanelWidget = true;
+      w.serialize = false;
+      return panel;
+    }
+  }
+  return null;
+}
+async function uploadSingle(file) {
+  const body = new FormData();
+  body.append("image", file);
+  body.append("type", "input");
+  body.append("subfolder", MANAGED_SUBFOLDER);
+  body.append("overwrite", "true");
+  const response = await fetch("/upload/image", {
+    method: "POST",
+    body
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Upload failed (${response.status})`);
+  }
+  return await response.json();
+}
+async function handleUpload(node) {
+  const picker = document.createElement("input");
+  picker.type = "file";
+  picker.accept = ".png,.jpg,.jpeg,.webp,image/*";
+  picker.multiple = true;
+  picker.onchange = async () => {
+    const files = Array.from(picker.files || []);
+    if (!files.length) return;
+    const state = getState2(node);
+    for (const file of files) {
+      const uploaded = await uploadSingle(file);
+      const name = uploaded?.name || uploaded?.filename || file.name;
+      if (!state.files.includes(name)) state.files.push(name);
+    }
+    syncUploadState(node);
+    renderPanel2(node);
+    app3.graph?.setDirtyCanvas?.(true, true);
+  };
+  picker.click();
+}
+function removeFile(node, name) {
+  const state = getState2(node);
+  state.files = state.files.filter((file) => file !== name);
+  syncUploadState(node);
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
+}
+function clearAll(node) {
+  const state = getState2(node);
+  state.files = [];
+  syncUploadState(node);
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
+}
+function applyOverflowAfterSix(list, count) {
+  if (!list) return;
+  if (count <= 6) {
+    list.style.maxHeight = "";
+    list.style.overflowY = "";
+    return;
+  }
+  const cards = Array.from(list.querySelectorAll(".avatary-lb-item"));
+  const rowHeights = [0, 0, 0];
+  for (let i = 0; i < Math.min(6, cards.length); i++) {
+    const row = Math.floor(i / 2);
+    rowHeights[row] = Math.max(rowHeights[row], cards[i].offsetHeight || 0);
+  }
+  const gapPx = 8;
+  const maxHeight = rowHeights.reduce((sum, h) => sum + h, 0) + gapPx * 2;
+  if (maxHeight > 0) {
+    list.style.maxHeight = `${maxHeight}px`;
+    list.style.overflowY = "auto";
+  }
+}
+function applyGridColumns(list, count) {
+  if (!list) return;
+  list.style.gridTemplateColumns = count === 1 ? "1fr" : "repeat(2, minmax(0, 1fr))";
+}
+function renderPanel2(node) {
+  ensureStyles2();
+  const panel = ensurePanelWidget2(node);
+  if (!panel) return;
+  const state = getState2(node);
+  panel.innerHTML = "";
+  const actions = document.createElement("div");
+  actions.className = "avatary-lb-actions";
+  const uploadBtn = document.createElement("button");
+  uploadBtn.className = "avatary-lb-btn";
+  uploadBtn.textContent = "Upload Images";
+  uploadBtn.onclick = async () => {
+    try {
+      await handleUpload(node);
+    } catch (err) {
+      console.error("[AvataryLoadImageBatch] upload failed", err);
+    }
+  };
+  const clearBtn = document.createElement("button");
+  clearBtn.className = "avatary-lb-btn secondary";
+  clearBtn.textContent = "Clear";
+  clearBtn.disabled = state.files.length === 0;
+  clearBtn.onclick = () => clearAll(node);
+  actions.appendChild(uploadBtn);
+  actions.appendChild(clearBtn);
+  panel.appendChild(actions);
+  const list = document.createElement("div");
+  list.className = "avatary-lb-list";
+  applyGridColumns(list, state.files.length);
+  if (!state.files.length) {
+    const empty = document.createElement("div");
+    empty.className = "avatary-lb-empty";
+    empty.textContent = "Upload one or more images to preview and batch load.";
+    panel.appendChild(empty);
+  } else {
+    for (const name of state.files) {
+      const item = document.createElement("div");
+      item.className = "avatary-lb-item";
+      const img = document.createElement("img");
+      img.className = "avatary-lb-thumb";
+      img.loading = "lazy";
+      img.src = previewUrl(name, state.subfolder);
+      img.alt = name;
+      img.onload = () => applyOverflowAfterSix(list, state.files.length);
+      const meta = document.createElement("div");
+      meta.className = "avatary-lb-meta";
+      const label = document.createElement("div");
+      label.className = "avatary-lb-name";
+      label.title = name;
+      label.textContent = name;
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "avatary-lb-remove";
+      removeBtn.textContent = "Remove";
+      removeBtn.onclick = () => removeFile(node, name);
+      meta.appendChild(label);
+      meta.appendChild(removeBtn);
+      item.appendChild(img);
+      item.appendChild(meta);
+      list.appendChild(item);
+    }
+    panel.appendChild(list);
+    requestAnimationFrame(() => applyOverflowAfterSix(list, state.files.length));
+  }
+  syncUploadState(node);
+  node.size[0] = Math.max(node.size?.[0] || 0, 340);
+  node.size[1] = Math.max(node.size?.[1] || 0, 380);
+}
+app3.registerExtension({
+  name: "Avatary.LoadImageBatch.MultiUploadPreview",
+  async beforeRegisterNodeDef(nodeType, nodeData) {
+    if (nodeData.name !== NODE_CLASS2) return;
+    const origCreated = nodeType.prototype.onNodeCreated;
+    nodeType.prototype.onNodeCreated = function(...args) {
+      const r = origCreated?.apply(this, args);
+      renderPanel2(this);
+      setTimeout(() => {
+        try {
+          renderPanel2(this);
+        } catch (_err) {
+        }
+      }, 60);
+      return r;
+    };
+    const origConfigure = nodeType.prototype.onConfigure;
+    nodeType.prototype.onConfigure = function(...args) {
+      const r = origConfigure?.apply(this, args);
+      renderPanel2(this);
+      return r;
+    };
+    const origRemoved = nodeType.prototype.onRemoved;
+    nodeType.prototype.onRemoved = function(...args) {
+      if (this._avataryLbPanel?.isConnected) this._avataryLbPanel.remove();
+      if (this.widgets) this.widgets = this.widgets.filter((w) => !w?._avataryLbPanelWidget);
+      return origRemoved?.apply(this, args);
+    };
+  },
+  loadedGraphNode(node) {
+    const isTarget = node?.comfyClass === NODE_CLASS2 || node?.type === NODE_CLASS2 || node?.constructor?.type === NODE_CLASS2;
+    if (!isTarget) return;
+    renderPanel2(node);
+  }
+});
