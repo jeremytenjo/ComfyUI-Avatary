@@ -8,17 +8,19 @@ const MANAGED_SUBFOLDER = 'avatary_load_image_batch';
 const PANEL_HEIGHT = 260;
 const VIEWER_ID = 'avatary-lb-viewer';
 const ACCEPTED_TYPES = ['.png', '.jpg', '.jpeg', '.webp', 'image/*'];
+const FIXED_NODE_WIDTH = 340;
+const FIXED_NODE_HEIGHT = 380;
 
 function ensureStyles() {
   if (document.getElementById('avatary-load-image-batch-styles')) return;
   const style = document.createElement('style');
   style.id = 'avatary-load-image-batch-styles';
   style.textContent = `
-    .avatary-lb-panel { display:flex; flex-direction:column; gap:8px; font:12px 'Segoe UI',sans-serif; height:100%; }
+    .avatary-lb-panel { display:flex; flex-direction:column; gap:8px; font:12px 'Segoe UI',sans-serif; height:100%; min-height:0; }
     .avatary-lb-actions { display:flex; gap:8px; }
     .avatary-lb-btn { flex:1; min-height:30px; border-radius:10px; border:1px solid var(--border-color,#434958); background:var(--comfy-input-bg,#232831); color:var(--input-text,#e6e9ef); cursor:pointer; }
     .avatary-lb-btn.secondary { flex:0 0 auto; padding:0 10px; }
-    .avatary-lb-list { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; overflow:auto; padding-right:2px; }
+    .avatary-lb-list { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; overflow:auto; padding-right:2px; flex:1 1 auto; min-height:0; align-content:start; }
     .avatary-lb-item { border:1px solid var(--border-color,#434958); border-radius:10px; padding:6px; background:var(--comfy-menu-bg,#16191f); display:flex; flex-direction:column; gap:4px; }
     .avatary-lb-thumb { width:100%; height:auto; object-fit:contain; border-radius:6px; background:#0f1116; display:block; }
     .avatary-lb-meta { display:flex; align-items:center; justify-content:space-between; gap:6px; }
@@ -240,7 +242,12 @@ async function clearAll(node) {
   app.graph?.setDirtyCanvas?.(true, true);
 }
 
-function applyOverflowAfterSix(list, count) {
+function applyGridColumns(list, count) {
+  if (!list) return;
+  list.style.gridTemplateColumns = count === 1 ? '1fr' : 'repeat(2, minmax(0, 1fr))';
+}
+
+function applyOverflowAfterFour(list, count) {
   if (!list) return;
   if (count <= 4) {
     list.style.maxHeight = '';
@@ -263,9 +270,11 @@ function applyOverflowAfterSix(list, count) {
   }
 }
 
-function applyGridColumns(list, count) {
-  if (!list) return;
-  list.style.gridTemplateColumns = count === 1 ? '1fr' : 'repeat(2, minmax(0, 1fr))';
+function lockNodeSize(node) {
+  if (!node) return;
+  node.resizable = false;
+  node.flags = { ...(node.flags || {}), no_resize: true };
+  node.size = [FIXED_NODE_WIDTH, FIXED_NODE_HEIGHT];
 }
 
 function closeViewer() {
@@ -377,7 +386,7 @@ function renderPanel(node) {
       img.loading = 'lazy';
       img.src = previewUrl(name, state.subfolder);
       img.alt = name;
-      img.onload = () => applyOverflowAfterSix(list, state.files.length);
+      img.onload = () => applyOverflowAfterFour(list, state.files.length);
       img.ondblclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -409,12 +418,11 @@ function renderPanel(node) {
       list.appendChild(item);
     }
     panel.appendChild(list);
-    requestAnimationFrame(() => applyOverflowAfterSix(list, state.files.length));
+    requestAnimationFrame(() => applyOverflowAfterFour(list, state.files.length));
   }
 
   syncUploadState(node);
-  node.size[0] = Math.max(node.size?.[0] || 0, 340);
-  node.size[1] = Math.max(node.size?.[1] || 0, 380);
+  lockNodeSize(node);
 }
 
 app.registerExtension({
@@ -425,9 +433,11 @@ app.registerExtension({
     const origCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function (...args) {
       const r = origCreated?.apply(this, args);
+      lockNodeSize(this);
       renderPanel(this);
       setTimeout(() => {
         try {
+          lockNodeSize(this);
           renderPanel(this);
         } catch (_err) {}
       }, 60);
@@ -437,6 +447,7 @@ app.registerExtension({
     const origConfigure = nodeType.prototype.onConfigure;
     nodeType.prototype.onConfigure = function (...args) {
       const r = origConfigure?.apply(this, args);
+      lockNodeSize(this);
       renderPanel(this);
       return r;
     };
@@ -455,6 +466,7 @@ app.registerExtension({
       node?.type === NODE_CLASS ||
       node?.constructor?.type === NODE_CLASS;
     if (!isTarget) return;
+    lockNodeSize(node);
     renderPanel(node);
   },
 });
