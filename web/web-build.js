@@ -4179,6 +4179,16 @@ function ensureStyles2() {
   style.id = "avatary-load-image-batch-styles";
   style.textContent = `
     .avatary-lb-panel { display:flex; flex-direction:column; gap:8px; font:12px 'Segoe UI',sans-serif; height:100%; min-height:0; }
+    .avatary-lb-panel.drag-hover {
+      outline: 2px dashed #7ab8ff;
+      outline-offset: -2px;
+      border-radius: 10px;
+      background: rgba(90, 140, 210, 0.08);
+    }
+    .avatary-lb-panel.drag-hover .avatary-lb-list {
+      box-shadow: inset 0 0 0 1px rgba(122, 184, 255, 0.45);
+      border-radius: 10px;
+    }
     .avatary-lb-actions { display:flex; gap:8px; }
     .avatary-lb-btn { flex:1; min-height:30px; border-radius:10px; border:1px solid var(--border-color,#434958); background:var(--comfy-input-bg,#232831); color:var(--input-text,#e6e9ef); cursor:pointer; }
     .avatary-lb-btn.secondary { flex:0 0 auto; padding:0 10px; }
@@ -4442,17 +4452,28 @@ function renderPanel2(node) {
   panel.innerHTML = "";
   const actions = document.createElement("div");
   actions.className = "avatary-lb-actions";
+  const setDragHover = (isActive) => {
+    panel.classList.toggle("drag-hover", isActive);
+  };
   panel.ondragenter = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    setDragHover(true);
   };
   panel.ondragover = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    setDragHover(true);
+  };
+  panel.ondragleave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!panel.contains(e.relatedTarget)) setDragHover(false);
   };
   panel.ondrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    setDragHover(false);
     const droppedFiles = e?.dataTransfer?.files;
     if (!droppedFiles?.length) return;
     try {
