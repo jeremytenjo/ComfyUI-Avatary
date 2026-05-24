@@ -4194,7 +4194,27 @@ function ensureStyles2() {
     .avatary-lb-btn.secondary { flex:0 0 auto; padding:0 10px; }
     .avatary-lb-list { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; overflow:auto; padding-right:2px; flex:1 1 auto; min-height:0; align-content:start; }
     .avatary-lb-item { border:1px solid var(--border-color,#434958); border-radius:10px; padding:6px; background:var(--comfy-menu-bg,#16191f); display:flex; flex-direction:column; gap:4px; }
+    .avatary-lb-thumb-wrap { position: relative; }
     .avatary-lb-thumb { width:100%; height:auto; object-fit:contain; border-radius:6px; background:#0f1116; display:block; }
+    .avatary-lb-replace {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid var(--border-color,#434958);
+      background: rgba(20, 24, 31, 0.88);
+      color: var(--input-text,#e6e9ef);
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.9;
+    }
+    .avatary-lb-replace:hover { opacity: 1; background: rgba(30, 36, 46, 0.96); }
     .avatary-lb-meta { display:flex; align-items:center; justify-content:space-between; gap:6px; }
     .avatary-lb-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--input-text,#d0d6e2); }
     .avatary-lb-remove { border:none; background:transparent; color:#ff8f9d; cursor:pointer; font-size:11px; }
@@ -4375,6 +4395,51 @@ async function removeFile(node, name) {
   renderPanel2(node);
   app3.graph?.setDirtyCanvas?.(true, true);
 }
+async function replaceFile(node, oldName) {
+  const state = getState2(node);
+  if (state.isUploading) return;
+  const picker = document.createElement("input");
+  picker.type = "file";
+  picker.accept = ACCEPTED_TYPES.join(",");
+  picker.multiple = false;
+  picker.onchange = async () => {
+    const picked = filterImageFiles(picker.files);
+    if (!picked.length) return;
+    state.isUploading = true;
+    state.uploadDone = 0;
+    state.uploadTotal = 1;
+    renderPanel2(node);
+    app3.graph?.setDirtyCanvas?.(true, true);
+    try {
+      const uploaded = await uploadSingle(picked[0]);
+      const newName = uploaded?.name || uploaded?.filename || picked[0].name;
+      if (newName !== oldName) {
+        try {
+          await deleteFilesFromDisk([oldName]);
+        } catch (err) {
+          console.error("[AvataryLoadImageBatch] replace delete failed", err);
+        }
+      }
+      state.files = state.files.filter((file) => file !== oldName && file !== newName);
+      if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, oldName)) {
+        delete state.uploadedAt[oldName];
+      }
+      state.uploadedAt[newName] = Date.now();
+      state.files.unshift(newName);
+      state.uploadDone = 1;
+    } catch (err) {
+      console.error("[AvataryLoadImageBatch] replace upload failed", err);
+    } finally {
+      state.isUploading = false;
+      state.uploadDone = 0;
+      state.uploadTotal = 0;
+    }
+    syncUploadState(node);
+    renderPanel2(node);
+    app3.graph?.setDirtyCanvas?.(true, true);
+  };
+  picker.click();
+}
 async function clearAll(node) {
   const state = getState2(node);
   if (state.isUploading) return;
@@ -4520,6 +4585,8 @@ function renderPanel2(node) {
     for (const name of state.files) {
       const item = document.createElement("div");
       item.className = "avatary-lb-item";
+      const thumbWrap = document.createElement("div");
+      thumbWrap.className = "avatary-lb-thumb-wrap";
       const img = document.createElement("img");
       img.className = "avatary-lb-thumb";
       img.loading = "lazy";
@@ -4530,6 +4597,16 @@ function renderPanel2(node) {
         e.preventDefault();
         e.stopPropagation();
         openViewer(img.src, name);
+      };
+      const replaceBtn = document.createElement("button");
+      replaceBtn.className = "avatary-lb-replace";
+      replaceBtn.textContent = "\u21BB";
+      replaceBtn.title = "Replace image";
+      replaceBtn.disabled = state.isUploading;
+      replaceBtn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await replaceFile(node, name);
       };
       const meta = document.createElement("div");
       meta.className = "avatary-lb-meta";
@@ -4544,10 +4621,12 @@ function renderPanel2(node) {
       removeBtn.onclick = async () => removeFile(node, name);
       meta.appendChild(label);
       meta.appendChild(removeBtn);
-      item.appendChild(img);
+      thumbWrap.appendChild(img);
+      thumbWrap.appendChild(replaceBtn);
+      item.appendChild(thumbWrap);
       item.appendChild(meta);
       item.ondblclick = (e) => {
-        if (e.target === removeBtn) return;
+        if (e.target === removeBtn || e.target === replaceBtn) return;
         openViewer(img.src, name);
       };
       list.appendChild(item);

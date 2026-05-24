@@ -11,6 +11,7 @@ All notable changes to internal packs are documented in this file.
 - New uploads are now sorted latest-first automatically.
 - Locked the node to a stable fixed size and restored the 4-image viewport cap for a cleaner, predictable layout.
 - Kept quick actions simple: upload, preview, remove, and clear all in one place.
+- Added a top-right replace icon on each image card to upload a new file and swap that image in place.
 
 ### 2026-05-21
 
