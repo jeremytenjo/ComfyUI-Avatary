@@ -4,6 +4,20 @@ All notable changes to internal packs are documented in this file.
 
 ## Avatary Core
 
+### 2026-05-25
+
+- Added new `Features Avatary` node with inverted toggle semantics (`Enabled` = not bypassed, `Disabled` = bypassed) and no hardcoded group names.
+- Updated Prompt List UI so `prompt_positive_prefix` stays multiline but auto-resizes to fit its content.
+- Extracted reusable textarea autosize utilities into `web-src/components/textarea.ts` and reused them in Prompt List.
+- Expanded `Load Images Avatary` actions:
+  - Added a Paste button between Upload and Clear for clipboard image uploads.
+  - Added dual top-right card actions: replace from file picker and replace from clipboard paste.
+  - Switched overlay and paste button icons to Lucide.
+- Improved `Load Images Avatary` preview behavior:
+  - Broken/missing images are automatically removed from node state instead of showing broken tiles.
+  - Filename/Remove row is pinned to the bottom of each card.
+  - Thumbnails preserve aspect ratio (no stretching).
+
 ### 2026-05-24
 
 - Added new `Load Images Avatary` node with built-in drag-and-drop uploads.
