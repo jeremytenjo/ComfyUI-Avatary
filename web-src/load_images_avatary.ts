@@ -34,10 +34,15 @@ function ensureStyles() {
     .avatary-lb-item { border:1px solid var(--border-color,#434958); border-radius:10px; padding:6px; background:var(--comfy-menu-bg,#16191f); display:flex; flex-direction:column; gap:4px; }
     .avatary-lb-thumb-wrap { position: relative; }
     .avatary-lb-thumb { width:100%; height:auto; object-fit:contain; border-radius:6px; background:#0f1116; display:block; }
-    .avatary-lb-replace {
+    .avatary-lb-thumb-actions {
       position: absolute;
       top: 8px;
       right: 8px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .avatary-lb-replace {
       width: 28px;
       height: 28px;
       border-radius: 999px;
@@ -239,8 +244,8 @@ async function handleUpload(node) {
   picker.click();
 }
 
-async function handlePaste(node) {
-  if (!navigator?.clipboard?.read) return;
+async function readClipboardImageFiles() {
+  if (!navigator?.clipboard?.read) return [];
   const items = await navigator.clipboard.read();
   const files = [];
   let imageIndex = 0;
@@ -255,6 +260,11 @@ async function handlePaste(node) {
     imageIndex += 1;
   }
 
+  return files;
+}
+
+async function handlePaste(node) {
+  const files = await readClipboardImageFiles();
   if (!files.length) return;
   await uploadFiles(node, files);
 }
@@ -340,6 +350,52 @@ async function replaceFile(node, oldName) {
   };
 
   picker.click();
+}
+
+async function replaceFileFromClipboard(node, oldName) {
+  const state = getState(node);
+  if (state.isUploading) return;
+
+  const files = await readClipboardImageFiles();
+  if (!files.length) return;
+  const replacement = files[0];
+
+  state.isUploading = true;
+  state.uploadDone = 0;
+  state.uploadTotal = 1;
+  renderPanel(node);
+  app.graph?.setDirtyCanvas?.(true, true);
+
+  try {
+    const uploaded = await uploadSingle(replacement);
+    const newName = uploaded?.name || uploaded?.filename || replacement.name;
+
+    if (newName !== oldName) {
+      try {
+        await deleteFilesFromDisk([oldName]);
+      } catch (err) {
+        console.error('[AvataryLoadImageBatch] clipboard replace delete failed', err);
+      }
+    }
+
+    state.files = state.files.filter((file) => file !== oldName && file !== newName);
+    if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, oldName)) {
+      delete state.uploadedAt[oldName];
+    }
+    state.uploadedAt[newName] = Date.now();
+    state.files.unshift(newName);
+    state.uploadDone = 1;
+  } catch (err) {
+    console.error('[AvataryLoadImageBatch] clipboard replace upload failed', err);
+  } finally {
+    state.isUploading = false;
+    state.uploadDone = 0;
+    state.uploadTotal = 0;
+  }
+
+  syncUploadState(node);
+  renderPanel(node);
+  app.graph?.setDirtyCanvas?.(true, true);
 }
 
 async function clearAll(node) {
@@ -543,6 +599,9 @@ function renderPanel(node) {
         openViewer(img.src, name);
       };
 
+      const actionsOverlay = document.createElement('div');
+      actionsOverlay.className = 'avatary-lb-thumb-actions';
+
       const replaceBtn = document.createElement('button');
       replaceBtn.className = 'avatary-lb-replace';
       replaceBtn.textContent = '↻';
@@ -552,6 +611,17 @@ function renderPanel(node) {
         e.preventDefault();
         e.stopPropagation();
         await replaceFile(node, name);
+      };
+
+      const pasteReplaceBtn = document.createElement('button');
+      pasteReplaceBtn.className = 'avatary-lb-replace';
+      pasteReplaceBtn.textContent = '⎘';
+      pasteReplaceBtn.title = 'Paste and replace image';
+      pasteReplaceBtn.disabled = state.isUploading;
+      pasteReplaceBtn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await replaceFileFromClipboard(node, name);
       };
 
       const meta = document.createElement('div');
@@ -571,11 +641,13 @@ function renderPanel(node) {
       meta.appendChild(label);
       meta.appendChild(removeBtn);
       thumbWrap.appendChild(img);
-      thumbWrap.appendChild(replaceBtn);
+      actionsOverlay.appendChild(replaceBtn);
+      actionsOverlay.appendChild(pasteReplaceBtn);
+      thumbWrap.appendChild(actionsOverlay);
       item.appendChild(thumbWrap);
       item.appendChild(meta);
       item.ondblclick = (e) => {
-        if (e.target === removeBtn || e.target === replaceBtn) return;
+        if (e.target === removeBtn || e.target === replaceBtn || e.target === pasteReplaceBtn) return;
         openViewer(img.src, name);
       };
       list.appendChild(item);
