@@ -57,8 +57,17 @@ export function createTextarea({
 
 export function autosizeTextarea(textarea, { minHeight = 30 } = {}) {
 	if (!textarea) return;
+	if (Number.isFinite(minHeight) && minHeight > 0) {
+		textarea.rows = 1;
+		textarea.style.minHeight = `${minHeight}px`;
+	}
 	textarea.style.overflowY = "hidden";
 	textarea.style.height = "auto";
+	const isEmpty = String(textarea.value || "").trim().length === 0;
+	if (isEmpty) {
+		textarea.style.height = `${minHeight}px`;
+		return;
+	}
 	textarea.style.height = `${Math.max(minHeight, textarea.scrollHeight)}px`;
 }
 
