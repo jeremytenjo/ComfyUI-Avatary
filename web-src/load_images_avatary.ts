@@ -30,6 +30,13 @@ function ensureStyles() {
     .avatary-lb-actions { display:flex; gap:8px; }
     .avatary-lb-btn { flex:1; min-height:30px; border-radius:10px; border:1px solid var(--border-color,#434958); background:var(--comfy-input-bg,#232831); color:var(--input-text,#e6e9ef); cursor:pointer; }
     .avatary-lb-btn.secondary { flex:0 0 auto; padding:0 10px; }
+    .avatary-lb-btn i {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+      display: inline-block;
+      vertical-align: middle;
+    }
     .avatary-lb-list { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; overflow:auto; padding-right:2px; flex:1 1 auto; min-height:0; align-content:start; }
     .avatary-lb-item { border:1px solid var(--border-color,#434958); border-radius:10px; padding:6px; background:var(--comfy-menu-bg,#16191f); display:flex; flex-direction:column; gap:4px; }
     .avatary-lb-thumb-wrap { position: relative; }
@@ -572,7 +579,7 @@ function renderPanel(node) {
 
   const pasteBtn = document.createElement('button');
   pasteBtn.className = 'avatary-lb-btn secondary';
-  pasteBtn.textContent = 'Paste';
+  pasteBtn.innerHTML = '<i class="icon-[lucide--clipboard-paste]"></i>';
   pasteBtn.title = 'Paste image from clipboard';
   pasteBtn.disabled = state.isUploading;
   pasteBtn.onclick = async () => {
