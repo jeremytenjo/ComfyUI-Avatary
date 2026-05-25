@@ -4689,6 +4689,12 @@ function ensureStyles2() {
       opacity: 0.9;
     }
     .avatary-lb-replace:hover { opacity: 1; background: rgba(30, 36, 46, 0.96); }
+    .avatary-lb-replace i {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+      display: inline-block;
+    }
     .avatary-lb-meta { display:flex; align-items:center; justify-content:space-between; gap:6px; }
     .avatary-lb-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--input-text,#d0d6e2); }
     .avatary-lb-remove { border:none; background:transparent; color:#ff8f9d; cursor:pointer; font-size:11px; }
@@ -5164,7 +5170,7 @@ function renderPanel2(node) {
       actionsOverlay.className = "avatary-lb-thumb-actions";
       const replaceBtn = document.createElement("button");
       replaceBtn.className = "avatary-lb-replace";
-      replaceBtn.textContent = "\u21BB";
+      replaceBtn.innerHTML = '<i class="icon-[lucide--refresh-cw]"></i>';
       replaceBtn.title = "Replace image";
       replaceBtn.disabled = state.isUploading;
       replaceBtn.onclick = async (e) => {
@@ -5174,7 +5180,7 @@ function renderPanel2(node) {
       };
       const pasteReplaceBtn = document.createElement("button");
       pasteReplaceBtn.className = "avatary-lb-replace";
-      pasteReplaceBtn.textContent = "\u2398";
+      pasteReplaceBtn.innerHTML = '<i class="icon-[lucide--clipboard-paste]"></i>';
       pasteReplaceBtn.title = "Paste and replace image";
       pasteReplaceBtn.disabled = state.isUploading;
       pasteReplaceBtn.onclick = async (e) => {

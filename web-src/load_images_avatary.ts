@@ -58,6 +58,12 @@ function ensureStyles() {
       opacity: 0.9;
     }
     .avatary-lb-replace:hover { opacity: 1; background: rgba(30, 36, 46, 0.96); }
+    .avatary-lb-replace i {
+      width: 14px;
+      height: 14px;
+      font-size: 14px;
+      display: inline-block;
+    }
     .avatary-lb-meta { display:flex; align-items:center; justify-content:space-between; gap:6px; }
     .avatary-lb-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--input-text,#d0d6e2); }
     .avatary-lb-remove { border:none; background:transparent; color:#ff8f9d; cursor:pointer; font-size:11px; }
@@ -101,7 +107,8 @@ function getState(node) {
   }
   const state = node.properties[STATE_KEY];
   if (!Array.isArray(state.files)) state.files = [];
-  if (!state.uploadedAt || typeof state.uploadedAt !== 'object') state.uploadedAt = {};
+  if (!state.uploadedAt || typeof state.uploadedAt !== 'object')
+    state.uploadedAt = {};
   if (!state.subfolder) state.subfolder = MANAGED_SUBFOLDER;
   if (typeof state.isUploading !== 'boolean') state.isUploading = false;
   if (!Number.isFinite(state.uploadDone)) state.uploadDone = 0;
@@ -126,18 +133,31 @@ function syncUploadState(node) {
   const state = getState(node);
   const hidden = getHiddenWidget(node);
   state.files = getFilesLatestFirst(state);
-  if (hidden) hidden.value = JSON.stringify({ subfolder: state.subfolder, files: state.files });
+  if (hidden)
+    hidden.value = JSON.stringify({
+      subfolder: state.subfolder,
+      files: state.files,
+    });
 }
 
 function previewUrl(fileName, subfolder) {
-  const params = new URLSearchParams({ filename: fileName, type: 'input', subfolder });
+  const params = new URLSearchParams({
+    filename: fileName,
+    type: 'input',
+    subfolder,
+  });
   return `/view?${params.toString()}`;
 }
 
 function ensurePanelWidget(node) {
-  if (node._avataryLbPanel && node.widgets?.some((w) => w?._avataryLbPanelWidget)) return node._avataryLbPanel;
+  if (
+    node._avataryLbPanel &&
+    node.widgets?.some((w) => w?._avataryLbPanelWidget)
+  )
+    return node._avataryLbPanel;
 
-  if (node.widgets) node.widgets = node.widgets.filter((w) => !w?._avataryLbPanelWidget);
+  if (node.widgets)
+    node.widgets = node.widgets.filter((w) => !w?._avataryLbPanelWidget);
   node._avataryLbPanel = null;
 
   const panel = document.createElement('div');
@@ -179,7 +199,8 @@ async function uploadSingle(file) {
 }
 
 async function deleteFilesFromDisk(files) {
-  if (!Array.isArray(files) || files.length === 0) return { deleted: [], errors: [] };
+  if (!Array.isArray(files) || files.length === 0)
+    return { deleted: [], errors: [] };
   const response = await fetch('/avatary/load-images/delete', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -193,7 +214,9 @@ async function deleteFilesFromDisk(files) {
 }
 
 function filterImageFiles(files) {
-  return Array.from(files || []).filter((file) => file?.type?.startsWith('image/'));
+  return Array.from(files || []).filter((file) =>
+    file?.type?.startsWith('image/'),
+  );
 }
 
 async function uploadFiles(node, files) {
@@ -251,7 +274,9 @@ async function readClipboardImageFiles() {
   let imageIndex = 0;
 
   for (const item of items) {
-    const imageType = item.types.find((type) => String(type).startsWith('image/'));
+    const imageType = item.types.find((type) =>
+      String(type).startsWith('image/'),
+    );
     if (!imageType) continue;
     const blob = await item.getType(imageType);
     const ext = imageType.split('/')[1] || 'png';
@@ -278,7 +303,7 @@ async function removeFile(node, name) {
     console.error('[AvataryLoadImageBatch] delete failed', err);
   }
   state.files = state.files.filter((file) => file !== name);
-  if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, name)) {
+  if (state.uploadedAt && Object.hasOwn(state.uploadedAt, name)) {
     delete state.uploadedAt[name];
   }
   syncUploadState(node);
@@ -290,7 +315,7 @@ function forgetMissingFile(node, name) {
   const state = getState(node);
   if (!state.files.includes(name)) return;
   state.files = state.files.filter((file) => file !== name);
-  if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, name)) {
+  if (state.uploadedAt && Object.hasOwn(state.uploadedAt, name)) {
     delete state.uploadedAt[name];
   }
   syncUploadState(node);
@@ -329,8 +354,10 @@ async function replaceFile(node, oldName) {
         }
       }
 
-      state.files = state.files.filter((file) => file !== oldName && file !== newName);
-      if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, oldName)) {
+      state.files = state.files.filter(
+        (file) => file !== oldName && file !== newName,
+      );
+      if (state.uploadedAt && Object.hasOwn(state.uploadedAt, oldName)) {
         delete state.uploadedAt[oldName];
       }
       state.uploadedAt[newName] = Date.now();
@@ -374,19 +401,27 @@ async function replaceFileFromClipboard(node, oldName) {
       try {
         await deleteFilesFromDisk([oldName]);
       } catch (err) {
-        console.error('[AvataryLoadImageBatch] clipboard replace delete failed', err);
+        console.error(
+          '[AvataryLoadImageBatch] clipboard replace delete failed',
+          err,
+        );
       }
     }
 
-    state.files = state.files.filter((file) => file !== oldName && file !== newName);
-    if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, oldName)) {
+    state.files = state.files.filter(
+      (file) => file !== oldName && file !== newName,
+    );
+    if (state.uploadedAt && Object.hasOwn(state.uploadedAt, oldName)) {
       delete state.uploadedAt[oldName];
     }
     state.uploadedAt[newName] = Date.now();
     state.files.unshift(newName);
     state.uploadDone = 1;
   } catch (err) {
-    console.error('[AvataryLoadImageBatch] clipboard replace upload failed', err);
+    console.error(
+      '[AvataryLoadImageBatch] clipboard replace upload failed',
+      err,
+    );
   } finally {
     state.isUploading = false;
     state.uploadDone = 0;
@@ -416,7 +451,8 @@ async function clearAll(node) {
 
 function applyGridColumns(list, count) {
   if (!list) return;
-  list.style.gridTemplateColumns = count === 1 ? '1fr' : 'repeat(2, minmax(0, 1fr))';
+  list.style.gridTemplateColumns =
+    count === 1 ? '1fr' : 'repeat(2, minmax(0, 1fr))';
 }
 
 function applyOverflowAfterFour(list, count) {
@@ -604,7 +640,7 @@ function renderPanel(node) {
 
       const replaceBtn = document.createElement('button');
       replaceBtn.className = 'avatary-lb-replace';
-      replaceBtn.textContent = '↻';
+      replaceBtn.innerHTML = '<i class="icon-[lucide--refresh-cw]"></i>';
       replaceBtn.title = 'Replace image';
       replaceBtn.disabled = state.isUploading;
       replaceBtn.onclick = async (e) => {
@@ -615,7 +651,8 @@ function renderPanel(node) {
 
       const pasteReplaceBtn = document.createElement('button');
       pasteReplaceBtn.className = 'avatary-lb-replace';
-      pasteReplaceBtn.textContent = '⎘';
+      pasteReplaceBtn.innerHTML =
+        '<i class="icon-[lucide--clipboard-paste]"></i>';
       pasteReplaceBtn.title = 'Paste and replace image';
       pasteReplaceBtn.disabled = state.isUploading;
       pasteReplaceBtn.onclick = async (e) => {
@@ -647,13 +684,20 @@ function renderPanel(node) {
       item.appendChild(thumbWrap);
       item.appendChild(meta);
       item.ondblclick = (e) => {
-        if (e.target === removeBtn || e.target === replaceBtn || e.target === pasteReplaceBtn) return;
+        if (
+          e.target === removeBtn ||
+          e.target === replaceBtn ||
+          e.target === pasteReplaceBtn
+        )
+          return;
         openViewer(img.src, name);
       };
       list.appendChild(item);
     }
     panel.appendChild(list);
-    requestAnimationFrame(() => applyOverflowAfterFour(list, state.files.length));
+    requestAnimationFrame(() =>
+      applyOverflowAfterFour(list, state.files.length),
+    );
   }
 
   syncUploadState(node);
@@ -690,7 +734,8 @@ app.registerExtension({
     const origRemoved = nodeType.prototype.onRemoved;
     nodeType.prototype.onRemoved = function (...args) {
       if (this._avataryLbPanel?.isConnected) this._avataryLbPanel.remove();
-      if (this.widgets) this.widgets = this.widgets.filter((w) => !w?._avataryLbPanelWidget);
+      if (this.widgets)
+        this.widgets = this.widgets.filter((w) => !w?._avataryLbPanelWidget);
       return origRemoved?.apply(this, args);
     };
   },
