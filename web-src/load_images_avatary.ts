@@ -239,6 +239,26 @@ async function handleUpload(node) {
   picker.click();
 }
 
+async function handlePaste(node) {
+  if (!navigator?.clipboard?.read) return;
+  const items = await navigator.clipboard.read();
+  const files = [];
+  let imageIndex = 0;
+
+  for (const item of items) {
+    const imageType = item.types.find((type) => String(type).startsWith('image/'));
+    if (!imageType) continue;
+    const blob = await item.getType(imageType);
+    const ext = imageType.split('/')[1] || 'png';
+    const fileName = `pasted_${Date.now()}_${imageIndex}.${ext}`;
+    files.push(new File([blob], fileName, { type: imageType }));
+    imageIndex += 1;
+  }
+
+  if (!files.length) return;
+  await uploadFiles(node, files);
+}
+
 async function removeFile(node, name) {
   const state = getState(node);
   if (state.isUploading) return;
@@ -458,6 +478,20 @@ function renderPanel(node) {
     }
   };
 
+  const pasteBtn = document.createElement('button');
+  pasteBtn.className = 'avatary-lb-btn secondary';
+  pasteBtn.textContent = 'Paste';
+  pasteBtn.title = 'Paste image from clipboard';
+  pasteBtn.disabled = state.isUploading;
+  pasteBtn.onclick = async () => {
+    if (state.isUploading) return;
+    try {
+      await handlePaste(node);
+    } catch (err) {
+      console.error('[AvataryLoadImageBatch] paste failed', err);
+    }
+  };
+
   const clearBtn = document.createElement('button');
   clearBtn.className = 'avatary-lb-btn secondary';
   clearBtn.textContent = 'Clear';
@@ -465,6 +499,7 @@ function renderPanel(node) {
   clearBtn.onclick = async () => clearAll(node);
 
   actions.appendChild(uploadBtn);
+  actions.appendChild(pasteBtn);
   actions.appendChild(clearBtn);
   panel.appendChild(actions);
 
