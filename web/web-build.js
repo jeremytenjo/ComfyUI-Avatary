@@ -4690,7 +4690,7 @@ function ensureStyles2() {
     }
     .avatary-lb-replace:hover { opacity: 1; background: rgba(30, 36, 46, 0.96); }
     .avatary-lb-replace i {
-      width: 14px;
+      width: 10px;
       height: 14px;
       font-size: 14px;
       display: inline-block;
@@ -4737,7 +4737,8 @@ function getState2(node) {
   }
   const state = node.properties[STATE_KEY4];
   if (!Array.isArray(state.files)) state.files = [];
-  if (!state.uploadedAt || typeof state.uploadedAt !== "object") state.uploadedAt = {};
+  if (!state.uploadedAt || typeof state.uploadedAt !== "object")
+    state.uploadedAt = {};
   if (!state.subfolder) state.subfolder = MANAGED_SUBFOLDER;
   if (typeof state.isUploading !== "boolean") state.isUploading = false;
   if (!Number.isFinite(state.uploadDone)) state.uploadDone = 0;
@@ -4759,15 +4760,25 @@ function syncUploadState(node) {
   const state = getState2(node);
   const hidden = getHiddenWidget(node);
   state.files = getFilesLatestFirst(state);
-  if (hidden) hidden.value = JSON.stringify({ subfolder: state.subfolder, files: state.files });
+  if (hidden)
+    hidden.value = JSON.stringify({
+      subfolder: state.subfolder,
+      files: state.files
+    });
 }
 function previewUrl(fileName, subfolder) {
-  const params = new URLSearchParams({ filename: fileName, type: "input", subfolder });
+  const params = new URLSearchParams({
+    filename: fileName,
+    type: "input",
+    subfolder
+  });
   return `/view?${params.toString()}`;
 }
 function ensurePanelWidget2(node) {
-  if (node._avataryLbPanel && node.widgets?.some((w) => w?._avataryLbPanelWidget)) return node._avataryLbPanel;
-  if (node.widgets) node.widgets = node.widgets.filter((w) => !w?._avataryLbPanelWidget);
+  if (node._avataryLbPanel && node.widgets?.some((w) => w?._avataryLbPanelWidget))
+    return node._avataryLbPanel;
+  if (node.widgets)
+    node.widgets = node.widgets.filter((w) => !w?._avataryLbPanelWidget);
   node._avataryLbPanel = null;
   const panel = document.createElement("div");
   panel.className = "avatary-lb-panel";
@@ -4803,7 +4814,8 @@ async function uploadSingle(file) {
   return await response.json();
 }
 async function deleteFilesFromDisk(files) {
-  if (!Array.isArray(files) || files.length === 0) return { deleted: [], errors: [] };
+  if (!Array.isArray(files) || files.length === 0)
+    return { deleted: [], errors: [] };
   const response = await fetch("/avatary/load-images/delete", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -4816,7 +4828,9 @@ async function deleteFilesFromDisk(files) {
   return await response.json();
 }
 function filterImageFiles(files) {
-  return Array.from(files || []).filter((file) => file?.type?.startsWith("image/"));
+  return Array.from(files || []).filter(
+    (file) => file?.type?.startsWith("image/")
+  );
 }
 async function uploadFiles(node, files) {
   const selectedFiles = filterImageFiles(files);
@@ -4865,7 +4879,9 @@ async function readClipboardImageFiles() {
   const files = [];
   let imageIndex = 0;
   for (const item of items) {
-    const imageType = item.types.find((type) => String(type).startsWith("image/"));
+    const imageType = item.types.find(
+      (type) => String(type).startsWith("image/")
+    );
     if (!imageType) continue;
     const blob = await item.getType(imageType);
     const ext = imageType.split("/")[1] || "png";
@@ -4889,7 +4905,7 @@ async function removeFile(node, name) {
     console.error("[AvataryLoadImageBatch] delete failed", err);
   }
   state.files = state.files.filter((file) => file !== name);
-  if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, name)) {
+  if (state.uploadedAt && Object.hasOwn(state.uploadedAt, name)) {
     delete state.uploadedAt[name];
   }
   syncUploadState(node);
@@ -4900,7 +4916,7 @@ function forgetMissingFile(node, name) {
   const state = getState2(node);
   if (!state.files.includes(name)) return;
   state.files = state.files.filter((file) => file !== name);
-  if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, name)) {
+  if (state.uploadedAt && Object.hasOwn(state.uploadedAt, name)) {
     delete state.uploadedAt[name];
   }
   syncUploadState(node);
@@ -4932,8 +4948,10 @@ async function replaceFile(node, oldName) {
           console.error("[AvataryLoadImageBatch] replace delete failed", err);
         }
       }
-      state.files = state.files.filter((file) => file !== oldName && file !== newName);
-      if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, oldName)) {
+      state.files = state.files.filter(
+        (file) => file !== oldName && file !== newName
+      );
+      if (state.uploadedAt && Object.hasOwn(state.uploadedAt, oldName)) {
         delete state.uploadedAt[oldName];
       }
       state.uploadedAt[newName] = Date.now();
@@ -4970,18 +4988,26 @@ async function replaceFileFromClipboard(node, oldName) {
       try {
         await deleteFilesFromDisk([oldName]);
       } catch (err) {
-        console.error("[AvataryLoadImageBatch] clipboard replace delete failed", err);
+        console.error(
+          "[AvataryLoadImageBatch] clipboard replace delete failed",
+          err
+        );
       }
     }
-    state.files = state.files.filter((file) => file !== oldName && file !== newName);
-    if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, oldName)) {
+    state.files = state.files.filter(
+      (file) => file !== oldName && file !== newName
+    );
+    if (state.uploadedAt && Object.hasOwn(state.uploadedAt, oldName)) {
       delete state.uploadedAt[oldName];
     }
     state.uploadedAt[newName] = Date.now();
     state.files.unshift(newName);
     state.uploadDone = 1;
   } catch (err) {
-    console.error("[AvataryLoadImageBatch] clipboard replace upload failed", err);
+    console.error(
+      "[AvataryLoadImageBatch] clipboard replace upload failed",
+      err
+    );
   } finally {
     state.isUploading = false;
     state.uploadDone = 0;
@@ -5202,19 +5228,22 @@ function renderPanel2(node) {
       meta.appendChild(label);
       meta.appendChild(removeBtn);
       thumbWrap.appendChild(img);
-      actionsOverlay.appendChild(replaceBtn);
       actionsOverlay.appendChild(pasteReplaceBtn);
+      actionsOverlay.appendChild(replaceBtn);
       thumbWrap.appendChild(actionsOverlay);
       item.appendChild(thumbWrap);
       item.appendChild(meta);
       item.ondblclick = (e) => {
-        if (e.target === removeBtn || e.target === replaceBtn || e.target === pasteReplaceBtn) return;
+        if (e.target === removeBtn || e.target === replaceBtn || e.target === pasteReplaceBtn)
+          return;
         openViewer(img.src, name);
       };
       list.appendChild(item);
     }
     panel.appendChild(list);
-    requestAnimationFrame(() => applyOverflowAfterFour(list, state.files.length));
+    requestAnimationFrame(
+      () => applyOverflowAfterFour(list, state.files.length)
+    );
   }
   syncUploadState(node);
   lockNodeSize(node);
@@ -5247,7 +5276,8 @@ app5.registerExtension({
     const origRemoved = nodeType.prototype.onRemoved;
     nodeType.prototype.onRemoved = function(...args) {
       if (this._avataryLbPanel?.isConnected) this._avataryLbPanel.remove();
-      if (this.widgets) this.widgets = this.widgets.filter((w) => !w?._avataryLbPanelWidget);
+      if (this.widgets)
+        this.widgets = this.widgets.filter((w) => !w?._avataryLbPanelWidget);
       return origRemoved?.apply(this, args);
     };
   },

@@ -678,8 +678,8 @@ function renderPanel(node) {
       meta.appendChild(label);
       meta.appendChild(removeBtn);
       thumbWrap.appendChild(img);
-      actionsOverlay.appendChild(replaceBtn);
       actionsOverlay.appendChild(pasteReplaceBtn);
+      actionsOverlay.appendChild(replaceBtn);
       thumbWrap.appendChild(actionsOverlay);
       item.appendChild(thumbWrap);
       item.appendChild(meta);
