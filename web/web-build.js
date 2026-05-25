@@ -3911,8 +3911,92 @@ app2.registerExtension({
   }
 });
 
-// web-src/switch/index.ts
+// web-src/prompt_list.ts
 import { app as app3 } from "/scripts/app.js";
+
+// web-src/components/textarea.ts
+function autosizeTextarea(textarea, { minHeight = 30 } = {}) {
+  if (!textarea) return;
+  textarea.style.overflowY = "hidden";
+  textarea.style.height = "auto";
+  textarea.style.height = `${Math.max(minHeight, textarea.scrollHeight)}px`;
+}
+function bindTextareaAutosize(textarea, { minHeight = 30 } = {}) {
+  if (!textarea || textarea.__avataryTextareaAutosizeBound) return;
+  textarea.__avataryTextareaAutosizeBound = true;
+  const apply = () => autosizeTextarea(textarea, { minHeight });
+  textarea.addEventListener("input", apply);
+  textarea.addEventListener("change", apply);
+  apply();
+}
+
+// web-src/prompt_list.ts
+var NODE_CLASS = "ComfyUI-Prompts";
+var PREFIX_WIDGET = "prompt_positive_prefix";
+function isTargetNodeDef3(nodeData) {
+  return String(nodeData?.name || "") === NODE_CLASS;
+}
+function isTargetNodeInstance3(node) {
+  const candidates = [node?.type, node?.comfyClass, node?.constructor?.type].map((v) => String(v || ""));
+  return candidates.includes(NODE_CLASS);
+}
+function findPrefixTextarea(node) {
+  const widget = (node.widgets || []).find((w) => w?.name === PREFIX_WIDGET);
+  if (!widget) return null;
+  const direct = widget.inputEl || widget.element || widget.el;
+  if (direct?.tagName === "TEXTAREA") return direct;
+  if (direct && typeof direct.querySelector === "function") {
+    const nested = direct.querySelector("textarea");
+    if (nested) return nested;
+  }
+  if (typeof widget.querySelector === "function") {
+    const nested = widget.querySelector("textarea");
+    if (nested) return nested;
+  }
+  return null;
+}
+function autosizePrefix(node) {
+  const textarea = findPrefixTextarea(node);
+  if (!textarea) return;
+  bindTextareaAutosize(textarea, { minHeight: 30 });
+  const apply = () => {
+    node.setSize([node.size[0], node.computeSize()[1]]);
+    app3.graph?.setDirtyCanvas?.(true, true);
+  };
+  if (!textarea.__avataryPromptPrefixResizeBound) {
+    textarea.__avataryPromptPrefixResizeBound = true;
+    textarea.addEventListener("input", apply);
+    textarea.addEventListener("change", apply);
+  }
+  apply();
+}
+app3.registerExtension({
+  name: "Avatary.PromptList.AutoHeight",
+  async beforeRegisterNodeDef(nodeType, nodeData) {
+    if (!isTargetNodeDef3(nodeData)) return;
+    const origCreated = nodeType.prototype.onNodeCreated;
+    nodeType.prototype.onNodeCreated = function(...args) {
+      const r = origCreated?.apply(this, args);
+      requestAnimationFrame(() => autosizePrefix(this));
+      setTimeout(() => autosizePrefix(this), 80);
+      return r;
+    };
+    const origConfigure = nodeType.prototype.onConfigure;
+    nodeType.prototype.onConfigure = function(...args) {
+      const r = origConfigure?.apply(this, args);
+      requestAnimationFrame(() => autosizePrefix(this));
+      return r;
+    };
+  },
+  loadedGraphNode(node) {
+    if (!isTargetNodeInstance3(node)) return;
+    requestAnimationFrame(() => autosizePrefix(node));
+    setTimeout(() => autosizePrefix(node), 80);
+  }
+});
+
+// web-src/switch/index.ts
+import { app as app4 } from "/scripts/app.js";
 
 // web-src/components/textfield.ts
 function createTextfield({
@@ -4027,7 +4111,7 @@ function createToggle({ active, disabled, title, onToggle }) {
 }
 
 // web-src/switch/index.ts
-var NODE_CLASS = "AvatarySwitch";
+var NODE_CLASS2 = "AvatarySwitch";
 var STATE_KEY3 = "switchState";
 var HIDDEN_INPUT_NAME = "SwitchState";
 var MAX_INPUTS = 32;
@@ -4155,12 +4239,12 @@ function forEachSwitchNode(fn) {
     const nodes = graph._nodes || graph.nodes || [];
     for (const n of nodes) {
       if (!n) continue;
-      if (n.comfyClass === NODE_CLASS || n.type === NODE_CLASS) fn(n);
+      if (n.comfyClass === NODE_CLASS2 || n.type === NODE_CLASS2) fn(n);
       const inner = n.subgraph || n.graph || n._graph;
       if (inner && inner !== graph) visit(inner);
     }
   };
-  visit(app3.graph);
+  visit(app4.graph);
 }
 function syncSwitchStateWidget(node) {
   const state = getState(node);
@@ -4231,7 +4315,7 @@ function syncUpstreamBypass(node, activeIdx) {
     if (!up) continue;
     up.mode = i + 1 === activeIdx ? 0 : 4;
   }
-  app3.graph?.setDirtyCanvas?.(true, true);
+  app4.graph?.setDirtyCanvas?.(true, true);
 }
 function getRows(node) {
   const state = getState(node);
@@ -4346,7 +4430,7 @@ function renderPanel(node) {
         const v = String(nextValue || "").trim();
         if (!v) delete state.labels[row.i];
         else state.labels[row.i] = v;
-        app3.graph?.setDirtyCanvas?.(true, true);
+        app4.graph?.setDirtyCanvas?.(true, true);
         renderPanel(node);
       }
     });
@@ -4359,7 +4443,7 @@ function renderPanel(node) {
         state.activeIndex = row.i;
         syncUpstreamBypass(node, row.i);
         syncSwitchStateWidget(node);
-        app3.graph?.setDirtyCanvas?.(true, true);
+        app4.graph?.setDirtyCanvas?.(true, true);
         renderPanel(node);
       }
     });
@@ -4419,12 +4503,12 @@ function refreshNode3(node) {
   node.size[0] = Math.max(node.size?.[0] || 0, DEFAULT_W);
   node.size[1] = Math.max(node.size?.[1] || 0, PANEL_HEIGHT + 90);
   node._avatarySwitchConnSig = connectionSignature(node);
-  app3.graph?.setDirtyCanvas?.(true, true);
+  app4.graph?.setDirtyCanvas?.(true, true);
 }
-app3.registerExtension({
+app4.registerExtension({
   name: "Avatary.Switch.Nodes2CustomPanel",
   async beforeRegisterNodeDef(nodeType, nodeData) {
-    if (nodeData.name !== NODE_CLASS) return;
+    if (nodeData.name !== NODE_CLASS2) return;
     const _origCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function(...args) {
       _origCreated?.apply(this, args);
@@ -4480,10 +4564,10 @@ app3.registerExtension({
     };
   }
 });
-if (app3?.loadGraphData && !app3._avatarySwitchLoadGraphWrapped) {
-  app3._avatarySwitchLoadGraphWrapped = true;
-  const _origLoadGraphData = app3.loadGraphData.bind(app3);
-  app3.loadGraphData = (...args) => {
+if (app4?.loadGraphData && !app4._avatarySwitchLoadGraphWrapped) {
+  app4._avatarySwitchLoadGraphWrapped = true;
+  const _origLoadGraphData = app4.loadGraphData.bind(app4);
+  app4.loadGraphData = (...args) => {
     const result = _origLoadGraphData(...args);
     Promise.resolve(result).finally(() => {
       setTimeout(() => {
@@ -4513,13 +4597,13 @@ function buildNodeIndex() {
     const nodes = graph._nodes || graph.nodes || [];
     for (const n of nodes) {
       if (!n) continue;
-      if (n.comfyClass === NODE_CLASS || n.type === NODE_CLASS)
+      if (n.comfyClass === NODE_CLASS2 || n.type === NODE_CLASS2)
         map.set(String(n.id), n);
       const inner = n.subgraph || n.graph || n._graph;
       if (inner && inner !== graph) visit(inner);
     }
   };
-  visit(app3.graph);
+  visit(app4.graph);
   return map;
 }
 function resolveNode(map, promptId) {
@@ -4529,15 +4613,15 @@ function resolveNode(map, promptId) {
   if (tail && map.has(tail)) return map.get(tail);
   return null;
 }
-var _origGraphToPrompt = app3.graphToPrompt.bind(app3);
-app3.graphToPrompt = async (...args) => {
+var _origGraphToPrompt = app4.graphToPrompt.bind(app4);
+app4.graphToPrompt = async (...args) => {
   const result = await _origGraphToPrompt(...args);
   const out = result?.output;
   if (!out) return result;
   let index = null;
   for (const id in out) {
     const entry = out[id];
-    if (!entry || entry.class_type !== NODE_CLASS) continue;
+    if (!entry || entry.class_type !== NODE_CLASS2) continue;
     if (!index) index = buildNodeIndex();
     const node = resolveNode(index, id);
     const state = node?.properties?.[STATE_KEY3];
@@ -4548,8 +4632,8 @@ app3.graphToPrompt = async (...args) => {
 };
 
 // web-src/load_images_avatary.ts
-import { app as app4 } from "/scripts/app.js";
-var NODE_CLASS2 = "AvataryLoadImageBatch";
+import { app as app5 } from "/scripts/app.js";
+var NODE_CLASS3 = "AvataryLoadImageBatch";
 var STATE_KEY4 = "avataryLoadImageBatch";
 var HIDDEN_INPUT_NAME2 = "UploadState";
 var MANAGED_SUBFOLDER = "avatary_load_image_batch";
@@ -4732,7 +4816,7 @@ async function uploadFiles(node, files) {
   state.uploadDone = 0;
   state.uploadTotal = selectedFiles.length;
   renderPanel2(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  app5.graph?.setDirtyCanvas?.(true, true);
   try {
     for (const file of selectedFiles) {
       const uploaded = await uploadSingle(file);
@@ -4752,7 +4836,7 @@ async function uploadFiles(node, files) {
   }
   syncUploadState(node);
   renderPanel2(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  app5.graph?.setDirtyCanvas?.(true, true);
 }
 async function handleUpload(node) {
   const picker = document.createElement("input");
@@ -4778,7 +4862,7 @@ async function removeFile(node, name) {
   }
   syncUploadState(node);
   renderPanel2(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  app5.graph?.setDirtyCanvas?.(true, true);
 }
 function forgetMissingFile(node, name) {
   const state = getState2(node);
@@ -4789,7 +4873,7 @@ function forgetMissingFile(node, name) {
   }
   syncUploadState(node);
   renderPanel2(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  app5.graph?.setDirtyCanvas?.(true, true);
 }
 async function replaceFile(node, oldName) {
   const state = getState2(node);
@@ -4805,7 +4889,7 @@ async function replaceFile(node, oldName) {
     state.uploadDone = 0;
     state.uploadTotal = 1;
     renderPanel2(node);
-    app4.graph?.setDirtyCanvas?.(true, true);
+    app5.graph?.setDirtyCanvas?.(true, true);
     try {
       const uploaded = await uploadSingle(picked[0]);
       const newName = uploaded?.name || uploaded?.filename || picked[0].name;
@@ -4832,7 +4916,7 @@ async function replaceFile(node, oldName) {
     }
     syncUploadState(node);
     renderPanel2(node);
-    app4.graph?.setDirtyCanvas?.(true, true);
+    app5.graph?.setDirtyCanvas?.(true, true);
   };
   picker.click();
 }
@@ -4849,7 +4933,7 @@ async function clearAll(node) {
   state.uploadedAt = {};
   syncUploadState(node);
   renderPanel2(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  app5.graph?.setDirtyCanvas?.(true, true);
 }
 function applyGridColumns(list, count) {
   if (!list) return;
@@ -5036,10 +5120,10 @@ function renderPanel2(node) {
   syncUploadState(node);
   lockNodeSize(node);
 }
-app4.registerExtension({
+app5.registerExtension({
   name: "Avatary.LoadImageBatch.MultiUploadPreview",
   async beforeRegisterNodeDef(nodeType, nodeData) {
-    if (nodeData.name !== NODE_CLASS2) return;
+    if (nodeData.name !== NODE_CLASS3) return;
     const origCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function(...args) {
       const r = origCreated?.apply(this, args);
@@ -5069,7 +5153,7 @@ app4.registerExtension({
     };
   },
   loadedGraphNode(node) {
-    const isTarget = node?.comfyClass === NODE_CLASS2 || node?.type === NODE_CLASS2 || node?.constructor?.type === NODE_CLASS2;
+    const isTarget = node?.comfyClass === NODE_CLASS3 || node?.type === NODE_CLASS3 || node?.constructor?.type === NODE_CLASS3;
     if (!isTarget) return;
     lockNodeSize(node);
     renderPanel2(node);
@@ -5082,14 +5166,14 @@ function buildNodeIndex2() {
     const nodes = graph._nodes || graph.nodes || [];
     for (const n of nodes) {
       if (!n) continue;
-      if (n.comfyClass === NODE_CLASS2 || n.type === NODE_CLASS2) {
+      if (n.comfyClass === NODE_CLASS3 || n.type === NODE_CLASS3) {
         map.set(String(n.id), n);
       }
       const inner = n.subgraph || n.graph || n._graph;
       if (inner && inner !== graph) visit(inner);
     }
   };
-  visit(app4.graph);
+  visit(app5.graph);
   return map;
 }
 function resolveNode2(map, promptId) {
@@ -5099,17 +5183,17 @@ function resolveNode2(map, promptId) {
   if (tail && map.has(tail)) return map.get(tail);
   return null;
 }
-if (!app4._avataryLoadImagesGraphToPromptWrapped) {
-  app4._avataryLoadImagesGraphToPromptWrapped = true;
-  const _origGraphToPrompt2 = app4.graphToPrompt.bind(app4);
-  app4.graphToPrompt = async (...args) => {
+if (!app5._avataryLoadImagesGraphToPromptWrapped) {
+  app5._avataryLoadImagesGraphToPromptWrapped = true;
+  const _origGraphToPrompt2 = app5.graphToPrompt.bind(app5);
+  app5.graphToPrompt = async (...args) => {
     const result = await _origGraphToPrompt2(...args);
     const out = result?.output;
     if (!out) return result;
     let index = null;
     for (const id in out) {
       const entry = out[id];
-      if (!entry || entry.class_type !== NODE_CLASS2) continue;
+      if (!entry || entry.class_type !== NODE_CLASS3) continue;
       if (!index) index = buildNodeIndex2();
       const node = resolveNode2(index, id);
       const state = node?.properties?.[STATE_KEY4] || {};
