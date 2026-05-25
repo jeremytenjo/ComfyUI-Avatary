@@ -40,6 +40,7 @@ def test_root_registry_contains_expected_nodes():
 
     expected_keys = {
         "ComfyUI-Group-Bypasser",
+        "AvataryFeatures",
         "NanoBananaProImage",
         "ComfyUI-Prompts",
         "SaveImageWithPromptToggle",

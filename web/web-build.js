@@ -3536,8 +3536,383 @@ app.registerExtension({
   }
 });
 
+// web-src/features_avatary.ts
+import { app as app2 } from "../../scripts/app.js";
+var NODE_NAME2 = "AvataryFeatures";
+var NODE_DISPLAY_NAME2 = "Features Avatary";
+var MODE_ACTIVE2 = LiteGraph.ALWAYS;
+var MODE_BYPASS2 = 4;
+var STATE_KEY2 = "features_avatary_states";
+var REFRESH_MS2 = 400;
+var ALPHABETICAL_COLLATOR2 = new Intl.Collator(void 0, {
+  sensitivity: "base",
+  numeric: true
+});
+function queueRefresh2(node, force = false) {
+  if (force) {
+    node.__featuresAvataryForceRefresh = true;
+  }
+  if (node.__featuresAvataryRefreshQueued) {
+    return;
+  }
+  node.__featuresAvataryRefreshQueued = true;
+  setTimeout(() => {
+    node.__featuresAvataryRefreshQueued = false;
+    refreshNode2(node);
+  }, 0);
+}
+function isTargetNodeDef2(nodeData) {
+  return String(nodeData?.name || "") === NODE_NAME2;
+}
+function isTargetNodeInstance2(node) {
+  const candidates = [
+    node?.type,
+    node?.comfyClass,
+    node?.constructor?.type,
+    node?.constructor?.title
+  ].map((value) => String(value || ""));
+  return candidates.includes(NODE_NAME2);
+}
+function syncNodeTitle2(node) {
+  if (!node) {
+    return;
+  }
+  const title = String(node.title || "").trim();
+  if (!title || title === NODE_NAME2) {
+    node.title = NODE_DISPLAY_NAME2;
+  }
+}
+function normalizeTitle2(title) {
+  return String(title || "").trim();
+}
+function keyForTitle2(title) {
+  return normalizeTitle2(title).toLowerCase();
+}
+function getCurrentGraph2(node) {
+  return node?.graph || app2?.canvas?.getCurrentGraph?.() || app2?.graph;
+}
+function getGroupBounds2(group) {
+  const bounds = group?._bounding || group?.bounding;
+  if (!Array.isArray(bounds) || bounds.length < 4) {
+    return null;
+  }
+  return bounds;
+}
+function collectNestedGraphs2(rootGraph) {
+  if (!rootGraph) {
+    return [];
+  }
+  const collected = [];
+  const stack = [rootGraph];
+  const seen = /* @__PURE__ */ new Set();
+  while (stack.length) {
+    const graph = stack.pop();
+    if (!graph || seen.has(graph)) {
+      continue;
+    }
+    seen.add(graph);
+    collected.push(graph);
+    for (const graphNode of graph._nodes || []) {
+      const childGraph = graphNode?.subgraph;
+      if (childGraph && !seen.has(childGraph)) {
+        stack.push(childGraph);
+      }
+    }
+  }
+  return collected;
+}
+function getGroupNodes2(group, graph) {
+  if (!group || !graph) {
+    return [];
+  }
+  try {
+    if (typeof group.recomputeInsideNodes === "function") {
+      group.recomputeInsideNodes();
+    }
+  } catch (_error) {
+  }
+  const fromChildren = Array.from(group?._children || []).filter(
+    (node) => typeof node?.id === "number"
+  );
+  if (fromChildren.length) {
+    return fromChildren;
+  }
+  const bounds = getGroupBounds2(group);
+  if (!bounds) {
+    return [];
+  }
+  const [gx, gy, gw, gh] = bounds;
+  return (graph._nodes || []).filter((graphNode) => {
+    if (typeof graphNode?.id !== "number") {
+      return false;
+    }
+    const pos = graphNode.pos || [0, 0];
+    const size = Array.isArray(graphNode.size) ? graphNode.size : [140, 80];
+    const centerX = Number(pos[0] || 0) + Number(size[0] || 0) * 0.5;
+    const centerY = Number(pos[1] || 0) + Number(size[1] || 0) * 0.5;
+    return centerX >= gx && centerX < gx + gw && centerY >= gy && centerY < gy + gh;
+  });
+}
+function collectGroupsByTitle2(node) {
+  const rootGraph = getCurrentGraph2(node);
+  if (!rootGraph) {
+    return [];
+  }
+  const deduped = /* @__PURE__ */ new Map();
+  for (const graph of collectNestedGraphs2(rootGraph)) {
+    const sourceGroups = Array.isArray(graph._groups) ? graph._groups : Array.isArray(graph.groups) ? graph.groups : [];
+    for (const group of sourceGroups) {
+      const title = normalizeTitle2(group?.title);
+      if (!title) {
+        continue;
+      }
+      const key = keyForTitle2(title);
+      if (!deduped.has(key)) {
+        deduped.set(key, {
+          key,
+          title,
+          groups: []
+        });
+      }
+      deduped.get(key).groups.push({ group, graph });
+    }
+  }
+  return Array.from(deduped.values()).sort(
+    (a, b) => ALPHABETICAL_COLLATOR2.compare(a.title, b.title) || a.key.localeCompare(b.key)
+  );
+}
+function ensureStateStore2(node) {
+  if (!node.properties || typeof node.properties !== "object") {
+    node.properties = {};
+  }
+  if (!node.properties[STATE_KEY2] || typeof node.properties[STATE_KEY2] !== "object") {
+    node.properties[STATE_KEY2] = {};
+  }
+  return node.properties[STATE_KEY2];
+}
+function findWidget2(node, name) {
+  return (node.widgets || []).find((widget) => widget.name === name);
+}
+function applyModeToGroupTitle2(_node, groupEntry, enabled) {
+  if (!groupEntry?.groups?.length) {
+    return;
+  }
+  const seenNodeIds = /* @__PURE__ */ new WeakMap();
+  const mode = enabled ? MODE_ACTIVE2 : MODE_BYPASS2;
+  for (const { group, graph } of groupEntry.groups) {
+    if (!group || !graph) {
+      continue;
+    }
+    let graphSeenIds = seenNodeIds.get(graph);
+    if (!graphSeenIds) {
+      graphSeenIds = /* @__PURE__ */ new Set();
+      seenNodeIds.set(graph, graphSeenIds);
+    }
+    for (const targetNode of getGroupNodes2(group, graph)) {
+      if (!(targetNode && Number.isInteger(targetNode.id) && targetNode.id >= 0)) {
+        continue;
+      }
+      if (graphSeenIds.has(targetNode.id)) {
+        continue;
+      }
+      graphSeenIds.add(targetNode.id);
+      targetNode.mode = mode;
+    }
+    graph.setDirtyCanvas?.(true, true);
+  }
+}
+function resolveEnabledFromGroups(_node, groupEntry) {
+  if (!groupEntry?.groups?.length) {
+    return false;
+  }
+  const seenNodeIds = /* @__PURE__ */ new WeakMap();
+  let allEnabled = true;
+  let anyFound = false;
+  for (const { group, graph } of groupEntry.groups) {
+    if (!group || !graph) {
+      continue;
+    }
+    let graphSeenIds = seenNodeIds.get(graph);
+    if (!graphSeenIds) {
+      graphSeenIds = /* @__PURE__ */ new Set();
+      seenNodeIds.set(graph, graphSeenIds);
+    }
+    for (const targetNode of getGroupNodes2(group, graph)) {
+      if (!(targetNode && Number.isInteger(targetNode.id) && targetNode.id >= 0)) {
+        continue;
+      }
+      if (graphSeenIds.has(targetNode.id)) {
+        continue;
+      }
+      graphSeenIds.add(targetNode.id);
+      anyFound = true;
+      if (targetNode.mode === MODE_BYPASS2) {
+        allEnabled = false;
+      }
+    }
+  }
+  if (!anyFound) {
+    return false;
+  }
+  return allEnabled;
+}
+function getEntryByKey2(node, key) {
+  return collectGroupsByTitle2(node).find((entry) => entry.key === key) || null;
+}
+function computeSignature2(groupsByTitle) {
+  return groupsByTitle.map((entry) => entry.key).join("|");
+}
+function hasStoredState2(stateStore, key) {
+  return Object.hasOwn(stateStore, key);
+}
+function resolveInitialEnabled(node, entry, stateStore) {
+  if (hasStoredState2(stateStore, entry.key)) {
+    return Boolean(stateStore[entry.key]);
+  }
+  return resolveEnabledFromGroups(node, entry);
+}
+function syncWidgets2(node, groupsByTitle, stateStore) {
+  for (const entry of groupsByTitle) {
+    const widgetName = entry.title;
+    const widget = findWidget2(node, widgetName);
+    if (!widget?.__featuresAvataryDynamic) {
+      continue;
+    }
+    const actualEnabled = resolveEnabledFromGroups(node, entry);
+    const targetEnabled = resolveInitialEnabled(node, entry, stateStore);
+    if (!hasStoredState2(stateStore, entry.key)) {
+      stateStore[entry.key] = targetEnabled;
+    }
+    if (actualEnabled !== targetEnabled) {
+      applyModeToGroupTitle2(node, entry, targetEnabled);
+    }
+    widget.value = targetEnabled;
+  }
+}
+function removeDynamicWidgets2(node) {
+  let index = 0;
+  while ((node.widgets || [])[index]) {
+    if (node.widgets[index]?.__featuresAvataryDynamic) {
+      node.removeWidget(index);
+      continue;
+    }
+    index += 1;
+  }
+}
+function forceFullRefresh2(node) {
+  queueRefresh2(node, true);
+}
+function refreshNode2(node) {
+  if (!isTargetNodeInstance2(node)) {
+    return;
+  }
+  const groupsByTitle = collectGroupsByTitle2(node);
+  const stateStore = ensureStateStore2(node);
+  const signature = computeSignature2(groupsByTitle);
+  const forceRefresh = Boolean(node.__featuresAvataryForceRefresh);
+  if (forceRefresh) {
+    node.__featuresAvataryForceRefresh = false;
+  }
+  const activeKeys = new Set(groupsByTitle.map((entry) => entry.key));
+  for (const key of Object.keys(stateStore)) {
+    if (!activeKeys.has(key)) {
+      delete stateStore[key];
+    }
+  }
+  if (!forceRefresh && node.__featuresAvatarySignature === signature) {
+    syncWidgets2(node, groupsByTitle, stateStore);
+    app2.graph?.setDirtyCanvas?.(true, true);
+    return;
+  }
+  node.__featuresAvatarySignature = signature;
+  removeDynamicWidgets2(node);
+  for (const entry of groupsByTitle) {
+    const widgetName = entry.title;
+    const isEnabled = resolveInitialEnabled(node, entry, stateStore);
+    stateStore[entry.key] = isEnabled;
+    const actualEnabled = resolveEnabledFromGroups(node, entry);
+    if (actualEnabled !== isEnabled) {
+      applyModeToGroupTitle2(node, entry, isEnabled);
+    }
+    const widget = node.addWidget("toggle", widgetName, isEnabled, (value) => {
+      const enabled = Boolean(value);
+      const latestEntry = getEntryByKey2(node, entry.key);
+      if (!latestEntry) {
+        return;
+      }
+      stateStore[entry.key] = enabled;
+      applyModeToGroupTitle2(node, latestEntry, enabled);
+    });
+    widget.__featuresAvataryDynamic = true;
+    widget.__featuresAvataryKey = entry.key;
+    widget.value = isEnabled;
+  }
+  node.setSize([node.size[0], node.computeSize()[1]]);
+  app2.graph?.setDirtyCanvas?.(true, true);
+}
+function bindNode2(node) {
+  if (node.__featuresAvataryBound) {
+    return;
+  }
+  node.__featuresAvataryBound = true;
+  syncNodeTitle2(node);
+  const originalOnRemoved = node.onRemoved;
+  node.onRemoved = function(...args) {
+    if (this.__featuresAvataryRefreshTimer) {
+      clearInterval(this.__featuresAvataryRefreshTimer);
+      this.__featuresAvataryRefreshTimer = null;
+    }
+    return originalOnRemoved?.apply(this, args);
+  };
+  node.__featuresAvataryRefreshTimer = setInterval(() => {
+    const graph = getCurrentGraph2(node);
+    if (!graph) {
+      return;
+    }
+    if (node.__featuresAvataryGraphRef !== graph) {
+      node.__featuresAvataryGraphRef = graph;
+      forceFullRefresh2(node);
+      return;
+    }
+    refreshNode2(node);
+  }, REFRESH_MS2);
+}
+app2.registerExtension({
+  name: "avatary.features",
+  async beforeRegisterNodeDef(nodeType, nodeData) {
+    if (!isTargetNodeDef2(nodeData)) {
+      return;
+    }
+    const originalOnNodeCreated = nodeType.prototype.onNodeCreated;
+    const originalOnConfigure = nodeType.prototype.onConfigure;
+    nodeType.prototype.onNodeCreated = function(...args) {
+      const result = originalOnNodeCreated?.apply(this, args);
+      bindNode2(this);
+      queueRefresh2(this, true);
+      setTimeout(() => queueRefresh2(this, true), 80);
+      setTimeout(() => queueRefresh2(this, true), 250);
+      return result;
+    };
+    nodeType.prototype.onConfigure = function(...args) {
+      const result = originalOnConfigure?.apply(this, args);
+      bindNode2(this);
+      queueRefresh2(this, true);
+      setTimeout(() => queueRefresh2(this, true), 80);
+      return result;
+    };
+  },
+  loadedGraphNode(node) {
+    if (!isTargetNodeInstance2(node)) {
+      return;
+    }
+    bindNode2(node);
+    queueRefresh2(node, true);
+    setTimeout(() => queueRefresh2(node, true), 80);
+  }
+});
+
 // web-src/switch/index.ts
-import { app as app2 } from "/scripts/app.js";
+import { app as app3 } from "/scripts/app.js";
 
 // web-src/components/textfield.ts
 function createTextfield({
@@ -3653,7 +4028,7 @@ function createToggle({ active, disabled, title, onToggle }) {
 
 // web-src/switch/index.ts
 var NODE_CLASS = "AvatarySwitch";
-var STATE_KEY2 = "switchState";
+var STATE_KEY3 = "switchState";
 var HIDDEN_INPUT_NAME = "SwitchState";
 var MAX_INPUTS = 32;
 var DEFAULT_W = 340;
@@ -3726,15 +4101,15 @@ function rowName(i) {
 }
 function getState(node) {
   if (!node.properties) node.properties = {};
-  if (!node.properties[STATE_KEY2]) {
-    node.properties[STATE_KEY2] = {
+  if (!node.properties[STATE_KEY3]) {
+    node.properties[STATE_KEY3] = {
       activeIndex: 1,
       activeLinkId: null,
       labels: {},
       visibleCount: 1
     };
   }
-  return node.properties[STATE_KEY2];
+  return node.properties[STATE_KEY3];
 }
 function _iterGraphLinks(graph) {
   const links = graph?.links;
@@ -3785,7 +4160,7 @@ function forEachSwitchNode(fn) {
       if (inner && inner !== graph) visit(inner);
     }
   };
-  visit(app2.graph);
+  visit(app3.graph);
 }
 function syncSwitchStateWidget(node) {
   const state = getState(node);
@@ -3856,7 +4231,7 @@ function syncUpstreamBypass(node, activeIdx) {
     if (!up) continue;
     up.mode = i + 1 === activeIdx ? 0 : 4;
   }
-  app2.graph?.setDirtyCanvas?.(true, true);
+  app3.graph?.setDirtyCanvas?.(true, true);
 }
 function getRows(node) {
   const state = getState(node);
@@ -3971,7 +4346,7 @@ function renderPanel(node) {
         const v = String(nextValue || "").trim();
         if (!v) delete state.labels[row.i];
         else state.labels[row.i] = v;
-        app2.graph?.setDirtyCanvas?.(true, true);
+        app3.graph?.setDirtyCanvas?.(true, true);
         renderPanel(node);
       }
     });
@@ -3984,7 +4359,7 @@ function renderPanel(node) {
         state.activeIndex = row.i;
         syncUpstreamBypass(node, row.i);
         syncSwitchStateWidget(node);
-        app2.graph?.setDirtyCanvas?.(true, true);
+        app3.graph?.setDirtyCanvas?.(true, true);
         renderPanel(node);
       }
     });
@@ -4037,32 +4412,32 @@ function clearLegacySwitchWidgets(node) {
     (w) => !w?._avatarySwitchLegacyWidget && !w?._avatarySwitchFallbackWidget
   );
 }
-function refreshNode2(node) {
+function refreshNode3(node) {
   normalizeInputs(node);
   clearLegacySwitchWidgets(node);
   renderPanel(node);
   node.size[0] = Math.max(node.size?.[0] || 0, DEFAULT_W);
   node.size[1] = Math.max(node.size?.[1] || 0, PANEL_HEIGHT + 90);
   node._avatarySwitchConnSig = connectionSignature(node);
-  app2.graph?.setDirtyCanvas?.(true, true);
+  app3.graph?.setDirtyCanvas?.(true, true);
 }
-app2.registerExtension({
+app3.registerExtension({
   name: "Avatary.Switch.Nodes2CustomPanel",
   async beforeRegisterNodeDef(nodeType, nodeData) {
     if (nodeData.name !== NODE_CLASS) return;
     const _origCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function(...args) {
       _origCreated?.apply(this, args);
-      refreshNode2(this);
+      refreshNode3(this);
       setTimeout(() => {
         try {
-          refreshNode2(this);
+          refreshNode3(this);
         } catch (_e) {
         }
       }, 0);
       setTimeout(() => {
         try {
-          refreshNode2(this);
+          refreshNode3(this);
         } catch (_e) {
         }
       }, 200);
@@ -4070,13 +4445,13 @@ app2.registerExtension({
     const _origConfigure = nodeType.prototype.onConfigure;
     nodeType.prototype.onConfigure = function(...args) {
       const r = _origConfigure?.apply(this, args);
-      refreshNode2(this);
+      refreshNode3(this);
       return r;
     };
     const _origConn = nodeType.prototype.onConnectionsChange;
     nodeType.prototype.onConnectionsChange = function(...args) {
       const r = _origConn?.apply(this, args);
-      refreshNode2(this);
+      refreshNode3(this);
       return r;
     };
     const _origDraw = nodeType.prototype.onDrawForeground;
@@ -4085,7 +4460,7 @@ app2.registerExtension({
       const sig = connectionSignature(this);
       if (sig !== this._avatarySwitchConnSig) {
         try {
-          refreshNode2(this);
+          refreshNode3(this);
         } catch (_e) {
         }
       }
@@ -4105,16 +4480,16 @@ app2.registerExtension({
     };
   }
 });
-if (app2?.loadGraphData && !app2._avatarySwitchLoadGraphWrapped) {
-  app2._avatarySwitchLoadGraphWrapped = true;
-  const _origLoadGraphData = app2.loadGraphData.bind(app2);
-  app2.loadGraphData = (...args) => {
+if (app3?.loadGraphData && !app3._avatarySwitchLoadGraphWrapped) {
+  app3._avatarySwitchLoadGraphWrapped = true;
+  const _origLoadGraphData = app3.loadGraphData.bind(app3);
+  app3.loadGraphData = (...args) => {
     const result = _origLoadGraphData(...args);
     Promise.resolve(result).finally(() => {
       setTimeout(() => {
         forEachSwitchNode((node) => {
           try {
-            refreshNode2(node);
+            refreshNode3(node);
           } catch (_e) {
           }
         });
@@ -4122,7 +4497,7 @@ if (app2?.loadGraphData && !app2._avatarySwitchLoadGraphWrapped) {
       setTimeout(() => {
         forEachSwitchNode((node) => {
           try {
-            refreshNode2(node);
+            refreshNode3(node);
           } catch (_e) {
           }
         });
@@ -4144,7 +4519,7 @@ function buildNodeIndex() {
       if (inner && inner !== graph) visit(inner);
     }
   };
-  visit(app2.graph);
+  visit(app3.graph);
   return map;
 }
 function resolveNode(map, promptId) {
@@ -4154,8 +4529,8 @@ function resolveNode(map, promptId) {
   if (tail && map.has(tail)) return map.get(tail);
   return null;
 }
-var _origGraphToPrompt = app2.graphToPrompt.bind(app2);
-app2.graphToPrompt = async (...args) => {
+var _origGraphToPrompt = app3.graphToPrompt.bind(app3);
+app3.graphToPrompt = async (...args) => {
   const result = await _origGraphToPrompt(...args);
   const out = result?.output;
   if (!out) return result;
@@ -4165,7 +4540,7 @@ app2.graphToPrompt = async (...args) => {
     if (!entry || entry.class_type !== NODE_CLASS) continue;
     if (!index) index = buildNodeIndex();
     const node = resolveNode(index, id);
-    const state = node?.properties?.[STATE_KEY2];
+    const state = node?.properties?.[STATE_KEY3];
     entry.inputs = entry.inputs || {};
     entry.inputs[HIDDEN_INPUT_NAME] = String(state?.activeIndex || 1);
   }
@@ -4173,9 +4548,9 @@ app2.graphToPrompt = async (...args) => {
 };
 
 // web-src/load_images_avatary.ts
-import { app as app3 } from "/scripts/app.js";
+import { app as app4 } from "/scripts/app.js";
 var NODE_CLASS2 = "AvataryLoadImageBatch";
-var STATE_KEY3 = "avataryLoadImageBatch";
+var STATE_KEY4 = "avataryLoadImageBatch";
 var HIDDEN_INPUT_NAME2 = "UploadState";
 var MANAGED_SUBFOLDER = "avatary_load_image_batch";
 var PANEL_HEIGHT2 = 260;
@@ -4255,8 +4630,8 @@ function ensureStyles2() {
 }
 function getState2(node) {
   if (!node.properties) node.properties = {};
-  if (!node.properties[STATE_KEY3]) {
-    node.properties[STATE_KEY3] = {
+  if (!node.properties[STATE_KEY4]) {
+    node.properties[STATE_KEY4] = {
       subfolder: MANAGED_SUBFOLDER,
       files: [],
       uploadedAt: {},
@@ -4265,7 +4640,7 @@ function getState2(node) {
       uploadTotal: 0
     };
   }
-  const state = node.properties[STATE_KEY3];
+  const state = node.properties[STATE_KEY4];
   if (!Array.isArray(state.files)) state.files = [];
   if (!state.uploadedAt || typeof state.uploadedAt !== "object") state.uploadedAt = {};
   if (!state.subfolder) state.subfolder = MANAGED_SUBFOLDER;
@@ -4357,7 +4732,7 @@ async function uploadFiles(node, files) {
   state.uploadDone = 0;
   state.uploadTotal = selectedFiles.length;
   renderPanel2(node);
-  app3.graph?.setDirtyCanvas?.(true, true);
+  app4.graph?.setDirtyCanvas?.(true, true);
   try {
     for (const file of selectedFiles) {
       const uploaded = await uploadSingle(file);
@@ -4377,7 +4752,7 @@ async function uploadFiles(node, files) {
   }
   syncUploadState(node);
   renderPanel2(node);
-  app3.graph?.setDirtyCanvas?.(true, true);
+  app4.graph?.setDirtyCanvas?.(true, true);
 }
 async function handleUpload(node) {
   const picker = document.createElement("input");
@@ -4403,7 +4778,7 @@ async function removeFile(node, name) {
   }
   syncUploadState(node);
   renderPanel2(node);
-  app3.graph?.setDirtyCanvas?.(true, true);
+  app4.graph?.setDirtyCanvas?.(true, true);
 }
 async function replaceFile(node, oldName) {
   const state = getState2(node);
@@ -4419,7 +4794,7 @@ async function replaceFile(node, oldName) {
     state.uploadDone = 0;
     state.uploadTotal = 1;
     renderPanel2(node);
-    app3.graph?.setDirtyCanvas?.(true, true);
+    app4.graph?.setDirtyCanvas?.(true, true);
     try {
       const uploaded = await uploadSingle(picked[0]);
       const newName = uploaded?.name || uploaded?.filename || picked[0].name;
@@ -4446,7 +4821,7 @@ async function replaceFile(node, oldName) {
     }
     syncUploadState(node);
     renderPanel2(node);
-    app3.graph?.setDirtyCanvas?.(true, true);
+    app4.graph?.setDirtyCanvas?.(true, true);
   };
   picker.click();
 }
@@ -4463,7 +4838,7 @@ async function clearAll(node) {
   state.uploadedAt = {};
   syncUploadState(node);
   renderPanel2(node);
-  app3.graph?.setDirtyCanvas?.(true, true);
+  app4.graph?.setDirtyCanvas?.(true, true);
 }
 function applyGridColumns(list, count) {
   if (!list) return;
@@ -4647,7 +5022,7 @@ function renderPanel2(node) {
   syncUploadState(node);
   lockNodeSize(node);
 }
-app3.registerExtension({
+app4.registerExtension({
   name: "Avatary.LoadImageBatch.MultiUploadPreview",
   async beforeRegisterNodeDef(nodeType, nodeData) {
     if (nodeData.name !== NODE_CLASS2) return;
@@ -4700,7 +5075,7 @@ function buildNodeIndex2() {
       if (inner && inner !== graph) visit(inner);
     }
   };
-  visit(app3.graph);
+  visit(app4.graph);
   return map;
 }
 function resolveNode2(map, promptId) {
@@ -4710,10 +5085,10 @@ function resolveNode2(map, promptId) {
   if (tail && map.has(tail)) return map.get(tail);
   return null;
 }
-if (!app3._avataryLoadImagesGraphToPromptWrapped) {
-  app3._avataryLoadImagesGraphToPromptWrapped = true;
-  const _origGraphToPrompt2 = app3.graphToPrompt.bind(app3);
-  app3.graphToPrompt = async (...args) => {
+if (!app4._avataryLoadImagesGraphToPromptWrapped) {
+  app4._avataryLoadImagesGraphToPromptWrapped = true;
+  const _origGraphToPrompt2 = app4.graphToPrompt.bind(app4);
+  app4.graphToPrompt = async (...args) => {
     const result = await _origGraphToPrompt2(...args);
     const out = result?.output;
     if (!out) return result;
@@ -4723,7 +5098,7 @@ if (!app3._avataryLoadImagesGraphToPromptWrapped) {
       if (!entry || entry.class_type !== NODE_CLASS2) continue;
       if (!index) index = buildNodeIndex2();
       const node = resolveNode2(index, id);
-      const state = node?.properties?.[STATE_KEY3] || {};
+      const state = node?.properties?.[STATE_KEY4] || {};
       entry.inputs = entry.inputs || {};
       entry.inputs[HIDDEN_INPUT_NAME2] = JSON.stringify({
         subfolder: state.subfolder || MANAGED_SUBFOLDER,

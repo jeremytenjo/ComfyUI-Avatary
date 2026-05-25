@@ -29,6 +29,10 @@ try:
     from .nodes.node_group_bypasser import (
         NODE_DISPLAY_NAME_MAPPINGS as _NAMES_GROUP_BYPASSER,
     )
+    from .nodes.node_features_avatary import NODE_CLASS_MAPPINGS as _MAPS_FEATURES_AVATARY
+    from .nodes.node_features_avatary import (
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES_FEATURES_AVATARY,
+    )
     from .nodes.node_nano_banana import NODE_CLASS_MAPPINGS as _MAPS_NANO_BANANA
     from .nodes.node_nano_banana import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_NANO_BANANA
     from .nodes.node_prompt_list import NODE_CLASS_MAPPINGS as _MAPS_PROMPT_LIST
@@ -45,6 +49,10 @@ except ImportError:
     from nodes.node_group_bypasser import NODE_CLASS_MAPPINGS as _MAPS_GROUP_BYPASSER
     from nodes.node_group_bypasser import (
         NODE_DISPLAY_NAME_MAPPINGS as _NAMES_GROUP_BYPASSER,
+    )
+    from nodes.node_features_avatary import NODE_CLASS_MAPPINGS as _MAPS_FEATURES_AVATARY
+    from nodes.node_features_avatary import (
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES_FEATURES_AVATARY,
     )
     from nodes.node_nano_banana import NODE_CLASS_MAPPINGS as _MAPS_NANO_BANANA
     from nodes.node_nano_banana import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_NANO_BANANA
@@ -77,6 +85,7 @@ def _merge_mapping_dicts(*mapping_dicts: dict[str, object]) -> dict[str, object]
 
 NODE_CLASS_MAPPINGS = _merge_mapping_dicts(
     _MAPS_GROUP_BYPASSER,
+    _MAPS_FEATURES_AVATARY,
     _MAPS_NANO_BANANA,
     _MAPS_PROMPT_LIST,
     _MAPS_SAVE_IMAGE_ULTRA,
@@ -86,6 +95,7 @@ NODE_CLASS_MAPPINGS = _merge_mapping_dicts(
 
 NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
     _NAMES_GROUP_BYPASSER,
+    _NAMES_FEATURES_AVATARY,
     _NAMES_NANO_BANANA,
     _NAMES_PROMPT_LIST,
     _NAMES_SAVE_IMAGE_ULTRA,
