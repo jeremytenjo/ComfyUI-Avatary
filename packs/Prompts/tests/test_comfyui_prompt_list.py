@@ -22,7 +22,7 @@ def test_input_types_contains_text_and_divider():
         "prompt_negative_default",
     ]
     assert optional["prompt_positive_prefix"][1]["default"] == ""
-    assert optional["prompt_positive_prefix"][1]["multiline"] is True
+    assert optional["prompt_positive_prefix"][1]["multiline"] is False
     assert optional["prompt_negative_default"][1]["default"] == ""
 
 

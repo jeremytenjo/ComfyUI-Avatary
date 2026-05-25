@@ -18,7 +18,7 @@ class ComfyUIPromptList:
             "optional": {
                 "prompt_positive_prefix": (
                     "STRING",
-                    {"default": "", "multiline": True},
+                    {"default": "", "multiline": False},
                 ),
                 "prompt_negative_default": (
                     "STRING",

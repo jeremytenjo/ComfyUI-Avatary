@@ -3917,18 +3917,11 @@ import { app as app3 } from "/scripts/app.js";
 // web-src/components/textarea.ts
 function autosizeTextarea(textarea, { minHeight = 30 } = {}) {
   if (!textarea) return;
-  if (Number.isFinite(minHeight) && minHeight > 0) {
-    textarea.rows = 1;
-    textarea.style.minHeight = `${minHeight}px`;
-  }
+  textarea.rows = 1;
   textarea.style.overflowY = "hidden";
   textarea.style.height = "auto";
-  const isEmpty = String(textarea.value || "").trim().length === 0;
-  if (isEmpty) {
-    textarea.style.height = `${minHeight}px`;
-    return;
-  }
-  textarea.style.height = `${Math.max(minHeight, textarea.scrollHeight)}px`;
+  const resolvedMinHeight = Number.isFinite(minHeight) && minHeight > 0 ? minHeight : 0;
+  textarea.style.height = `${Math.max(resolvedMinHeight, textarea.scrollHeight)}px`;
 }
 function bindTextareaAutosize(textarea, { minHeight = 30 } = {}) {
   if (!textarea || textarea.__avataryTextareaAutosizeBound) return;
@@ -3941,7 +3934,7 @@ function bindTextareaAutosize(textarea, { minHeight = 30 } = {}) {
 
 // web-src/prompt_list.ts
 var NODE_CLASS = "ComfyUI-Prompts";
-var PREFIX_WIDGET = "prompt_positive_prefix";
+var AUTO_SIZE_WIDGETS = ["text", "prompt_positive_prefix"];
 function isTargetNodeDef3(nodeData) {
   return String(nodeData?.name || "") === NODE_CLASS;
 }
@@ -3949,8 +3942,8 @@ function isTargetNodeInstance3(node) {
   const candidates = [node?.type, node?.comfyClass, node?.constructor?.type].map((v) => String(v || ""));
   return candidates.includes(NODE_CLASS);
 }
-function findPrefixTextarea(node) {
-  const widget = (node.widgets || []).find((w) => w?.name === PREFIX_WIDGET);
+function findWidgetTextarea(node, widgetName) {
+  const widget = (node.widgets || []).find((w) => w?.name === widgetName);
   if (!widget) return null;
   const direct = widget.inputEl || widget.element || widget.el;
   if (direct?.tagName === "TEXTAREA") return direct;
@@ -3964,20 +3957,25 @@ function findPrefixTextarea(node) {
   }
   return null;
 }
-function autosizePrefix(node) {
-  const textarea = findPrefixTextarea(node);
-  if (!textarea) return;
-  bindTextareaAutosize(textarea, { minHeight: 30 });
+function autosizePromptFields(node) {
+  let boundAny = false;
   const apply = () => {
     node.setSize([node.size[0], node.computeSize()[1]]);
     app3.graph?.setDirtyCanvas?.(true, true);
   };
-  if (!textarea.__avataryPromptPrefixResizeBound) {
-    textarea.__avataryPromptPrefixResizeBound = true;
-    textarea.addEventListener("input", apply);
-    textarea.addEventListener("change", apply);
+  for (const widgetName of AUTO_SIZE_WIDGETS) {
+    const textarea = findWidgetTextarea(node, widgetName);
+    if (!textarea) continue;
+    bindTextareaAutosize(textarea, { minHeight: 30 });
+    const bindKey = `__avataryPromptResizeBound_${widgetName}`;
+    if (!textarea[bindKey]) {
+      textarea[bindKey] = true;
+      textarea.addEventListener("input", apply);
+      textarea.addEventListener("change", apply);
+    }
+    boundAny = true;
   }
-  apply();
+  if (boundAny) apply();
 }
 app3.registerExtension({
   name: "Avatary.PromptList.AutoHeight",
@@ -3986,21 +3984,21 @@ app3.registerExtension({
     const origCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function(...args) {
       const r = origCreated?.apply(this, args);
-      requestAnimationFrame(() => autosizePrefix(this));
-      setTimeout(() => autosizePrefix(this), 80);
+      requestAnimationFrame(() => autosizePromptFields(this));
+      setTimeout(() => autosizePromptFields(this), 80);
       return r;
     };
     const origConfigure = nodeType.prototype.onConfigure;
     nodeType.prototype.onConfigure = function(...args) {
       const r = origConfigure?.apply(this, args);
-      requestAnimationFrame(() => autosizePrefix(this));
+      requestAnimationFrame(() => autosizePromptFields(this));
       return r;
     };
   },
   loadedGraphNode(node) {
     if (!isTargetNodeInstance3(node)) return;
-    requestAnimationFrame(() => autosizePrefix(node));
-    setTimeout(() => autosizePrefix(node), 80);
+    requestAnimationFrame(() => autosizePromptFields(node));
+    setTimeout(() => autosizePromptFields(node), 80);
   }
 });
 
