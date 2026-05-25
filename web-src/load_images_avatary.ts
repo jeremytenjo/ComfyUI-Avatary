@@ -256,6 +256,18 @@ async function removeFile(node, name) {
   app.graph?.setDirtyCanvas?.(true, true);
 }
 
+function forgetMissingFile(node, name) {
+  const state = getState(node);
+  if (!state.files.includes(name)) return;
+  state.files = state.files.filter((file) => file !== name);
+  if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, name)) {
+    delete state.uploadedAt[name];
+  }
+  syncUploadState(node);
+  renderPanel(node);
+  app.graph?.setDirtyCanvas?.(true, true);
+}
+
 async function replaceFile(node, oldName) {
   const state = getState(node);
   if (state.isUploading) return;
@@ -486,6 +498,10 @@ function renderPanel(node) {
       img.src = previewUrl(name, state.subfolder);
       img.alt = name;
       img.onload = () => applyOverflowAfterFour(list, state.files.length);
+      img.onerror = () => {
+        // Source file is missing/unreadable (e.g. new pod with empty disk): drop stale entry.
+        forgetMissingFile(node, name);
+      };
       img.ondblclick = (e) => {
         e.preventDefault();
         e.stopPropagation();

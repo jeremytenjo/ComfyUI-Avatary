@@ -4780,6 +4780,17 @@ async function removeFile(node, name) {
   renderPanel2(node);
   app4.graph?.setDirtyCanvas?.(true, true);
 }
+function forgetMissingFile(node, name) {
+  const state = getState2(node);
+  if (!state.files.includes(name)) return;
+  state.files = state.files.filter((file) => file !== name);
+  if (state.uploadedAt && Object.prototype.hasOwnProperty.call(state.uploadedAt, name)) {
+    delete state.uploadedAt[name];
+  }
+  syncUploadState(node);
+  renderPanel2(node);
+  app4.graph?.setDirtyCanvas?.(true, true);
+}
 async function replaceFile(node, oldName) {
   const state = getState2(node);
   if (state.isUploading) return;
@@ -4978,6 +4989,9 @@ function renderPanel2(node) {
       img.src = previewUrl(name, state.subfolder);
       img.alt = name;
       img.onload = () => applyOverflowAfterFour(list, state.files.length);
+      img.onerror = () => {
+        forgetMissingFile(node, name);
+      };
       img.ondblclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
