@@ -4659,6 +4659,19 @@ function ensureStyles2() {
       border-radius: 10px;
     }
     .avatary-lb-actions { display:flex; gap:8px; }
+    .avatary-lb-actions.path-mode { justify-content:flex-end; }
+    .avatary-lb-path-wrap { display:flex; gap:8px; width:100%; }
+    .avatary-lb-path-input {
+      flex:1;
+      min-width:0;
+      min-height:30px;
+      border-radius:10px;
+      border:1px solid var(--border-color,#434958);
+      background:var(--comfy-input-bg,#232831);
+      color:var(--input-text,#e6e9ef);
+      padding:0 10px;
+      outline:none;
+    }
     .avatary-lb-btn { flex:1; min-height:30px; border-radius:10px; border:1px solid var(--border-color,#434958); background:var(--comfy-input-bg,#232831); color:var(--input-text,#e6e9ef); cursor:pointer; }
     .avatary-lb-btn.secondary { flex:0 0 auto; padding:0 10px; }
     .avatary-lb-btn i {
@@ -4667,6 +4680,14 @@ function ensureStyles2() {
       font-size: 14px;
       display: inline-block;
       vertical-align: middle;
+    }
+    .avatary-lb-btn.mode {
+      flex:0 0 auto;
+      width:36px;
+      padding:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
     .avatary-lb-list { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; overflow:auto; padding-right:2px; flex:1 1 auto; min-height:0; align-content:start; }
     .avatary-lb-item { border:1px solid var(--border-color,#434958); border-radius:10px; padding:6px; background:var(--comfy-menu-bg,#16191f); display:flex; flex-direction:column; gap:4px; }
@@ -4739,7 +4760,12 @@ function getState2(node) {
       uploadedAt: {},
       isUploading: false,
       uploadDone: 0,
-      uploadTotal: 0
+      uploadTotal: 0,
+      mode: "upload",
+      folderPath: "",
+      sourceDir: "",
+      previewKind: "managed",
+      previewSubfolder: MANAGED_SUBFOLDER
     };
   }
   const state = node.properties[STATE_KEY4];
@@ -4750,6 +4776,13 @@ function getState2(node) {
   if (typeof state.isUploading !== "boolean") state.isUploading = false;
   if (!Number.isFinite(state.uploadDone)) state.uploadDone = 0;
   if (!Number.isFinite(state.uploadTotal)) state.uploadTotal = 0;
+  if (state.mode !== "upload" && state.mode !== "path") state.mode = "upload";
+  if (typeof state.folderPath !== "string") state.folderPath = "";
+  if (typeof state.sourceDir !== "string") state.sourceDir = "";
+  if (state.previewKind !== "managed" && state.previewKind !== "input" && state.previewKind !== "folder") {
+    state.previewKind = "managed";
+  }
+  if (typeof state.previewSubfolder !== "string") state.previewSubfolder = MANAGED_SUBFOLDER;
   return state;
 }
 function getFilesLatestFirst(state) {
@@ -4770,16 +4803,33 @@ function syncUploadState(node) {
   if (hidden)
     hidden.value = JSON.stringify({
       subfolder: state.subfolder,
-      files: state.files
+      files: state.files,
+      mode: state.mode,
+      folder_path: state.folderPath,
+      source_dir: state.sourceDir
     });
 }
-function previewUrl(fileName, subfolder) {
+function managedPreviewUrl(fileName, subfolder) {
   const params = new URLSearchParams({
     filename: fileName,
     type: "input",
     subfolder
   });
   return `/view?${params.toString()}`;
+}
+function previewUrl(node, fileName) {
+  const state = getState2(node);
+  if (state.previewKind === "input") {
+    return managedPreviewUrl(fileName, state.previewSubfolder || "");
+  }
+  if (state.previewKind === "folder") {
+    const params = new URLSearchParams({
+      filename: fileName,
+      folder_path: state.sourceDir || ""
+    });
+    return `/avatary/load-images/preview?${params.toString()}`;
+  }
+  return managedPreviewUrl(fileName, state.subfolder);
 }
 function ensurePanelWidget2(node) {
   if (node._avataryLbPanel && node.widgets?.some((w) => w?._avataryLbPanelWidget))
@@ -4844,6 +4894,11 @@ async function uploadFiles(node, files) {
   if (!selectedFiles.length) return;
   const state = getState2(node);
   if (state.isUploading) return;
+  state.mode = "upload";
+  state.sourceDir = "";
+  state.folderPath = "";
+  state.previewKind = "managed";
+  state.previewSubfolder = state.subfolder || MANAGED_SUBFOLDER;
   state.isUploading = true;
   state.uploadDone = 0;
   state.uploadTotal = selectedFiles.length;
@@ -5159,12 +5214,60 @@ function renderPanel2(node) {
   const clearBtn = document.createElement("button");
   clearBtn.className = "avatary-lb-btn secondary";
   clearBtn.textContent = "Clear";
-  clearBtn.disabled = state.files.length === 0 || state.isUploading;
-  clearBtn.onclick = async () => clearAll(node);
-  actions.appendChild(uploadBtn);
-  actions.appendChild(pasteBtn);
-  actions.appendChild(clearBtn);
-  panel.appendChild(actions);
+  clearBtn.disabled = (state.mode === "upload" ? state.files.length === 0 : String(state.folderPath || "").trim().length === 0) || state.isUploading;
+  clearBtn.onclick = async () => {
+    if (state.mode === "path") {
+      state.folderPath = "";
+      syncUploadState(node);
+      renderPanel2(node);
+      app5.graph?.setDirtyCanvas?.(true, true);
+      return;
+    }
+    await clearAll(node);
+  };
+  const modeBtn = document.createElement("button");
+  modeBtn.className = "avatary-lb-btn mode";
+  modeBtn.title = state.mode === "upload" ? "Switch to folder path mode" : "Switch to upload mode";
+  modeBtn.innerHTML = state.mode === "upload" ? '<i class="icon-[lucide--folder-search]"></i>' : '<i class="icon-[lucide--image]"></i>';
+  modeBtn.disabled = state.isUploading;
+  modeBtn.onclick = () => {
+    if (state.isUploading) return;
+    state.mode = state.mode === "upload" ? "path" : "upload";
+    syncUploadState(node);
+    renderPanel2(node);
+  };
+  if (state.mode === "upload") {
+    actions.appendChild(uploadBtn);
+    actions.appendChild(pasteBtn);
+    actions.appendChild(clearBtn);
+    actions.appendChild(modeBtn);
+    panel.appendChild(actions);
+  } else {
+    actions.classList.add("path-mode");
+    actions.appendChild(modeBtn);
+    panel.appendChild(actions);
+    const pathWrap = document.createElement("div");
+    pathWrap.className = "avatary-lb-path-wrap";
+    const pathInput = document.createElement("input");
+    pathInput.className = "avatary-lb-path-input";
+    pathInput.type = "text";
+    pathInput.placeholder = "Path under ComfyUI root (e.g. input/my-folder)";
+    pathInput.value = state.folderPath || "";
+    pathInput.disabled = state.isUploading;
+    pathInput.oninput = () => {
+      state.folderPath = pathInput.value;
+      syncUploadState(node);
+      app5.graph?.setDirtyCanvas?.(true, true);
+    };
+    pathWrap.appendChild(pathInput);
+    panel.appendChild(pathWrap);
+    const note = document.createElement("div");
+    note.className = "avatary-lb-empty";
+    note.textContent = "Path mode: images will be loaded from this folder when the workflow runs.";
+    panel.appendChild(note);
+    lockNodeSize(node);
+    return;
+  }
   if (state.isUploading) {
     const loading = document.createElement("div");
     loading.className = "avatary-lb-empty";
@@ -5188,7 +5291,7 @@ function renderPanel2(node) {
       const img = document.createElement("img");
       img.className = "avatary-lb-thumb";
       img.loading = "lazy";
-      img.src = previewUrl(name, state.subfolder);
+      img.src = previewUrl(node, name);
       img.alt = name;
       img.onload = () => applyOverflowAfterFour(list, state.files.length);
       img.onerror = () => {
@@ -5336,7 +5439,10 @@ if (!app5._avataryLoadImagesGraphToPromptWrapped) {
       entry.inputs = entry.inputs || {};
       entry.inputs[HIDDEN_INPUT_NAME2] = JSON.stringify({
         subfolder: state.subfolder || MANAGED_SUBFOLDER,
-        files: Array.isArray(state.files) ? state.files : []
+        files: Array.isArray(state.files) ? state.files : [],
+        mode: state.mode === "path" ? "path" : "upload",
+        folder_path: String(state.folderPath || ""),
+        source_dir: String(state.sourceDir || "")
       });
     }
     return result;

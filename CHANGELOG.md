@@ -17,6 +17,10 @@ All notable changes to internal packs are documented in this file.
   - Broken/missing images are automatically removed from node state instead of showing broken tiles.
   - Filename/Remove row is pinned to the bottom of each card.
   - Thumbnails preserve aspect ratio (no stretching).
+- Added `Load Images Avatary` folder-path mode with a single mode-toggle icon:
+  - Path mode hides the image grid and shows a single path textfield.
+  - Uses images from that folder path when the workflow runs (newest-first by mtime).
+  - Restricts folder paths to ComfyUI root.
 
 ### 2026-05-24
 

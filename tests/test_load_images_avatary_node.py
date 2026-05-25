@@ -1,4 +1,7 @@
 import importlib.util
+import json
+import os
+import time
 from pathlib import Path
 
 import pytest
@@ -68,3 +71,38 @@ def test_no_valid_files_raises(tmp_path: Path, monkeypatch):
     state = '{"subfolder":"avatary_load_image_batch","files":["readme.md"]}'
     with pytest.raises(FileNotFoundError):
         node.load_images(state)
+
+
+def test_path_mode_loads_newest_first(tmp_path: Path, monkeypatch):
+    comfy_root = tmp_path / "ComfyUI"
+    target = comfy_root / "input" / "path_mode_set"
+    target.mkdir(parents=True, exist_ok=True)
+    older = target / "a.png"
+    newer = target / "b.jpg"
+    _make_image(older, (10, 10, 10))
+    _make_image(newer, (20, 20, 20))
+    now = time.time()
+    os.utime(older, (now - 60, now - 60))
+    os.utime(newer, (now - 10, now - 10))
+
+    monkeypatch.setattr(MODULE.folder_paths, "base_path", str(comfy_root))
+
+    node = AvataryLoadImageBatch()
+    state = json.dumps({"mode": "path", "folder_path": str(target)})
+    source_dir, files = node._resolve_upload_files(state)
+    assert Path(source_dir) == target
+    assert files == ["b.jpg", "a.png"]
+
+
+def test_path_mode_rejects_outside_comfy_root(tmp_path: Path, monkeypatch):
+    comfy_root = tmp_path / "ComfyUI"
+    comfy_root.mkdir(parents=True, exist_ok=True)
+    outside = tmp_path / "outside_folder"
+    outside.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setattr(MODULE.folder_paths, "base_path", str(comfy_root))
+
+    node = AvataryLoadImageBatch()
+    state = json.dumps({"mode": "path", "folder_path": str(outside)})
+    with pytest.raises(FileNotFoundError):
+        node._resolve_upload_files(state)

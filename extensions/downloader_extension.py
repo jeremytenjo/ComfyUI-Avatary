@@ -158,6 +158,8 @@ def _resolve_managed_avatary_upload_path(filename: str) -> str:
     return target
 
 
+
+
 def _filename_from_url(download_url: str) -> str:
     parsed = urllib.parse.urlparse(download_url)
     inferred = Path(parsed.path).name

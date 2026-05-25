@@ -40,6 +40,7 @@ def test_safe_path_from_root_blocks_escape(tmp_path: Path):
         dtd._safe_path_from_root(str(tmp_path), "../outside.txt")
 
 
+
 def test_prepare_download_request_allows_comfy_root_subfolders_and_localhost(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
