@@ -6,6 +6,7 @@
   const ADVANCED_OPEN_KEY = "download-to-directory-advanced-open-v1";
   const HISTORY_KEY = "download-to-directory-history-v1";
   const HF_TOKEN_KEY = "download-to-directory-hf-token-v1";
+  const DEFAULT_DOWNLOAD_ROOT = "models/loras";
   const MAX_RECENT_FOLDERS = 8;
   const MAX_HISTORY_ITEMS = 100;
   const HOT_RELOAD_POLL_MS = 800;
@@ -1602,7 +1603,16 @@
         (opt) => opt.value === previousValue
       );
       if (hasPrevious) select.value = previousValue;
+      return;
     }
+    const hasDefault = Array.from(select.options).some(
+      (opt) => opt.value === DEFAULT_DOWNLOAD_ROOT
+    );
+    if (hasDefault) {
+      select.value = DEFAULT_DOWNLOAD_ROOT;
+      return;
+    }
+    if (select.options.length > 0) select.value = select.options[0].value;
   }
   function formatBytes(bytes) {
     const value = Number(bytes || 0);
