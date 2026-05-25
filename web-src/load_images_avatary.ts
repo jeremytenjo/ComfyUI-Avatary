@@ -59,7 +59,7 @@ function ensureStyles() {
     }
     .avatary-lb-replace:hover { opacity: 1; background: rgba(30, 36, 46, 0.96); }
     .avatary-lb-replace i {
-      width: 14px;
+      width: 10px;
       height: 14px;
       font-size: 14px;
       display: inline-block;
