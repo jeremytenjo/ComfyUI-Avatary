@@ -3,6 +3,5 @@
 import "./download_to_directory.js";
 import "./group_bypasser.js";
 import "./features_avatary.js";
-import "./prompt_list.js";
 import "./switch/index.js";
 import "./load_images_avatary.js";
