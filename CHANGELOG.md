@@ -4,6 +4,13 @@ All notable changes to internal packs are documented in this file.
 
 ## Avatary Core
 
+### 2026-05-27
+
+- Enhanced `Load Images Avatary` fullscreen preview with an in-view compare workflow:
+  - Added a center-right Compare/Paste button in fullscreen preview.
+  - Clicking the button pastes a clipboard image and displays it side-by-side with the current fullscreen image.
+  - Updated the compare button placement to stay `20px` from the displayed image edge for tighter alignment.
+
 ### 2026-05-25
 
 - Added new `Features Avatary` node with inverted toggle semantics (`Enabled` = not bypassed, `Disabled` = bypassed) and no hardcoded group names.
