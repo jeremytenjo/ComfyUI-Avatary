@@ -322,6 +322,102 @@ function filterImageFiles(files) {
   );
 }
 
+function uniqueStrings(values) {
+  return Array.from(
+    new Set(
+      (values || [])
+        .map((value) => String(value || '').trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function extractUrlsFromText(payload) {
+  if (!payload) return [];
+  const text = String(payload);
+  const matches = text.match(/https?:\/\/[^\s"')<>]+|\/[^\s"')<>]+/g) || [];
+  return uniqueStrings(matches);
+}
+
+function resolveDraggedUrl(rawUrl) {
+  const value = String(rawUrl || '').trim();
+  if (!value) return null;
+  try {
+    return new URL(value, window.location.origin);
+  } catch {
+    return null;
+  }
+}
+
+function inferFileNameFromUrl(url, index) {
+  const fallback = `dropped_${Date.now()}_${index}.png`;
+  const fileNameParam = url.searchParams.get('filename');
+  if (fileNameParam) {
+    const fromParam = decodeURIComponent(fileNameParam).split('/').pop();
+    if (fromParam) return fromParam;
+  }
+  const fromPath = decodeURIComponent(url.pathname || '').split('/').pop();
+  if (fromPath) return fromPath;
+  return fallback;
+}
+
+async function fetchDraggedAssetFiles(event) {
+  const transfer = event?.dataTransfer;
+  if (!transfer) return [];
+
+  const directFiles = filterImageFiles(transfer.files);
+  if (directFiles.length) return directFiles;
+
+  const rawPayloads = [];
+  try {
+    for (const item of Array.from(transfer.items || [])) {
+      if (item?.kind !== 'string') continue;
+      const payload = await new Promise((resolve) => {
+        try {
+          item.getAsString((value) => resolve(value || ''));
+        } catch {
+          resolve('');
+        }
+      });
+      if (payload) rawPayloads.push(payload);
+    }
+  } catch {
+    // Ignore and continue with remaining fallback paths.
+  }
+
+  for (const type of ['text/uri-list', 'text/plain']) {
+    try {
+      const payload = transfer.getData(type);
+      if (payload) rawPayloads.push(payload);
+    } catch {
+      // Ignore unsupported transfer type lookups.
+    }
+  }
+
+  const draggedUrls = uniqueStrings(
+    rawPayloads.flatMap((payload) => extractUrlsFromText(payload)),
+  )
+    .map((url) => resolveDraggedUrl(url))
+    .filter((url) => url && url.origin === window.location.origin);
+
+  const files = [];
+  for (let i = 0; i < draggedUrls.length; i += 1) {
+    const url = draggedUrls[i];
+    try {
+      const response = await fetch(url.toString(), { credentials: 'same-origin' });
+      if (!response.ok) continue;
+      const blob = await response.blob();
+      if (!String(blob?.type || '').startsWith('image/')) continue;
+      const name = inferFileNameFromUrl(url, i);
+      files.push(new File([blob], name, { type: blob.type || 'image/png' }));
+    } catch {
+      // Skip inaccessible or invalid dragged URLs.
+    }
+  }
+
+  return files;
+}
+
 async function uploadFiles(node, files) {
   const selectedFiles = filterImageFiles(files);
   if (!selectedFiles.length) return;
@@ -713,7 +809,7 @@ function renderPanel(node) {
     e.preventDefault();
     e.stopPropagation();
     setDragHover(false);
-    const droppedFiles = e?.dataTransfer?.files;
+    const droppedFiles = await fetchDraggedAssetFiles(e);
     if (!droppedFiles?.length) return;
     try {
       await uploadFiles(node, droppedFiles);
