@@ -4700,6 +4700,15 @@ function ensureStyles2() {
       padding: 16px;
       box-sizing: border-box;
     }
+    .avatary-lb-viewer-content {
+      width: min(96vw, 1800px);
+      height: 96vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: default;
+    }
     .avatary-lb-viewer img {
       max-width: min(96vw, 1800px);
       max-height: 96vh;
@@ -4708,6 +4717,42 @@ function ensureStyles2() {
       object-fit: contain;
       border-radius: 10px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+    .avatary-lb-viewer-content.compare .avatary-lb-viewer-pane {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .avatary-lb-viewer-content.compare .avatary-lb-viewer-pane img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+    .avatary-lb-compare-btn {
+      position: absolute;
+      right: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 1px solid var(--border-color,#434958);
+      background: rgba(20, 24, 31, 0.92);
+      color: var(--input-text,#e6e9ef);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+    .avatary-lb-compare-btn:hover { background: rgba(30, 36, 46, 0.98); }
+    .avatary-lb-compare-btn i {
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+      display: inline-block;
     }
   `;
   document.head.appendChild(style);
@@ -5094,19 +5139,70 @@ function openViewer(src, alt = "") {
   const overlay = document.createElement("div");
   overlay.id = VIEWER_ID;
   overlay.className = "avatary-lb-viewer";
-  const img = document.createElement("img");
-  img.src = src;
-  img.alt = alt;
+  const content = document.createElement("div");
+  content.className = "avatary-lb-viewer-content";
+  const basePane = document.createElement("div");
+  basePane.className = "avatary-lb-viewer-pane";
+  const baseImg = document.createElement("img");
+  baseImg.src = src;
+  baseImg.alt = alt;
+  basePane.appendChild(baseImg);
+  content.appendChild(basePane);
+  const compareBtn = document.createElement("button");
+  compareBtn.className = "avatary-lb-compare-btn";
+  compareBtn.innerHTML = '<i class="icon-[lucide--clipboard-paste]"></i>';
+  compareBtn.title = "Paste image to compare";
+  compareBtn.onclick = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const files = await readClipboardImageFiles();
+      if (!files.length) return;
+      const existing = content.querySelector(
+        '[data-avatary-compare="true"]'
+      );
+      if (existing) existing.remove();
+      const objectUrl = URL.createObjectURL(files[0]);
+      const comparePane = document.createElement("div");
+      comparePane.className = "avatary-lb-viewer-pane";
+      comparePane.dataset.avataryCompare = "true";
+      comparePane.dataset.avataryObjectUrl = objectUrl;
+      const compareImg = document.createElement("img");
+      compareImg.src = objectUrl;
+      compareImg.alt = "Clipboard image";
+      comparePane.appendChild(compareImg);
+      content.appendChild(comparePane);
+      content.classList.add("compare");
+    } catch (err) {
+      console.error("[AvataryLoadImageBatch] viewer compare paste failed", err);
+    }
+  };
   overlay.onclick = () => closeViewer();
-  overlay.appendChild(img);
+  content.onclick = (e) => e.stopPropagation();
+  overlay.appendChild(content);
+  overlay.appendChild(compareBtn);
   document.body.appendChild(overlay);
+  const cleanupCompareUrl = () => {
+    const comparePane = content.querySelector('[data-avatary-compare="true"]');
+    const objectUrl = comparePane?.dataset?.avataryObjectUrl;
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  };
   const escHandler = (e) => {
     if (e.key === "Escape") {
+      cleanupCompareUrl();
       closeViewer();
       window.removeEventListener("keydown", escHandler, true);
     }
   };
   window.addEventListener("keydown", escHandler, true);
+  const observer = new MutationObserver(() => {
+    if (!document.getElementById(VIEWER_ID)) {
+      cleanupCompareUrl();
+      window.removeEventListener("keydown", escHandler, true);
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.body, { childList: true });
 }
 function renderPanel2(node) {
   ensureStyles2();
