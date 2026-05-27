@@ -10,6 +10,9 @@ All notable changes to internal packs are documented in this file.
   - Added a center-right Compare/Paste button in fullscreen preview.
   - Clicking the button pastes a clipboard image and displays it side-by-side with the current fullscreen image.
   - Updated the compare button placement to stay `20px` from the displayed image edge for tighter alignment.
+- Fixed `Load Images Avatary` drag-and-drop from the Generated assets panel:
+  - Added drop payload fallback handling for internal drag data (`text/uri-list`, `text/plain`, and string drag items).
+  - Resolved dropped asset URLs to same-origin images, converted them to `File` objects, and sent them through the existing upload pipeline.
 
 ### 2026-05-25
 
