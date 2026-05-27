@@ -34,6 +34,7 @@ class AvatarySwitch:
             "optional": optional,
             "hidden": {
                 "SwitchState": ("STRING", {"default": "1"}),
+                "BypassOthers": ("STRING", {"default": "1"}),
             },
         }
 

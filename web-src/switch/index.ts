@@ -6,6 +6,7 @@ import { createToggle, ensureToggleStyles } from '../components/toggle.js';
 const NODE_CLASS = 'AvatarySwitch';
 const STATE_KEY = 'switchState';
 const HIDDEN_INPUT_NAME = 'SwitchState';
+const HIDDEN_BYPASS_NAME = 'BypassOthers';
 const MAX_INPUTS = 32;
 const DEFAULT_W = 340;
 const PANEL_HEIGHT = 220;
@@ -91,9 +92,12 @@ function getState(node) {
       activeLinkId: null,
       labels: {},
       visibleCount: 1,
+      bypassOthers: true,
     };
   }
-  return node.properties[STATE_KEY];
+  const state = node.properties[STATE_KEY];
+  if (typeof state.bypassOthers !== 'boolean') state.bypassOthers = true;
+  return state;
 }
 
 function _iterGraphLinks(graph) {
@@ -158,6 +162,8 @@ function syncSwitchStateWidget(node) {
   const state = getState(node);
   const w = node.widgets?.find((wgt) => wgt.name === HIDDEN_INPUT_NAME);
   if (w) w.value = String(state.activeIndex || 1);
+  const bypass = node.widgets?.find((wgt) => wgt.name === HIDDEN_BYPASS_NAME);
+  if (bypass) bypass.value = state.bypassOthers ? '1' : '0';
 }
 
 function normalizeInputs(node) {
@@ -232,11 +238,16 @@ function getUpstreamNode(node, idx1) {
 // Set mode=0 (active) for the upstream node on the active slot,
 // mode=4 (bypass) for all other connected upstream nodes.
 function syncUpstreamBypass(node, activeIdx) {
+  const state = getState(node);
   const inputs = node.inputs || [];
   for (let i = 0; i < inputs.length; i++) {
     const up = getUpstreamNode(node, i + 1);
     if (!up) continue;
-    up.mode = i + 1 === activeIdx ? 0 : 4;
+    if (!state.bypassOthers) {
+      up.mode = 0;
+    } else {
+      up.mode = i + 1 === activeIdx ? 0 : 4;
+    }
   }
   app.graph?.setDirtyCanvas?.(true, true);
 }
@@ -352,6 +363,28 @@ function renderPanel(node) {
   clearFallbackWidgets(node);
   panel.innerHTML = '';
 
+  const policyRow = document.createElement('div');
+  policyRow.className = 'avatary-switch-row';
+  const policyLabel = document.createElement('div');
+  policyLabel.textContent = 'Bypass Others';
+  policyLabel.style.cssText =
+    'flex:1 1 auto;min-width:0;color:var(--input-text,#d0d6e2);padding-left:2px;user-select:none;';
+  const policyToggle = _toggleApi.createToggle({
+    active: state.bypassOthers,
+    disabled: false,
+    title: 'Disable to stop bypassing non-selected upstream nodes',
+    onToggle: () => {
+      state.bypassOthers = !state.bypassOthers;
+      syncSwitchStateWidget(node);
+      syncUpstreamBypass(node, state.activeIndex);
+      app.graph?.setDirtyCanvas?.(true, true);
+      renderPanel(node);
+    },
+  });
+  policyRow.appendChild(policyLabel);
+  policyRow.appendChild(policyToggle);
+  panel.appendChild(policyRow);
+
   if (rows.length === 0) {
     const empty = document.createElement('div');
     empty.textContent = 'Connect an input to start';
@@ -411,6 +444,20 @@ function clearFallbackWidgets(node) {
 
 function renderFallbackWidgets(node, rows, state) {
   clearFallbackWidgets(node);
+  const bypass = node.addWidget(
+    'toggle',
+    'Bypass Others',
+    state.bypassOthers,
+    (v) => {
+      state.bypassOthers = Boolean(v);
+      syncSwitchStateWidget(node);
+      syncUpstreamBypass(node, state.activeIndex);
+      renderPanel(node);
+    },
+  );
+  bypass._avatarySwitchFallbackWidget = true;
+  bypass.serialize = false;
+
   for (const row of rows) {
     const disabled = row.trailing || !row.connected;
     const label = node.addWidget(
@@ -600,6 +647,7 @@ app.graphToPrompt = async (...args) => {
     const state = node?.properties?.[STATE_KEY];
     entry.inputs = entry.inputs || {};
     entry.inputs[HIDDEN_INPUT_NAME] = String(state?.activeIndex || 1);
+    entry.inputs[HIDDEN_BYPASS_NAME] = state?.bypassOthers === false ? '0' : '1';
   }
   return result;
 };
