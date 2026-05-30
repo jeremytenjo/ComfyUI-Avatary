@@ -80,6 +80,18 @@ function ensureStyles() {
       object-fit: contain;
       display: block;
     }
+    .avatary-lb-list.single .avatary-lb-thumb-wrap {
+      padding-top: 0;
+      aspect-ratio: auto;
+      background: transparent;
+    }
+    .avatary-lb-list.single .avatary-lb-thumb {
+      position: static;
+      inset: auto;
+      width: 100%;
+      height: auto;
+      object-fit: initial;
+    }
     .avatary-lb-thumb-actions {
       position: absolute;
       top: 8px;
@@ -940,6 +952,8 @@ function renderPanel(node) {
 
   const list = document.createElement('div');
   list.className = 'avatary-lb-list';
+  const isSingleImage = state.files.length === 1;
+  if (isSingleImage) list.classList.add('single');
   applyGridColumns(list, state.files.length);
 
   if (!state.files.length) {
@@ -951,6 +965,7 @@ function renderPanel(node) {
     for (const name of state.files) {
       const item = document.createElement('div');
       item.className = 'avatary-lb-item';
+      if (isSingleImage) item.classList.add('single');
 
       const thumbWrap = document.createElement('div');
       thumbWrap.className = 'avatary-lb-thumb-wrap';
