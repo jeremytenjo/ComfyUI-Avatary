@@ -45,6 +45,8 @@ try:
     from .nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
     from .nodes.node_load_images_avatary import NODE_CLASS_MAPPINGS as _MAPS_LOAD_IMAGE_BATCH
     from .nodes.node_load_images_avatary import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_IMAGE_BATCH
+    from .nodes.node_control_light import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
+    from .nodes.node_control_light import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
 except ImportError:
     from nodes.node_group_bypasser import NODE_CLASS_MAPPINGS as _MAPS_GROUP_BYPASSER
     from nodes.node_group_bypasser import (
@@ -68,6 +70,8 @@ except ImportError:
     from nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
     from nodes.node_load_images_avatary import NODE_CLASS_MAPPINGS as _MAPS_LOAD_IMAGE_BATCH
     from nodes.node_load_images_avatary import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_IMAGE_BATCH
+    from nodes.node_control_light import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
+    from nodes.node_control_light import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
 
 
 def _merge_mapping_dicts(*mapping_dicts: dict[str, object]) -> dict[str, object]:
@@ -91,6 +95,7 @@ NODE_CLASS_MAPPINGS = _merge_mapping_dicts(
     _MAPS_SAVE_IMAGE_ULTRA,
     _MAPS_SWITCH,
     _MAPS_LOAD_IMAGE_BATCH,
+    _MAPS_CONTROL_LIGHT,
 )
 
 NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
@@ -101,6 +106,7 @@ NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
     _NAMES_SAVE_IMAGE_ULTRA,
     _NAMES_SWITCH,
     _NAMES_LOAD_IMAGE_BATCH,
+    _NAMES_CONTROL_LIGHT,
 )
 
 WEB_DIRECTORY = "./web"
