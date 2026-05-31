@@ -10,10 +10,13 @@
 ## Included Nodes
 
 - `Group Bypasser Avatary`
+- `Features Avatary`
+- `Load Images Avatary`
 - `Nano Banana Pro Avatary`
 - `Prompt List Avatary`
 - `Save Image Ultra Avatary`
 - `Switch Avatary`
+- `ControlLight Avatary`
 
 ## Category Taxonomy
 
@@ -33,4 +36,5 @@ Frontend assets are consolidated under `web/` and exposed via:
 ## Notes
 
 - `Downloader` remains an extension module (routes/web utilities), not a node mapping provider.
+- `ControlLight Avatary` includes inline missing-file guidance in the node body with expected install paths, source URLs, and one-click path copy.
 - This refactor is branding-first and may require workflow UI metadata adjustments for renamed display/category labels.

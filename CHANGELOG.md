@@ -4,6 +4,17 @@ All notable changes to internal packs are documented in this file.
 
 ## Avatary Core
 
+### 2026-05-31
+
+- Added new `ControlLight Avatary` node for low-light enhancement with a strict minimal interface:
+  - Inputs: `image`, `scale` (`0..1` mapped to ControlLight `alpha`)
+  - Output: enhanced `image`
+  - Fixed expected model locations under `models/ControlLight/`
+- Added a reusable node-body `Missing Files` UI component for model-dependent nodes:
+  - Shows missing files/directories, exact destination paths, and download URLs.
+  - Includes a one-click path copy action with copied-state checkmark feedback.
+- Added ControlLight backend route `GET /avatary/controllight/missing-files` to power inline missing-file status in the node body.
+
 ### 2026-05-27
 
 - Enhanced `Load Images Avatary` fullscreen preview with an in-view compare workflow:
