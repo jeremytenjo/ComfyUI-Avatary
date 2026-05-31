@@ -4006,6 +4006,7 @@ function ensureToggleStyles() {
       cursor: default;
     }
   `;
+  document.head.appendChild(style);
 }
 function createToggle({ active, disabled, title, onToggle }) {
   const toggle = document.createElement("div");
@@ -4784,7 +4785,6 @@ function ensureStyles2() {
       display: inline-block;
     }
   `;
-  document.head.appendChild(style);
 }
 function getState2(node) {
   if (!node.properties) node.properties = {};
@@ -5615,3 +5615,268 @@ if (!app4._avataryLoadImagesGraphToPromptWrapped) {
     return result;
   };
 }
+
+// web-src/control_light.ts
+import { app as app5 } from "/scripts/app.js";
+
+// web-src/components/missing_files.ts
+var STYLE_ID2 = "avatary-missing-files-styles";
+function ensureMissingFilesStyles() {
+  if (document.getElementById(STYLE_ID2)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ID2;
+  style.textContent = `
+    .avatary-missing-files {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 10px;
+      background: var(--component-node-widget-background);
+    }
+    .avatary-missing-files-title {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--component-node-foreground);
+    }
+    .avatary-missing-files-copy {
+      margin: 0;
+      font-size: 11px;
+      color: var(--component-node-foreground-secondary);
+      line-height: 1.4;
+    }
+    .avatary-missing-files-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .avatary-missing-files-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--component-node-widget-background-highlighted);
+      background: var(--component-node-background);
+    }
+    .avatary-missing-files-item-title {
+      margin: 0;
+      font-size: 11px;
+      color: var(--component-node-foreground);
+      word-break: break-word;
+    }
+    .avatary-missing-files-item-path {
+      margin: 0;
+      font-size: 10px;
+      color: var(--component-node-foreground-secondary);
+      word-break: break-all;
+    }
+    .avatary-missing-files-item-link {
+      width: fit-content;
+      font-size: 11px;
+      color: var(--p-primary-color);
+      text-decoration: underline;
+    }
+    .avatary-missing-files-empty {
+      margin: 0;
+      font-size: 11px;
+      color: var(--component-node-foreground-secondary);
+    }
+  `;
+  document.head.appendChild(style);
+}
+function renderMissingFiles({
+  container,
+  title = "Missing Files",
+  description = "",
+  items = []
+}) {
+  ensureMissingFilesStyles();
+  container.innerHTML = "";
+  const root = document.createElement("div");
+  root.className = "avatary-missing-files";
+  const titleEl = document.createElement("p");
+  titleEl.className = "avatary-missing-files-title";
+  titleEl.textContent = String(title || "Missing Files");
+  root.appendChild(titleEl);
+  if (description) {
+    const copyEl = document.createElement("p");
+    copyEl.className = "avatary-missing-files-copy";
+    copyEl.textContent = String(description);
+    root.appendChild(copyEl);
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    const emptyEl = document.createElement("p");
+    emptyEl.className = "avatary-missing-files-empty";
+    emptyEl.textContent = "All required files are available.";
+    root.appendChild(emptyEl);
+    container.appendChild(root);
+    return;
+  }
+  const list = document.createElement("div");
+  list.className = "avatary-missing-files-list";
+  for (const item of items) {
+    const row = document.createElement("div");
+    row.className = "avatary-missing-files-item";
+    const itemTitle = document.createElement("p");
+    itemTitle.className = "avatary-missing-files-item-title";
+    itemTitle.textContent = String(item?.label || "Missing file");
+    row.appendChild(itemTitle);
+    const itemPath = document.createElement("p");
+    itemPath.className = "avatary-missing-files-item-path";
+    itemPath.textContent = String(item?.path || "");
+    row.appendChild(itemPath);
+    const url = String(item?.url || "").trim();
+    if (url) {
+      const link = document.createElement("a");
+      link.className = "avatary-missing-files-item-link";
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Download";
+      row.appendChild(link);
+    }
+    list.appendChild(row);
+  }
+  root.appendChild(list);
+  container.appendChild(root);
+}
+
+// web-src/control_light.ts
+var NODE_CLASS3 = "ControlLight";
+var PANEL_HEIGHT3 = 210;
+var DEFAULT_W2 = 340;
+var ROUTE = "/avatary/controllight/missing-files";
+function ensurePanelWidget3(node) {
+  if (node._avataryControlLightPanel && node.widgets?.some((w) => w?._avataryControlLightPanelWidget)) {
+    return node._avataryControlLightPanel;
+  }
+  if (node.widgets) {
+    node.widgets = node.widgets.filter((w) => !w?._avataryControlLightPanelWidget);
+  }
+  const panel = document.createElement("div");
+  panel.style.cssText = [
+    "display:flex",
+    "flex-direction:column",
+    "gap:8px",
+    "padding:1px",
+    "height:100%",
+    "overflow:auto",
+    "box-sizing:border-box"
+  ].join(";");
+  node._avataryControlLightPanel = panel;
+  if (typeof node.addDOMWidget === "function") {
+    const w = node.addDOMWidget("ControlLight", "control_light_panel", panel, {
+      serialize: false,
+      hideOnZoom: false,
+      getMinHeight: () => PANEL_HEIGHT3
+    });
+    if (w) {
+      w._avataryControlLightPanelWidget = true;
+      w.serialize = false;
+      return panel;
+    }
+  }
+  return null;
+}
+async function fetchMissingFiles() {
+  const response = await fetch(ROUTE, { method: "GET" });
+  if (!response.ok) {
+    throw new Error(`Missing-files request failed (${response.status})`);
+  }
+  return await response.json();
+}
+function renderLoading(panel) {
+  panel.innerHTML = "";
+  const copy = document.createElement("div");
+  copy.className = "text-component-node-foreground-secondary text-xs";
+  copy.textContent = "Checking ControlLight files...";
+  panel.appendChild(copy);
+}
+function renderError(panel, message) {
+  panel.innerHTML = "";
+  const copy = document.createElement("div");
+  copy.className = "text-component-node-foreground-secondary text-xs";
+  copy.textContent = String(message || "Failed to check required files.");
+  panel.appendChild(copy);
+}
+async function refreshPanel(node) {
+  const panel = ensurePanelWidget3(node);
+  if (!panel) return;
+  if (node._avataryControlLightBusy) return;
+  node._avataryControlLightBusy = true;
+  renderLoading(panel);
+  try {
+    const payload = await fetchMissingFiles();
+    const items = (Array.isArray(payload?.items) ? payload.items : []).filter(
+      (item) => Boolean(item?.missing)
+    );
+    renderMissingFiles({
+      container: panel,
+      title: "ControlLight Missing Files",
+      description: "Download each file and place it in the expected path. The node runs once all files are present.",
+      items
+    });
+  } catch (err) {
+    renderError(panel, err?.message || String(err));
+  } finally {
+    node._avataryControlLightBusy = false;
+  }
+}
+function startPolling(node) {
+  if (node._avataryControlLightTimer) return;
+  node._avataryControlLightTimer = setInterval(() => {
+    try {
+      refreshPanel(node);
+    } catch (_err) {
+    }
+  }, 8e3);
+}
+app5.registerExtension({
+  name: "Avatary.ControlLight.MissingFiles",
+  async beforeRegisterNodeDef(nodeType, nodeData) {
+    if (nodeData.name !== NODE_CLASS3) return;
+    const origCreated = nodeType.prototype.onNodeCreated;
+    nodeType.prototype.onNodeCreated = function(...args) {
+      const r = origCreated?.apply(this, args);
+      this.size[0] = Math.max(this.size?.[0] || 0, DEFAULT_W2);
+      this.size[1] = Math.max(this.size?.[1] || 0, PANEL_HEIGHT3 + 110);
+      refreshPanel(this);
+      startPolling(this);
+      return r;
+    };
+    const origConfigure = nodeType.prototype.onConfigure;
+    nodeType.prototype.onConfigure = function(...args) {
+      const r = origConfigure?.apply(this, args);
+      refreshPanel(this);
+      startPolling(this);
+      return r;
+    };
+    const origRemoved = nodeType.prototype.onRemoved;
+    nodeType.prototype.onRemoved = function(...args) {
+      if (this._avataryControlLightTimer) {
+        clearInterval(this._avataryControlLightTimer);
+        this._avataryControlLightTimer = null;
+      }
+      if (this._avataryControlLightPanel?.isConnected) {
+        this._avataryControlLightPanel.remove();
+      }
+      this._avataryControlLightPanel = null;
+      if (this.widgets) {
+        this.widgets = this.widgets.filter(
+          (w) => !w?._avataryControlLightPanelWidget
+        );
+      }
+      return origRemoved?.apply(this, args);
+    };
+  },
+  loadedGraphNode(node) {
+    const isTarget = node?.comfyClass === NODE_CLASS3 || node?.type === NODE_CLASS3 || node?.constructor?.type === NODE_CLASS3;
+    if (!isTarget) return;
+    node.size[0] = Math.max(node.size?.[0] || 0, DEFAULT_W2);
+    node.size[1] = Math.max(node.size?.[1] || 0, PANEL_HEIGHT3 + 110);
+    refreshPanel(node);
+    startPolling(node);
+  }
+});

@@ -24,6 +24,22 @@ def _try_load_downloader_extension() -> None:
 
 _try_load_downloader_extension()
 
+
+def _try_load_controllight_extension() -> None:
+    try:
+        from .extensions import control_light_extension as _control_light_extension  # noqa: F401
+    except Exception:
+        try:
+            import extensions.control_light_extension as _control_light_extension  # noqa: F401
+        except Exception as exc:
+            print(
+                "[ComfyUI-Avatary] ControlLight extension not loaded in this runtime: "
+                f"{exc}"
+            )
+
+
+_try_load_controllight_extension()
+
 try:
     from .nodes.node_group_bypasser import NODE_CLASS_MAPPINGS as _MAPS_GROUP_BYPASSER
     from .nodes.node_group_bypasser import (
