@@ -91,7 +91,6 @@ async function refreshPanel(node) {
 		renderMissingFiles({
 			container: panel,
 			title: "ControlLight Missing Files",
-			description: "",
 			items,
 		});
 	} catch (err) {

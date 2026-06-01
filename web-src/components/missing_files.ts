@@ -145,6 +145,11 @@ export function renderMissingFiles({
     copyEl.className = 'avatary-missing-files-copy';
     copyEl.textContent = String(description);
     root.appendChild(copyEl);
+  } else if (String(title || '') === 'ControlLight Missing Files') {
+    const copyEl = document.createElement('p');
+    copyEl.className = 'avatary-missing-files-copy';
+    copyEl.textContent = 'Connect nodes and run again';
+    root.appendChild(copyEl);
   }
 
   if (Array.isArray(fields) && fields.length > 0) {
