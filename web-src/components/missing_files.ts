@@ -86,12 +86,6 @@ export function ensureMissingFilesStyles() {
       font-size: 12px;
       display: inline-block;
     }
-    .avatary-missing-files-item-link {
-      width: fit-content;
-      font-size: 11px;
-      color: var(--p-primary-color);
-      text-decoration: underline;
-    }
     .avatary-missing-files-empty {
       margin: 0;
       font-size: 11px;
@@ -181,17 +175,6 @@ export function renderMissingFiles({
     });
     itemUrlRow.appendChild(copyBtn);
     row.appendChild(itemUrlRow);
-
-    const url = String(item?.url || '').trim();
-    if (url) {
-      const link = document.createElement('a');
-      link.className = 'avatary-missing-files-item-link';
-      link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.textContent = 'Download';
-      row.appendChild(link);
-    }
 
     list.appendChild(row);
   }
