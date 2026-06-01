@@ -5714,7 +5714,7 @@ if (!app4._avataryLoadImagesGraphToPromptWrapped) {
   };
 }
 
-// web-src/control_light.ts
+// web-src/control_light_frontend.ts
 import { app as app5 } from "/scripts/app.js";
 
 // web-src/components/missing_files.ts
@@ -5970,7 +5970,7 @@ function renderMissingFiles({
   container.appendChild(root);
 }
 
-// web-src/control_light.ts
+// web-src/control_light_frontend.ts
 var NODE_CLASS3 = "ControlLight";
 var PANEL_HEIGHT3 = 210;
 var DEFAULT_W2 = 340;
