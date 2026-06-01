@@ -22,15 +22,17 @@ class ControlLight:
 
     @classmethod
     def INPUT_TYPES(cls):
-        diffusion_models = folder_paths.get_filename_list("diffusion_models")
-        lora_models = folder_paths.get_filename_list("loras")
         return {
             "required": {
                 "image": ("IMAGE",),
                 "scale": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "flux_2_klein_base_9B": (diffusion_models,),
-                "controllight": (lora_models,),
-            }
+                "flux_2_klein_base_9B": ("MODEL", {"forceInput": True}),
+                "controllight": ("MODEL", {"forceInput": True}),
+            },
+            "hidden": {
+                "prompt": "PROMPT",
+                "unique_id": "UNIQUE_ID",
+            },
         }
 
     RETURN_TYPES = ("IMAGE",)
@@ -38,12 +40,59 @@ class ControlLight:
     FUNCTION = "enhance"
     CATEGORY = "👑 Avatary/Image"
 
+    @staticmethod
+    def _coerce_connected_model_name(
+        input_value: object, prompt: dict | None, unique_id: object, input_name: str
+    ) -> str:
+        # Direct string values are still supported for API callers.
+        if isinstance(input_value, str):
+            value = input_value.strip()
+            if value:
+                return value
+
+        if not isinstance(prompt, dict):
+            return ""
+
+        node_data = prompt.get(str(unique_id)) or prompt.get(unique_id)
+        if not isinstance(node_data, dict):
+            return ""
+        inputs = node_data.get("inputs")
+        if not isinstance(inputs, dict):
+            return ""
+        link = inputs.get(input_name)
+        if not (isinstance(link, (list, tuple)) and len(link) >= 1):
+            return ""
+
+        source_node_id = link[0]
+        source_node = prompt.get(str(source_node_id)) or prompt.get(source_node_id)
+        if not isinstance(source_node, dict):
+            return ""
+        source_inputs = source_node.get("inputs")
+        if not isinstance(source_inputs, dict):
+            return ""
+
+        candidate_keys = (
+            "unet_name",
+            "lora_name",
+            "model_name",
+            "ckpt_name",
+            "name",
+            "filename",
+        )
+        for key in candidate_keys:
+            candidate = source_inputs.get(key)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        return ""
+
     @classmethod
     def _resolve_model_paths(cls, flux_2_klein_base_9B: str, controllight: str) -> tuple[Path, Path]:
         model_raw = str(flux_2_klein_base_9B or "").strip()
         lora_raw = str(controllight or "").strip()
         model_resolved = folder_paths.get_full_path("diffusion_models", model_raw)
-        lora_resolved = folder_paths.get_full_path("loras", lora_raw)
+        lora_resolved = folder_paths.get_full_path("loras", lora_raw) or folder_paths.get_full_path(
+            "diffusion_models", lora_raw
+        )
         model_path = Path(model_resolved).resolve() if model_resolved else Path(model_raw).expanduser().resolve()
         lora_path = Path(lora_resolved).resolve() if lora_resolved else Path(lora_raw).expanduser().resolve()
         if not model_path.exists():
@@ -121,8 +170,10 @@ class ControlLight:
         self,
         image: torch.Tensor,
         scale: float,
-        flux_2_klein_base_9B: str,
-        controllight: str,
+        flux_2_klein_base_9B: object,
+        controllight: object,
+        prompt: dict | None = None,
+        unique_id: object = None,
     ):
         try:
             alpha = float(scale)
@@ -136,11 +187,17 @@ class ControlLight:
         use_cuda = torch.cuda.is_available()
         device = "cuda" if use_cuda else "cpu"
         dtype = torch.bfloat16 if use_cuda else torch.float32
+        model_name = self._coerce_connected_model_name(
+            flux_2_klein_base_9B, prompt, unique_id, "flux_2_klein_base_9B"
+        )
+        lora_name = self._coerce_connected_model_name(
+            controllight, prompt, unique_id, "controllight"
+        )
         pipe = self._get_pipeline(
             device=device,
             dtype=dtype,
-            flux_2_klein_base_9B=flux_2_klein_base_9B,
-            controllight=controllight,
+            flux_2_klein_base_9B=model_name,
+            controllight=lora_name,
         )
 
         outputs: list[torch.Tensor] = []
