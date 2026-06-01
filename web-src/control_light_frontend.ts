@@ -6,6 +6,8 @@ const NODE_CLASS = "ControlLight";
 const PANEL_HEIGHT = 210;
 const DEFAULT_W = 340;
 const ROUTE = "/avatary/controllight/missing-files";
+const INIT_ROUTE = "/avatary/controllight/initialize";
+const HF_TOKEN_KEY = "avatary-controllight-hf-token-v1";
 
 function ensurePanelWidget(node) {
 	if (
@@ -52,6 +54,21 @@ async function fetchMissingFiles() {
 	return await response.json();
 }
 
+async function initializeAssets(hfToken = "") {
+	const response = await fetch(INIT_ROUTE, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ hf_token: String(hfToken || "").trim() }),
+	});
+	const payload = await response.json().catch(() => ({}));
+	if (!response.ok || !payload?.ok) {
+		throw new Error(
+			String(payload?.error || `Initialize failed (${response.status})`),
+		);
+	}
+	return payload;
+}
+
 function renderLoading(panel) {
 	panel.innerHTML = "";
 	const copy = document.createElement("div");
@@ -79,10 +96,51 @@ async function refreshPanel(node) {
 		const items = (Array.isArray(payload?.items) ? payload.items : []).filter(
 			(item) => Boolean(item?.missing),
 		);
+		const isInitializing = Boolean(node?._avataryControlLightInitializing);
 		renderMissingFiles({
 			container: panel,
 			title: "ControlLight Missing Files",
 			items,
+			primaryAction:
+				items.length > 0
+					? {
+							label: isInitializing ? "Initializing..." : "Initialize",
+							disabled: isInitializing,
+							onClick: async () => {
+								if (node._avataryControlLightInitializing) return;
+								node._avataryControlLightInitializing = true;
+								await refreshPanel(node);
+								try {
+									const savedToken = String(
+										localStorage.getItem(HF_TOKEN_KEY) || "",
+									).trim();
+									try {
+										await initializeAssets(savedToken);
+									} catch (firstErr) {
+										const msg = String(firstErr?.message || firstErr || "");
+										const needsAuth =
+											msg.includes("401") ||
+											msg.includes("403") ||
+											msg.toLowerCase().includes("unauthorized") ||
+											msg.toLowerCase().includes("forbidden") ||
+											msg.toLowerCase().includes("authentication");
+										if (!needsAuth) throw firstErr;
+										const prompted = window.prompt(
+											"Hugging Face token needed for Initialize. Paste hf_... token:",
+											savedToken,
+										);
+										const nextToken = String(prompted || "").trim();
+										if (!nextToken) throw firstErr;
+										localStorage.setItem(HF_TOKEN_KEY, nextToken);
+										await initializeAssets(nextToken);
+									}
+								} finally {
+									node._avataryControlLightInitializing = false;
+									await refreshPanel(node);
+								}
+							},
+						}
+					: null,
 		});
 	} catch (err) {
 		renderError(panel, err?.message || String(err));

@@ -5,7 +5,7 @@
   const RECENT_FOLDERS_KEY = "download-to-directory-recent-folders-v1";
   const ADVANCED_OPEN_KEY = "download-to-directory-advanced-open-v1";
   const HISTORY_KEY = "download-to-directory-history-v1";
-  const HF_TOKEN_KEY = "download-to-directory-hf-token-v1";
+  const HF_TOKEN_KEY2 = "download-to-directory-hf-token-v1";
   const DEFAULT_DOWNLOAD_ROOT = "models/loras";
   const MAX_RECENT_FOLDERS = 8;
   const MAX_HISTORY_ITEMS = 100;
@@ -1356,7 +1356,7 @@
     const trimmed = String(token || "").trim();
     const input = getHfTokenInput();
     if (input) input.value = trimmed;
-    writeSessionJson(HF_TOKEN_KEY, trimmed);
+    writeSessionJson(HF_TOKEN_KEY2, trimmed);
   }
   function revealHuggingFaceTokenInput() {
     const advanced = document.getElementById("dtd-advanced");
@@ -1382,7 +1382,7 @@
     revealHuggingFaceTokenInput();
     const userToken = window.prompt(
       "Hugging Face token is required for this download.\nPaste token (hf_...) to retry now. Leave blank to cancel.",
-      String(readSessionJson(HF_TOKEN_KEY, "") || "")
+      String(readSessionJson(HF_TOKEN_KEY2, "") || "")
     );
     const trimmedToken = String(userToken || "").trim();
     if (!trimmedToken) return null;
@@ -1759,7 +1759,7 @@
         tokenInput.dataset.action = "edit-hf-token";
         tokenInput.dataset.id = entry.id;
         tokenInput.placeholder = "Hugging Face token (hf_...)";
-        tokenInput.value = String(entry?.huggingface_token || "").trim() || String(readSessionJson(HF_TOKEN_KEY, "") || "").trim();
+        tokenInput.value = String(entry?.huggingface_token || "").trim() || String(readSessionJson(HF_TOKEN_KEY2, "") || "").trim();
         item.append(tokenInput);
       }
       const retryBtn = document.createElement("button");
@@ -2914,10 +2914,10 @@ ${copy}`.trim()));
     }
     const hfTokenInput = document.getElementById("dtd-hf-token");
     if (hfTokenInput instanceof HTMLInputElement) {
-      const savedToken = String(readSessionJson(HF_TOKEN_KEY, "") || "");
+      const savedToken = String(readSessionJson(HF_TOKEN_KEY2, "") || "");
       hfTokenInput.value = savedToken;
       hfTokenInput.addEventListener("input", () => {
-        writeSessionJson(HF_TOKEN_KEY, String(hfTokenInput.value || "").trim());
+        writeSessionJson(HF_TOKEN_KEY2, String(hfTokenInput.value || "").trim());
       });
     }
     renderHistory();
@@ -5841,6 +5841,28 @@ function ensureMissingFilesStyles() {
       font-size: 11px;
       color: var(--component-node-foreground-secondary);
     }
+    .avatary-missing-files-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .avatary-missing-files-action-btn {
+      width: fit-content;
+      min-width: 0;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--component-node-widget-background-highlighted);
+      background: var(--component-node-widget-background);
+      color: var(--component-node-foreground);
+      padding: 0 10px;
+      font-size: 11px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .avatary-missing-files-action-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -5850,7 +5872,8 @@ function renderMissingFiles({
   description = "",
   items = [],
   fields = [],
-  allRequiredConnected = false
+  allRequiredConnected = false,
+  primaryAction = null
 }) {
   ensureMissingFilesStyles();
   container.innerHTML = "";
@@ -5911,6 +5934,22 @@ function renderMissingFiles({
       fieldsRoot.appendChild(fieldRow);
     }
     root.appendChild(fieldsRoot);
+  }
+  if (primaryAction && typeof primaryAction === "object") {
+    const actions = document.createElement("div");
+    actions.className = "avatary-missing-files-actions";
+    const btn = document.createElement("button");
+    btn.className = "avatary-missing-files-action-btn";
+    btn.type = "button";
+    btn.disabled = Boolean(primaryAction?.disabled);
+    btn.textContent = String(primaryAction?.label || "Action");
+    btn.addEventListener("click", async () => {
+      if (typeof primaryAction?.onClick === "function") {
+        await primaryAction.onClick();
+      }
+    });
+    actions.appendChild(btn);
+    root.appendChild(actions);
   }
   if (!Array.isArray(items) || items.length === 0) {
     const emptyEl = document.createElement("p");
@@ -5979,6 +6018,8 @@ var NODE_CLASS3 = "ControlLight";
 var PANEL_HEIGHT3 = 210;
 var DEFAULT_W2 = 340;
 var ROUTE = "/avatary/controllight/missing-files";
+var INIT_ROUTE = "/avatary/controllight/initialize";
+var HF_TOKEN_KEY = "avatary-controllight-hf-token-v1";
 function ensurePanelWidget3(node) {
   if (node._avataryControlLightPanel && node.widgets?.some((w) => w?._avataryControlLightPanelWidget)) {
     return node._avataryControlLightPanel;
@@ -6018,6 +6059,20 @@ async function fetchMissingFiles() {
   }
   return await response.json();
 }
+async function initializeAssets(hfToken = "") {
+  const response = await fetch(INIT_ROUTE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ hf_token: String(hfToken || "").trim() })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload?.ok) {
+    throw new Error(
+      String(payload?.error || `Initialize failed (${response.status})`)
+    );
+  }
+  return payload;
+}
 function renderLoading(panel) {
   panel.innerHTML = "";
   const copy = document.createElement("div");
@@ -6043,10 +6098,43 @@ async function refreshPanel(node) {
     const items = (Array.isArray(payload?.items) ? payload.items : []).filter(
       (item) => Boolean(item?.missing)
     );
+    const isInitializing = Boolean(node?._avataryControlLightInitializing);
     renderMissingFiles({
       container: panel,
       title: "ControlLight Missing Files",
-      items
+      items,
+      primaryAction: items.length > 0 ? {
+        label: isInitializing ? "Initializing..." : "Initialize",
+        disabled: isInitializing,
+        onClick: async () => {
+          if (node._avataryControlLightInitializing) return;
+          node._avataryControlLightInitializing = true;
+          await refreshPanel(node);
+          try {
+            const savedToken = String(
+              localStorage.getItem(HF_TOKEN_KEY) || ""
+            ).trim();
+            try {
+              await initializeAssets(savedToken);
+            } catch (firstErr) {
+              const msg = String(firstErr?.message || firstErr || "");
+              const needsAuth = msg.includes("401") || msg.includes("403") || msg.toLowerCase().includes("unauthorized") || msg.toLowerCase().includes("forbidden") || msg.toLowerCase().includes("authentication");
+              if (!needsAuth) throw firstErr;
+              const prompted = window.prompt(
+                "Hugging Face token needed for Initialize. Paste hf_... token:",
+                savedToken
+              );
+              const nextToken = String(prompted || "").trim();
+              if (!nextToken) throw firstErr;
+              localStorage.setItem(HF_TOKEN_KEY, nextToken);
+              await initializeAssets(nextToken);
+            }
+          } finally {
+            node._avataryControlLightInitializing = false;
+            await refreshPanel(node);
+          }
+        }
+      } : null
     });
   } catch (err) {
     renderError(panel, err?.message || String(err));

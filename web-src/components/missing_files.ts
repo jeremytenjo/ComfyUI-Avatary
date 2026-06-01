@@ -124,6 +124,28 @@ export function ensureMissingFilesStyles() {
       font-size: 11px;
       color: var(--component-node-foreground-secondary);
     }
+    .avatary-missing-files-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .avatary-missing-files-action-btn {
+      width: fit-content;
+      min-width: 0;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--component-node-widget-background-highlighted);
+      background: var(--component-node-widget-background);
+      color: var(--component-node-foreground);
+      padding: 0 10px;
+      font-size: 11px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .avatary-missing-files-action-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -135,6 +157,7 @@ export function renderMissingFiles({
   items = [],
   fields = [],
   allRequiredConnected = false,
+  primaryAction = null,
 }) {
   ensureMissingFilesStyles();
   container.innerHTML = '';
@@ -206,6 +229,23 @@ export function renderMissingFiles({
     }
 
     root.appendChild(fieldsRoot);
+  }
+
+  if (primaryAction && typeof primaryAction === 'object') {
+    const actions = document.createElement('div');
+    actions.className = 'avatary-missing-files-actions';
+    const btn = document.createElement('button');
+    btn.className = 'avatary-missing-files-action-btn';
+    btn.type = 'button';
+    btn.disabled = Boolean(primaryAction?.disabled);
+    btn.textContent = String(primaryAction?.label || 'Action');
+    btn.addEventListener('click', async () => {
+      if (typeof primaryAction?.onClick === 'function') {
+        await primaryAction.onClick();
+      }
+    });
+    actions.appendChild(btn);
+    root.appendChild(actions);
   }
 
   if (!Array.isArray(items) || items.length === 0) {
