@@ -8,12 +8,13 @@ import folder_paths
 from server import PromptServer
 
 
-def _controllight_specs(flux_2_klein_base_9B: str, controllight: str) -> list[dict[str, str]]:
+def _controllight_specs() -> list[dict[str, str]]:
+    model_root = Path(folder_paths.models_dir).resolve()
     return [
         {
             "key": "base_model",
             "label": "FLUX.2-klein-base-9B",
-            "path": flux_2_klein_base_9B,
+            "path": str(model_root / "diffusion_models" / "FLUX.2-klein-base-9B"),
             "url": "https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9B",
             "kind": "directory",
             "required_type": "Output: models/diffusion_models",
@@ -21,7 +22,7 @@ def _controllight_specs(flux_2_klein_base_9B: str, controllight: str) -> list[di
         {
             "key": "lora",
             "label": "controllight.safetensors",
-            "path": controllight,
+            "path": str(model_root / "loras" / "controllight.safetensors"),
             "url": "https://huggingface.co/ControlLight/ControlLight",
             "kind": "file",
             "required_type": "Output: models/loras",
@@ -30,18 +31,12 @@ def _controllight_specs(flux_2_klein_base_9B: str, controllight: str) -> list[di
 
 
 @PromptServer.instance.routes.get("/avatary/controllight/missing-files")
-async def controllight_missing_files(request: web.Request) -> web.Response:
-    flux_2_klein_base_9B = str(request.query.get("flux_2_klein_base_9B", "")).strip()
-    controllight = str(request.query.get("controllight", "")).strip()
-    resolved_model = folder_paths.get_full_path("diffusion_models", flux_2_klein_base_9B)
-    resolved_lora = folder_paths.get_full_path("loras", controllight)
+async def controllight_missing_files(_request: web.Request) -> web.Response:
     items = []
-    for spec in _controllight_specs(
-        resolved_model or flux_2_klein_base_9B, resolved_lora or controllight
-    ):
+    for spec in _controllight_specs():
         expected_path = Path(spec["path"]).expanduser().resolve()
         kind = spec["kind"]
-        exists = bool(spec["path"]) and expected_path.exists()
+        exists = expected_path.is_dir() if kind == "directory" else expected_path.is_file()
         items.append(
             {
                 "key": spec["key"],

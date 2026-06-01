@@ -6011,23 +6011,8 @@ function ensurePanelWidget3(node) {
   }
   return null;
 }
-function getWidgetValue(node, name) {
-  const widget = node?.widgets?.find((w) => w?.name === name);
-  return String(widget?.value ?? "").trim();
-}
-function isInputConnected2(node, inputName) {
-  const slot = node?.inputs?.find((input) => input?.name === inputName);
-  return slot?.link != null;
-}
-function areRequiredInputsConnected(node) {
-  return isInputConnected2(node, "flux_2_klein_base_9B") && isInputConnected2(node, "controllight");
-}
-async function fetchMissingFiles(node) {
-  const params = new URLSearchParams({
-    flux_2_klein_base_9B: getWidgetValue(node, "flux_2_klein_base_9B"),
-    controllight: getWidgetValue(node, "controllight")
-  });
-  const response = await fetch(`${ROUTE}?${params.toString()}`, { method: "GET" });
+async function fetchMissingFiles() {
+  const response = await fetch(ROUTE, { method: "GET" });
   if (!response.ok) {
     throw new Error(`Missing-files request failed (${response.status})`);
   }
@@ -6054,14 +6039,13 @@ async function refreshPanel(node) {
   node._avataryControlLightBusy = true;
   renderLoading(panel);
   try {
-    const payload = await fetchMissingFiles(node);
+    const payload = await fetchMissingFiles();
     const items = (Array.isArray(payload?.items) ? payload.items : []).filter(
       (item) => Boolean(item?.missing)
     );
     renderMissingFiles({
       container: panel,
       title: "ControlLight Missing Files",
-      allRequiredConnected: areRequiredInputsConnected(node),
       items
     });
   } catch (err) {

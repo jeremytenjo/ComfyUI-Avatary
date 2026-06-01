@@ -18,6 +18,8 @@ class ControlLight:
     DEFAULT_STEPS = 20
     DEFAULT_GUIDANCE = 1.0
     DEFAULT_SEED = 42
+    DEFAULT_BASE_MODEL_DIR = "FLUX.2-klein-base-9B"
+    DEFAULT_LORA_FILE = "controllight.safetensors"
     _PIPELINE_CACHE: dict[tuple[str, str], object] = {}
 
     @classmethod
@@ -26,12 +28,6 @@ class ControlLight:
             "required": {
                 "image": ("IMAGE",),
                 "scale": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "flux_2_klein_base_9B": ("MODEL", {"forceInput": True}),
-                "controllight": ("MODEL", {"forceInput": True}),
-            },
-            "hidden": {
-                "prompt": "PROMPT",
-                "unique_id": "UNIQUE_ID",
             },
         }
 
@@ -40,73 +36,19 @@ class ControlLight:
     FUNCTION = "enhance"
     CATEGORY = "👑 Avatary/Image"
 
-    @staticmethod
-    def _coerce_connected_model_name(
-        input_value: object, prompt: dict | None, unique_id: object, input_name: str
-    ) -> str:
-        # Direct string values are still supported for API callers.
-        if isinstance(input_value, str):
-            value = input_value.strip()
-            if value:
-                return value
-
-        if not isinstance(prompt, dict):
-            return ""
-
-        node_data = prompt.get(str(unique_id)) or prompt.get(unique_id)
-        if not isinstance(node_data, dict):
-            return ""
-        inputs = node_data.get("inputs")
-        if not isinstance(inputs, dict):
-            return ""
-        link = inputs.get(input_name)
-        if not (isinstance(link, (list, tuple)) and len(link) >= 1):
-            return ""
-
-        source_node_id = link[0]
-        source_node = prompt.get(str(source_node_id)) or prompt.get(source_node_id)
-        if not isinstance(source_node, dict):
-            return ""
-        source_inputs = source_node.get("inputs")
-        if not isinstance(source_inputs, dict):
-            return ""
-
-        candidate_keys = (
-            "unet_name",
-            "control_net_name",
-            "lora_name",
-            "model_name",
-            "ckpt_name",
-            "name",
-            "filename",
-        )
-        for key in candidate_keys:
-            candidate = source_inputs.get(key)
-            if isinstance(candidate, str) and candidate.strip():
-                return candidate.strip()
-        return ""
-
     @classmethod
-    def _resolve_model_paths(cls, flux_2_klein_base_9B: str, controllight: str) -> tuple[Path, Path]:
-        model_raw = str(flux_2_klein_base_9B or "").strip()
-        lora_raw = str(controllight or "").strip()
-        model_resolved = folder_paths.get_full_path("diffusion_models", model_raw)
-        lora_resolved = (
-            folder_paths.get_full_path("loras", lora_raw)
-            or folder_paths.get_full_path("controlnet", lora_raw)
-            or folder_paths.get_full_path("diffusion_models", lora_raw)
-        )
-        model_path = Path(model_resolved).resolve() if model_resolved else Path(model_raw).expanduser().resolve()
-        lora_path = Path(lora_resolved).resolve() if lora_resolved else Path(lora_raw).expanduser().resolve()
-        if not model_path.exists():
+    def _resolve_model_paths(cls) -> tuple[Path, Path]:
+        model_path = Path(folder_paths.models_dir).resolve() / "diffusion_models" / cls.DEFAULT_BASE_MODEL_DIR
+        lora_path = Path(folder_paths.models_dir).resolve() / "loras" / cls.DEFAULT_LORA_FILE
+        if not model_path.is_dir():
             raise RuntimeError(
                 "ControlLight model path not found: "
-                f"'{model_path}'. Provide a valid path via flux_2_klein_base_9B."
+                f"'{model_path}'. Download FLUX.2-klein-base-9B into models/diffusion_models."
             )
         if not lora_path.is_file():
             raise RuntimeError(
                 "ControlLight LoRA path not found: "
-                f"'{lora_path}'. Provide a valid path via controllight."
+                f"'{lora_path}'. Place controllight.safetensors into models/loras."
             )
         return model_path, lora_path
 
@@ -122,10 +64,8 @@ class ControlLight:
         return ControlLightPipeline
 
     @classmethod
-    def _get_pipeline(
-        cls, device: str, dtype: torch.dtype, flux_2_klein_base_9B: str, controllight: str
-    ):
-        model_path, lora_path = cls._resolve_model_paths(flux_2_klein_base_9B, controllight)
+    def _get_pipeline(cls, device: str, dtype: torch.dtype):
+        model_path, lora_path = cls._resolve_model_paths()
         cache_key = (device, str(dtype), str(model_path), str(lora_path))
         cached = cls._PIPELINE_CACHE.get(cache_key)
         if cached is not None:
@@ -169,15 +109,7 @@ class ControlLight:
         arr = np.array(image.convert("RGB")).astype(np.float32) / 255.0
         return torch.from_numpy(arr)
 
-    def enhance(
-        self,
-        image: torch.Tensor,
-        scale: float,
-        flux_2_klein_base_9B: object,
-        controllight: object,
-        prompt: dict | None = None,
-        unique_id: object = None,
-    ):
+    def enhance(self, image: torch.Tensor, scale: float):
         try:
             alpha = float(scale)
         except (TypeError, ValueError) as exc:
@@ -190,18 +122,7 @@ class ControlLight:
         use_cuda = torch.cuda.is_available()
         device = "cuda" if use_cuda else "cpu"
         dtype = torch.bfloat16 if use_cuda else torch.float32
-        model_name = self._coerce_connected_model_name(
-            flux_2_klein_base_9B, prompt, unique_id, "flux_2_klein_base_9B"
-        )
-        lora_name = self._coerce_connected_model_name(
-            controllight, prompt, unique_id, "controllight"
-        )
-        pipe = self._get_pipeline(
-            device=device,
-            dtype=dtype,
-            flux_2_klein_base_9B=model_name,
-            controllight=lora_name,
-        )
+        pipe = self._get_pipeline(device=device, dtype=dtype)
 
         outputs: list[torch.Tensor] = []
         for idx in range(image.shape[0]):
