@@ -5711,13 +5711,13 @@ function ensureMissingFilesStyles() {
       color: var(--component-node-foreground);
       word-break: break-word;
     }
-    .avatary-missing-files-item-path {
+    .avatary-missing-files-item-url {
       margin: 0;
       font-size: 10px;
       color: var(--component-node-foreground-secondary);
       word-break: break-all;
     }
-    .avatary-missing-files-item-path-row {
+    .avatary-missing-files-item-url-row {
       display: flex;
       align-items: flex-start;
       gap: 6px;
@@ -5801,35 +5801,35 @@ function renderMissingFiles({
     itemTitle.className = "avatary-missing-files-item-title";
     itemTitle.textContent = String(item?.label || "Missing file");
     row.appendChild(itemTitle);
-    const itemPathRow = document.createElement("div");
-    itemPathRow.className = "avatary-missing-files-item-path-row";
-    const itemPath = document.createElement("p");
-    itemPath.className = "avatary-missing-files-item-path";
-    itemPath.textContent = String(item?.path || "");
-    itemPathRow.appendChild(itemPath);
+    const itemUrlRow = document.createElement("div");
+    itemUrlRow.className = "avatary-missing-files-item-url-row";
+    const itemUrl = document.createElement("p");
+    itemUrl.className = "avatary-missing-files-item-url";
+    itemUrl.textContent = String(item?.url || "");
+    itemUrlRow.appendChild(itemUrl);
     const copyBtn = document.createElement("button");
     copyBtn.className = "avatary-missing-files-copy-btn";
     copyBtn.type = "button";
-    copyBtn.title = "Copy path";
+    copyBtn.title = "Copy download URL";
     copyBtn.innerHTML = '<i class="icon-[lucide--copy]"></i>';
     copyBtn.addEventListener("click", async () => {
-      const pathText = String(item?.path || "").trim();
-      if (!pathText) return;
+      const urlText = String(item?.url || "").trim();
+      if (!urlText) return;
       try {
-        await navigator.clipboard.writeText(pathText);
+        await navigator.clipboard.writeText(urlText);
         copyBtn.classList.add("copied");
         copyBtn.title = "Copied";
         copyBtn.innerHTML = '<i class="icon-[lucide--check]"></i>';
         setTimeout(() => {
           copyBtn.classList.remove("copied");
-          copyBtn.title = "Copy path";
+          copyBtn.title = "Copy download URL";
           copyBtn.innerHTML = '<i class="icon-[lucide--copy]"></i>';
         }, 1200);
       } catch (_err) {
       }
     });
-    itemPathRow.appendChild(copyBtn);
-    row.appendChild(itemPathRow);
+    itemUrlRow.appendChild(copyBtn);
+    row.appendChild(itemUrlRow);
     const url = String(item?.url || "").trim();
     if (url) {
       const link = document.createElement("a");
@@ -5883,8 +5883,16 @@ function ensurePanelWidget3(node) {
   }
   return null;
 }
-async function fetchMissingFiles() {
-  const response = await fetch(ROUTE, { method: "GET" });
+function getWidgetValue(node, name) {
+  const widget = node?.widgets?.find((w) => w?.name === name);
+  return String(widget?.value ?? "").trim();
+}
+async function fetchMissingFiles(node) {
+  const params = new URLSearchParams({
+    flux_2_klein_base_9B: getWidgetValue(node, "flux_2_klein_base_9B"),
+    controllight: getWidgetValue(node, "controllight")
+  });
+  const response = await fetch(`${ROUTE}?${params.toString()}`, { method: "GET" });
   if (!response.ok) {
     throw new Error(`Missing-files request failed (${response.status})`);
   }
@@ -5911,14 +5919,14 @@ async function refreshPanel(node) {
   node._avataryControlLightBusy = true;
   renderLoading(panel);
   try {
-    const payload = await fetchMissingFiles();
+    const payload = await fetchMissingFiles(node);
     const items = (Array.isArray(payload?.items) ? payload.items : []).filter(
       (item) => Boolean(item?.missing)
     );
     renderMissingFiles({
       container: panel,
       title: "ControlLight Missing Files",
-      description: "Download each file and place it in the expected path. The node runs once all files are present.",
+      description: "Set both model paths in this node, then download the required assets from the URLs below.",
       items
     });
   } catch (err) {

@@ -44,8 +44,17 @@ function ensurePanelWidget(node) {
 	return null;
 }
 
-async function fetchMissingFiles() {
-	const response = await fetch(ROUTE, { method: "GET" });
+function getWidgetValue(node, name) {
+	const widget = node?.widgets?.find((w) => w?.name === name);
+	return String(widget?.value ?? "").trim();
+}
+
+async function fetchMissingFiles(node) {
+	const params = new URLSearchParams({
+		flux_2_klein_base_9B: getWidgetValue(node, "flux_2_klein_base_9B"),
+		controllight: getWidgetValue(node, "controllight"),
+	});
+	const response = await fetch(`${ROUTE}?${params.toString()}`, { method: "GET" });
 	if (!response.ok) {
 		throw new Error(`Missing-files request failed (${response.status})`);
 	}
@@ -75,7 +84,7 @@ async function refreshPanel(node) {
 	node._avataryControlLightBusy = true;
 	renderLoading(panel);
 	try {
-		const payload = await fetchMissingFiles();
+		const payload = await fetchMissingFiles(node);
 		const items = (Array.isArray(payload?.items) ? payload.items : []).filter(
 			(item) => Boolean(item?.missing),
 		);
@@ -83,7 +92,7 @@ async function refreshPanel(node) {
 			container: panel,
 			title: "ControlLight Missing Files",
 			description:
-				"Download each file and place it in the expected path. The node runs once all files are present.",
+				"Set both model paths in this node, then download the required assets from the URLs below.",
 			items,
 		});
 	} catch (err) {

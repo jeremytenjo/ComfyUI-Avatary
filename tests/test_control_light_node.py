@@ -25,28 +25,33 @@ def test_control_light_mapping_and_metadata():
 def test_scale_validation_bounds():
     node = ControlLight()
     image = torch.zeros((1, 8, 8, 3), dtype=torch.float32)
+    model_dir = "/tmp/flux_2_klein_base_9B"
+    lora_path = "/tmp/controllight.safetensors"
     with pytest.raises(ValueError, match="scale must be in \\[0, 1\\]"):
-        node.enhance(image, -0.1)
+        node.enhance(image, -0.1, model_dir, lora_path)
     with pytest.raises(ValueError, match="scale must be in \\[0, 1\\]"):
-        node.enhance(image, 1.1)
+        node.enhance(image, 1.1, model_dir, lora_path)
 
 
-def test_missing_model_paths_raise(tmp_path: Path, monkeypatch):
-    monkeypatch.setattr(MODULE.folder_paths, "base_path", str(tmp_path))
+def test_missing_model_paths_raise():
     with pytest.raises(RuntimeError, match="ControlLight model path not found"):
-        ControlLight._resolve_model_paths()
+        ControlLight._resolve_model_paths("/path/that/does/not/exist", "/tmp/controllight.safetensors")
 
 
 def test_dependency_missing_error(monkeypatch, tmp_path: Path):
-    model_dir = tmp_path / "models" / "ControlLight" / "FLUX.2-klein-base-9B"
-    lora_path = tmp_path / "models" / "ControlLight" / "controllight.safetensors"
+    model_dir = tmp_path / "flux_2_klein_base_9B"
+    lora_path = tmp_path / "controllight.safetensors"
     model_dir.mkdir(parents=True, exist_ok=True)
     lora_path.write_bytes(b"fake")
-    monkeypatch.setattr(MODULE.folder_paths, "base_path", str(tmp_path))
 
     def _raise_import_error():
         raise RuntimeError("ControlLightPipeline is unavailable")
 
     monkeypatch.setattr(ControlLight, "_import_pipeline", staticmethod(_raise_import_error))
     with pytest.raises(RuntimeError, match="ControlLightPipeline is unavailable"):
-        ControlLight._get_pipeline(device="cpu", dtype=torch.float32)
+        ControlLight._get_pipeline(
+            device="cpu",
+            dtype=torch.float32,
+            flux_2_klein_base_9B=str(model_dir),
+            controllight=str(lora_path),
+        )

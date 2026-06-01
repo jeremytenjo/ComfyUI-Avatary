@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-import folder_paths
 import torch
 
 
@@ -26,6 +25,8 @@ class ControlLight:
             "required": {
                 "image": ("IMAGE",),
                 "scale": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "flux_2_klein_base_9B": ("STRING", {"default": ""}),
+                "controllight": ("STRING", {"default": ""}),
             }
         }
 
@@ -35,19 +36,20 @@ class ControlLight:
     CATEGORY = "👑 Avatary/Image"
 
     @classmethod
-    def _resolve_model_paths(cls) -> tuple[Path, Path]:
-        comfy_root = Path(folder_paths.base_path).resolve()
-        model_path = (comfy_root / "models" / "ControlLight" / "FLUX.2-klein-base-9B").resolve()
-        lora_path = (comfy_root / "models" / "ControlLight" / "controllight.safetensors").resolve()
+    def _resolve_model_paths(
+        cls, flux_2_klein_base_9B: str, controllight: str
+    ) -> tuple[Path, Path]:
+        model_path = Path(str(flux_2_klein_base_9B or "")).expanduser().resolve()
+        lora_path = Path(str(controllight or "")).expanduser().resolve()
         if not model_path.is_dir():
             raise RuntimeError(
                 "ControlLight model path not found: "
-                f"'{model_path}'. Expected '<ComfyUI root>/models/ControlLight/FLUX.2-klein-base-9B'."
+                f"'{model_path}'. Provide a valid path via flux_2_klein_base_9B."
             )
         if not lora_path.is_file():
             raise RuntimeError(
                 "ControlLight LoRA path not found: "
-                f"'{lora_path}'. Expected '<ComfyUI root>/models/ControlLight/controllight.safetensors'."
+                f"'{lora_path}'. Provide a valid path via controllight."
             )
         return model_path, lora_path
 
@@ -63,9 +65,11 @@ class ControlLight:
         return ControlLightPipeline
 
     @classmethod
-    def _get_pipeline(cls, device: str, dtype: torch.dtype):
-        model_path, lora_path = cls._resolve_model_paths()
-        cache_key = (device, str(dtype))
+    def _get_pipeline(
+        cls, device: str, dtype: torch.dtype, flux_2_klein_base_9B: str, controllight: str
+    ):
+        model_path, lora_path = cls._resolve_model_paths(flux_2_klein_base_9B, controllight)
+        cache_key = (device, str(dtype), str(model_path), str(lora_path))
         cached = cls._PIPELINE_CACHE.get(cache_key)
         if cached is not None:
             return cached
@@ -98,7 +102,13 @@ class ControlLight:
         arr = np.array(image.convert("RGB")).astype(np.float32) / 255.0
         return torch.from_numpy(arr)
 
-    def enhance(self, image: torch.Tensor, scale: float):
+    def enhance(
+        self,
+        image: torch.Tensor,
+        scale: float,
+        flux_2_klein_base_9B: str,
+        controllight: str,
+    ):
         try:
             alpha = float(scale)
         except (TypeError, ValueError) as exc:
@@ -111,7 +121,12 @@ class ControlLight:
         use_cuda = torch.cuda.is_available()
         device = "cuda" if use_cuda else "cpu"
         dtype = torch.bfloat16 if use_cuda else torch.float32
-        pipe = self._get_pipeline(device=device, dtype=dtype)
+        pipe = self._get_pipeline(
+            device=device,
+            dtype=dtype,
+            flux_2_klein_base_9B=flux_2_klein_base_9B,
+            controllight=controllight,
+        )
 
         outputs: list[torch.Tensor] = []
         for idx in range(image.shape[0]):

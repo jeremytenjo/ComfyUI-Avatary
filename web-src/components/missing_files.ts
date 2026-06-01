@@ -47,13 +47,13 @@ export function ensureMissingFilesStyles() {
       color: var(--component-node-foreground);
       word-break: break-word;
     }
-    .avatary-missing-files-item-path {
+    .avatary-missing-files-item-url {
       margin: 0;
       font-size: 10px;
       color: var(--component-node-foreground-secondary);
       word-break: break-all;
     }
-    .avatary-missing-files-item-path-row {
+    .avatary-missing-files-item-url-row {
       display: flex;
       align-items: flex-start;
       gap: 6px;
@@ -146,38 +146,38 @@ export function renderMissingFiles({
     itemTitle.textContent = String(item?.label || 'Missing file');
     row.appendChild(itemTitle);
 
-    const itemPathRow = document.createElement('div');
-    itemPathRow.className = 'avatary-missing-files-item-path-row';
+    const itemUrlRow = document.createElement('div');
+    itemUrlRow.className = 'avatary-missing-files-item-url-row';
 
-    const itemPath = document.createElement('p');
-    itemPath.className = 'avatary-missing-files-item-path';
-    itemPath.textContent = String(item?.path || '');
-    itemPathRow.appendChild(itemPath);
+    const itemUrl = document.createElement('p');
+    itemUrl.className = 'avatary-missing-files-item-url';
+    itemUrl.textContent = String(item?.url || '');
+    itemUrlRow.appendChild(itemUrl);
 
     const copyBtn = document.createElement('button');
     copyBtn.className = 'avatary-missing-files-copy-btn';
     copyBtn.type = 'button';
-    copyBtn.title = 'Copy path';
+    copyBtn.title = 'Copy download URL';
     copyBtn.innerHTML = '<i class="icon-[lucide--copy]"></i>';
     copyBtn.addEventListener('click', async () => {
-      const pathText = String(item?.path || '').trim();
-      if (!pathText) return;
+      const urlText = String(item?.url || '').trim();
+      if (!urlText) return;
       try {
-        await navigator.clipboard.writeText(pathText);
+        await navigator.clipboard.writeText(urlText);
         copyBtn.classList.add('copied');
         copyBtn.title = 'Copied';
         copyBtn.innerHTML = '<i class="icon-[lucide--check]"></i>';
         setTimeout(() => {
           copyBtn.classList.remove('copied');
-          copyBtn.title = 'Copy path';
+          copyBtn.title = 'Copy download URL';
           copyBtn.innerHTML = '<i class="icon-[lucide--copy]"></i>';
         }, 1200);
       } catch (_err) {
         // Keep silent; clipboard can be unavailable in restricted contexts.
       }
     });
-    itemPathRow.appendChild(copyBtn);
-    row.appendChild(itemPathRow);
+    itemUrlRow.appendChild(copyBtn);
+    row.appendChild(itemUrlRow);
 
     const url = String(item?.url || '').trim();
     if (url) {
