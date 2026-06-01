@@ -49,22 +49,6 @@ function getWidgetValue(node, name) {
 	return String(widget?.value ?? "").trim();
 }
 
-function getWidgetOptions(node, name) {
-	const widget = node?.widgets?.find((w) => w?.name === name);
-	const values = widget?.options?.values;
-	return Array.isArray(values) ? values : [];
-}
-
-function setWidgetValue(node, name, value) {
-	const widget = node?.widgets?.find((w) => w?.name === name);
-	if (!widget) return;
-	widget.value = value;
-	if (typeof widget.callback === "function") {
-		widget.callback(value, node, widget);
-	}
-	node?.setDirtyCanvas?.(true, true);
-}
-
 async function fetchMissingFiles(node) {
 	const params = new URLSearchParams({
 		flux_2_klein_base_9B: getWidgetValue(node, "flux_2_klein_base_9B"),
@@ -107,30 +91,7 @@ async function refreshPanel(node) {
 		renderMissingFiles({
 			container: panel,
 			title: "ControlLight Missing Files",
-			description:
-				"Select both required models below, then download any missing assets from the URLs.",
-			fields: [
-				{
-					key: "flux_2_klein_base_9B",
-					label: "Base model (diffusion_models)",
-					value: getWidgetValue(node, "flux_2_klein_base_9B"),
-					options: getWidgetOptions(node, "flux_2_klein_base_9B"),
-					onChange: (value) => {
-						setWidgetValue(node, "flux_2_klein_base_9B", value);
-						refreshPanel(node);
-					},
-				},
-				{
-					key: "controllight",
-					label: "LoRA (loras)",
-					value: getWidgetValue(node, "controllight"),
-					options: getWidgetOptions(node, "controllight"),
-					onChange: (value) => {
-						setWidgetValue(node, "controllight", value);
-						refreshPanel(node);
-					},
-				},
-			],
+			description: "",
 			items,
 		});
 	} catch (err) {
