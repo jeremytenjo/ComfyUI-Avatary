@@ -134,9 +134,14 @@ export function renderMissingFiles({
   description = '',
   items = [],
   fields = [],
+  allRequiredConnected = false,
 }) {
   ensureMissingFilesStyles();
   container.innerHTML = '';
+
+  if (allRequiredConnected) {
+    return;
+  }
 
   const root = document.createElement('div');
   root.className = 'avatary-missing-files';

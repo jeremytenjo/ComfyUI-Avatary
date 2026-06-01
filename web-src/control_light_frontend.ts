@@ -49,6 +49,18 @@ function getWidgetValue(node, name) {
 	return String(widget?.value ?? "").trim();
 }
 
+function isInputConnected(node, inputName) {
+	const slot = node?.inputs?.find((input) => input?.name === inputName);
+	return slot?.link != null;
+}
+
+function areRequiredInputsConnected(node) {
+	return (
+		isInputConnected(node, "flux_2_klein_base_9B") &&
+		isInputConnected(node, "controllight")
+	);
+}
+
 async function fetchMissingFiles(node) {
 	const params = new URLSearchParams({
 		flux_2_klein_base_9B: getWidgetValue(node, "flux_2_klein_base_9B"),
@@ -91,6 +103,7 @@ async function refreshPanel(node) {
 		renderMissingFiles({
 			container: panel,
 			title: "ControlLight Missing Files",
+			allRequiredConnected: areRequiredInputsConnected(node),
 			items,
 		});
 	} catch (err) {

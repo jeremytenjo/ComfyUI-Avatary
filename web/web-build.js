@@ -5849,10 +5849,14 @@ function renderMissingFiles({
   title = "Missing Files",
   description = "",
   items = [],
-  fields = []
+  fields = [],
+  allRequiredConnected = false
 }) {
   ensureMissingFilesStyles();
   container.innerHTML = "";
+  if (allRequiredConnected) {
+    return;
+  }
   const root = document.createElement("div");
   root.className = "avatary-missing-files";
   const titleEl = document.createElement("p");
@@ -6011,6 +6015,13 @@ function getWidgetValue(node, name) {
   const widget = node?.widgets?.find((w) => w?.name === name);
   return String(widget?.value ?? "").trim();
 }
+function isInputConnected2(node, inputName) {
+  const slot = node?.inputs?.find((input) => input?.name === inputName);
+  return slot?.link != null;
+}
+function areRequiredInputsConnected(node) {
+  return isInputConnected2(node, "flux_2_klein_base_9B") && isInputConnected2(node, "controllight");
+}
 async function fetchMissingFiles(node) {
   const params = new URLSearchParams({
     flux_2_klein_base_9B: getWidgetValue(node, "flux_2_klein_base_9B"),
@@ -6050,6 +6061,7 @@ async function refreshPanel(node) {
     renderMissingFiles({
       container: panel,
       title: "ControlLight Missing Files",
+      allRequiredConnected: areRequiredInputsConnected(node),
       items
     });
   } catch (err) {
