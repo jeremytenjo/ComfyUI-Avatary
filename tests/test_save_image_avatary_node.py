@@ -20,7 +20,7 @@ class _FakeTensor:
 
 
 def _load_module(tmp_path: Path, disable_metadata: bool):
-    module_path = Path(__file__).resolve().parents[1] / "nodes" / "node_save_image_ultra.py"
+    module_path = Path(__file__).resolve().parents[1] / "nodes" / "node_save_image_avatary_backend.py"
     spec = importlib.util.spec_from_file_location("avatary_save_image_ultra_node", module_path)
     module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader

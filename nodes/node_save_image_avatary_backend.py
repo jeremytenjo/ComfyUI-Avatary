@@ -136,5 +136,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "SaveImageWithPromptToggle": "Save Image Ultra Avatary",
+    "SaveImageWithPromptToggle": "Save Image Avatary",
 }

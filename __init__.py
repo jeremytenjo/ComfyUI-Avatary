@@ -53,10 +53,10 @@ try:
     from .nodes.node_nano_banana import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_NANO_BANANA
     from .nodes.node_prompt_list import NODE_CLASS_MAPPINGS as _MAPS_PROMPT_LIST
     from .nodes.node_prompt_list import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_PROMPT_LIST
-    from .nodes.node_save_image_ultra import (
+    from .nodes.node_save_image_avatary_backend import (
         NODE_CLASS_MAPPINGS as _MAPS_SAVE_IMAGE_ULTRA,
     )
-    from .nodes.node_save_image_ultra import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SAVE_IMAGE_ULTRA
+    from .nodes.node_save_image_avatary_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SAVE_IMAGE_ULTRA
     from .nodes.node_switch import NODE_CLASS_MAPPINGS as _MAPS_SWITCH
     from .nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
     from .nodes.node_load_images_avatary import NODE_CLASS_MAPPINGS as _MAPS_LOAD_IMAGE_BATCH
@@ -76,10 +76,10 @@ except ImportError:
     from nodes.node_nano_banana import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_NANO_BANANA
     from nodes.node_prompt_list import NODE_CLASS_MAPPINGS as _MAPS_PROMPT_LIST
     from nodes.node_prompt_list import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_PROMPT_LIST
-    from nodes.node_save_image_ultra import (
+    from nodes.node_save_image_avatary_backend import (
         NODE_CLASS_MAPPINGS as _MAPS_SAVE_IMAGE_ULTRA,
     )
-    from nodes.node_save_image_ultra import (
+    from nodes.node_save_image_avatary_backend import (
         NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SAVE_IMAGE_ULTRA,
     )
     from nodes.node_switch import NODE_CLASS_MAPPINGS as _MAPS_SWITCH
