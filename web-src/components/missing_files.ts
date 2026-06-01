@@ -149,8 +149,11 @@ export function renderMissingFiles({
     const itemUrlRow = document.createElement('div');
     itemUrlRow.className = 'avatary-missing-files-item-url-row';
 
-    const itemUrl = document.createElement('p');
+    const itemUrl = document.createElement('a');
     itemUrl.className = 'avatary-missing-files-item-url';
+    itemUrl.href = String(item?.url || '').trim();
+    itemUrl.target = '_blank';
+    itemUrl.rel = 'noopener noreferrer';
     itemUrl.textContent = String(item?.url || '');
     itemUrlRow.appendChild(itemUrl);
 

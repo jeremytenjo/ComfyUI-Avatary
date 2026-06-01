@@ -1346,6 +1346,20 @@
     if (input) input.value = trimmed;
     writeSessionJson(HF_TOKEN_KEY, trimmed);
   }
+  function revealHuggingFaceTokenInput() {
+    const advanced = document.getElementById("dtd-advanced");
+    if (advanced instanceof HTMLDetailsElement && !advanced.open) {
+      advanced.open = true;
+      writeSessionBoolean(ADVANCED_OPEN_KEY, true);
+    }
+    const input = getHfTokenInput();
+    if (!input) return;
+    input.scrollIntoView({ block: "center", behavior: "smooth" });
+    window.setTimeout(() => {
+      input.focus();
+      input.select();
+    }, 120);
+  }
   async function promptForHuggingFaceTokenIfNeeded(attempt, message) {
     const hasExistingToken = Boolean(
       String(attempt?.huggingface_token || "").trim()
@@ -1353,6 +1367,7 @@
     if (hasExistingToken || !isHuggingFaceAuthError(attempt?.url, message)) {
       return null;
     }
+    revealHuggingFaceTokenInput();
     const userToken = window.prompt(
       "Hugging Face token is required for this download.\nPaste token (hf_...) to retry now. Leave blank to cancel.",
       String(readSessionJson(HF_TOKEN_KEY, "") || "")
@@ -5803,8 +5818,11 @@ function renderMissingFiles({
     row.appendChild(itemTitle);
     const itemUrlRow = document.createElement("div");
     itemUrlRow.className = "avatary-missing-files-item-url-row";
-    const itemUrl = document.createElement("p");
+    const itemUrl = document.createElement("a");
     itemUrl.className = "avatary-missing-files-item-url";
+    itemUrl.href = String(item?.url || "").trim();
+    itemUrl.target = "_blank";
+    itemUrl.rel = "noopener noreferrer";
     itemUrl.textContent = String(item?.url || "");
     itemUrlRow.appendChild(itemUrl);
     const copyBtn = document.createElement("button");

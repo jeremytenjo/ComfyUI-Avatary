@@ -1517,6 +1517,21 @@
 		writeSessionJson(HF_TOKEN_KEY, trimmed);
 	}
 
+	function revealHuggingFaceTokenInput() {
+		const advanced = document.getElementById("dtd-advanced");
+		if (advanced instanceof HTMLDetailsElement && !advanced.open) {
+			advanced.open = true;
+			writeSessionBoolean(ADVANCED_OPEN_KEY, true);
+		}
+		const input = getHfTokenInput();
+		if (!input) return;
+		input.scrollIntoView({ block: "center", behavior: "smooth" });
+		window.setTimeout(() => {
+			input.focus();
+			input.select();
+		}, 120);
+	}
+
 	async function promptForHuggingFaceTokenIfNeeded(attempt, message) {
 		const hasExistingToken = Boolean(
 			String(attempt?.huggingface_token || "").trim(),
@@ -1525,6 +1540,7 @@
 			return null;
 		}
 
+		revealHuggingFaceTokenInput();
 		const userToken = window.prompt(
 			"Hugging Face token is required for this download.\nPaste token (hf_...) to retry now. Leave blank to cancel.",
 			String(readSessionJson(HF_TOKEN_KEY, "") || ""),
