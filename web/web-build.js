@@ -464,6 +464,18 @@
         font-size: 12px;
         line-height: 1.3;
       }
+      #${DIALOG_ID} .history-hf-token-input {
+        margin: 0;
+        width: 100%;
+        height: 34px;
+        border-radius: 8px;
+        border: 1px solid var(--p-content-border-color, #434958);
+        background: var(--p-surface-900, #1a1f27);
+        color: var(--p-text-color, #f5f7fb);
+        padding: 6px 10px;
+        font-size: 12px;
+        line-height: 1.3;
+      }
       #${DIALOG_ID} .history-actions {
         display: flex;
         gap: 8px;
@@ -1446,7 +1458,8 @@
       bytes_written: Number(entry?.bytes_written || 0),
       total_bytes: entry?.total_bytes == null ? null : Number(entry.total_bytes || 0),
       progress_percent: entry?.progress_percent == null ? null : Number(entry.progress_percent || 0),
-      error: String(entry?.error || "").trim()
+      error: String(entry?.error || "").trim(),
+      huggingface_token: String(entry?.huggingface_token || "").trim()
     };
     writeHistoryEntries([record, ...state.historyEntries]);
     renderHistory();
@@ -1739,6 +1752,16 @@
       pathInput.dataset.id = entry.id;
       pathInput.value = getEntryPath(entry);
       item.append(pathInput);
+      if (isHuggingFaceAuthError(entry?.url, entry?.error)) {
+        const tokenInput = document.createElement("input");
+        tokenInput.type = "text";
+        tokenInput.className = "history-hf-token-input";
+        tokenInput.dataset.action = "edit-hf-token";
+        tokenInput.dataset.id = entry.id;
+        tokenInput.placeholder = "Hugging Face token (hf_...)";
+        tokenInput.value = String(entry?.huggingface_token || "").trim() || String(readSessionJson(HF_TOKEN_KEY, "") || "").trim();
+        item.append(tokenInput);
+      }
       const retryBtn = document.createElement("button");
       retryBtn.type = "button";
       retryBtn.dataset.action = "retry-entry";
@@ -2031,6 +2054,8 @@ Reinstall source: ${installTarget}`,
   function buildRetryAttemptFromEntry(entry) {
     const formValues = readDownloadFormValues();
     const retryPath = String(getEntryPath(entry) || "").trim();
+    const entryToken = String(entry?.huggingface_token || "").trim();
+    const formToken = String(formValues?.huggingface_token || "").trim();
     return {
       url: String(entry?.url || "").trim(),
       selected_root_value: "",
@@ -2039,7 +2064,7 @@ Reinstall source: ${installTarget}`,
       subdirectory: "",
       filename: String(entry?.filename || entry?.file_name || "").trim(),
       overwrite: Boolean(entry?.overwrite),
-      huggingface_token: String(formValues?.huggingface_token || "").trim()
+      huggingface_token: entryToken || formToken
     };
   }
   async function handleDownload(options = {}) {
@@ -2910,16 +2935,29 @@ ${copy}`.trim()));
     const historyList = document.getElementById("dtd-history-list");
     if (historyList) {
       historyList.addEventListener("input", (event) => {
-        const input = event.target instanceof Element ? event.target.closest('input[data-action="edit-path"][data-id]') : null;
-        if (!(input instanceof HTMLInputElement)) return;
-        const entryId = input.dataset.id || "";
-        const updatedPath = String(input.value || "").trim();
+        const pathInput = event.target instanceof Element ? event.target.closest('input[data-action="edit-path"][data-id]') : null;
+        if (pathInput instanceof HTMLInputElement) {
+          const entryId2 = pathInput.dataset.id || "";
+          const updatedPath = String(pathInput.value || "").trim();
+          writeHistoryEntries(
+            state.historyEntries.map((entry) => {
+              if (entry.id !== entryId2) return entry;
+              return { ...entry, path: updatedPath };
+            })
+          );
+          return;
+        }
+        const tokenInput = event.target instanceof Element ? event.target.closest('input[data-action="edit-hf-token"][data-id]') : null;
+        if (!(tokenInput instanceof HTMLInputElement)) return;
+        const entryId = tokenInput.dataset.id || "";
+        const updatedToken = String(tokenInput.value || "").trim();
         writeHistoryEntries(
           state.historyEntries.map((entry) => {
             if (entry.id !== entryId) return entry;
-            return { ...entry, path: updatedPath };
+            return { ...entry, huggingface_token: updatedToken };
           })
         );
+        saveHuggingFaceTokenForSession(updatedToken);
       });
       historyList.addEventListener("click", (event) => {
         const button = event.target instanceof Element ? event.target.closest("button[data-action][data-id]") : null;
