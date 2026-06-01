@@ -19,7 +19,7 @@ def _controllight_specs(flux_2_klein_base_9B: str, controllight: str) -> list[di
         },
         {
             "key": "lora",
-            "label": "ControlLight LoRA (controllight.safetensors)",
+            "label": "ControlLight ControlNet (controllight.safetensors)",
             "path": controllight,
             "url": "https://huggingface.co/ControlLight/ControlLight",
             "kind": "file",
