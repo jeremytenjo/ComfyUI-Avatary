@@ -312,6 +312,13 @@ export function renderMissingFiles({
       meta.textContent = requiredType;
       row.appendChild(meta);
     }
+    const reason = String(item?.reason || '').trim();
+    if (reason) {
+      const reasonEl = document.createElement('p');
+      reasonEl.className = 'avatary-missing-files-item-meta';
+      reasonEl.textContent = `Issue: ${reason}`;
+      row.appendChild(reasonEl);
+    }
 
     list.appendChild(row);
   }

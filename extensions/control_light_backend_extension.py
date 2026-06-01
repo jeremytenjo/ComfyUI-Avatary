@@ -8,6 +8,8 @@ from aiohttp import web
 import folder_paths
 from server import PromptServer
 
+_LFS_POINTER_PREFIX = b"version https://git-lfs.github.com/spec/"
+
 
 def _controllight_specs() -> list[dict[str, str]]:
     model_root = Path(folder_paths.models_dir).resolve()
@@ -29,6 +31,15 @@ def _controllight_specs() -> list[dict[str, str]]:
             "required_type": "Output: models/loras",
         },
     ]
+
+def _is_lfs_pointer_file(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    try:
+        with path.open("rb") as handle:
+            return handle.read(256).startswith(_LFS_POINTER_PREFIX)
+    except OSError:
+        return False
 
 
 def _initialize_assets(hf_token: str = "") -> dict[str, object]:
@@ -75,6 +86,13 @@ async def controllight_missing_files(_request: web.Request) -> web.Response:
         expected_path = Path(spec["path"]).expanduser().resolve()
         kind = spec["kind"]
         exists = expected_path.is_dir() if kind == "directory" else expected_path.is_file()
+        lfs_pointer_detected = False
+        if exists and kind == "directory":
+            primary_weight = expected_path / "flux-2-klein-base-9b.safetensors"
+            lfs_pointer_detected = _is_lfs_pointer_file(primary_weight)
+        elif exists and kind == "file":
+            lfs_pointer_detected = _is_lfs_pointer_file(expected_path)
+        missing = (not exists) or lfs_pointer_detected
         items.append(
             {
                 "key": spec["key"],
@@ -83,7 +101,8 @@ async def controllight_missing_files(_request: web.Request) -> web.Response:
                 "url": spec["url"],
                 "kind": kind,
                 "required_type": spec.get("required_type", ""),
-                "missing": not exists,
+                "missing": missing,
+                "reason": "Git LFS pointer file detected" if lfs_pointer_detected else "",
             }
         )
 
