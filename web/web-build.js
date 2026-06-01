@@ -5802,6 +5802,12 @@ function ensureMissingFilesStyles() {
       align-items: flex-start;
       gap: 6px;
     }
+    .avatary-missing-files-item-meta {
+      margin: 0;
+      font-size: 10px;
+      color: var(--component-node-foreground-secondary);
+      line-height: 1.35;
+    }
     .avatary-missing-files-copy-btn {
       flex: 0 0 auto;
       width: 20px;
@@ -5951,6 +5957,13 @@ function renderMissingFiles({
     });
     itemUrlRow.appendChild(copyBtn);
     row.appendChild(itemUrlRow);
+    const requiredType = String(item?.required_type || "").trim();
+    if (requiredType) {
+      const meta = document.createElement("p");
+      meta.className = "avatary-missing-files-item-meta";
+      meta.textContent = requiredType;
+      row.appendChild(meta);
+    }
     list.appendChild(row);
   }
   root.appendChild(list);

@@ -16,13 +16,15 @@ def _controllight_specs(flux_2_klein_base_9B: str, controllight: str) -> list[di
             "path": flux_2_klein_base_9B,
             "url": "https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9B",
             "kind": "directory",
+            "required_type": "Required type: diffusion_models / MODEL",
         },
         {
             "key": "lora",
-            "label": "ControlLight ControlNet (controllight.safetensors)",
+            "label": "controllight.safetensors",
             "path": controllight,
             "url": "https://huggingface.co/ControlLight/ControlLight",
             "kind": "file",
+            "required_type": "Required type: controlnet / CONTROL_NET",
         },
     ]
 
@@ -47,6 +49,7 @@ async def controllight_missing_files(request: web.Request) -> web.Response:
                 "path": spec["path"],
                 "url": spec["url"],
                 "kind": kind,
+                "required_type": spec.get("required_type", ""),
                 "missing": not exists,
             }
         )
