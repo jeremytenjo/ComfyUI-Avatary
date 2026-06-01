@@ -16,7 +16,7 @@ def _controllight_specs(flux_2_klein_base_9B: str, controllight: str) -> list[di
             "path": flux_2_klein_base_9B,
             "url": "https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9B",
             "kind": "directory",
-            "required_type": "Required type: diffusion_models / MODEL",
+            "required_type": "Output: models/diffusion_models",
         },
         {
             "key": "lora",
@@ -24,7 +24,7 @@ def _controllight_specs(flux_2_klein_base_9B: str, controllight: str) -> list[di
             "path": controllight,
             "url": "https://huggingface.co/ControlLight/ControlLight",
             "kind": "file",
-            "required_type": "Required type: loras / LORA",
+            "required_type": "Output: models/loras",
         },
     ]
 
