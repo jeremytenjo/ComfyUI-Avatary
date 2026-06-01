@@ -5,4 +5,4 @@ import "./group_bypasser.js";
 import "./features_avatary.js";
 import "./switch/index.js";
 import "./load_images_avatary.js";
-import "./control_light.js";
+import "./control_light_frontend.js";

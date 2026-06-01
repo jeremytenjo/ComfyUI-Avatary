@@ -12,6 +12,14 @@ Agents and contributors should follow this structure when adding or changing fea
 - `tests/`: Refactor-era root tests for registry and moved nodes.
 - `packs/`: Legacy source location kept for history/reference; do not add new architecture here.
 
+## File Naming Clarity Rules
+- Use explicit backend naming for Python runtime modules that execute nodes or expose server routes.
+- Use explicit frontend naming for browser-side TypeScript modules.
+- Naming convention for new files:
+  - Node runtime modules in `nodes/`: `node_<feature>_backend.py`
+  - Backend extensions in `extensions/`: `<feature>_backend_extension.py`
+  - Frontend entry modules in `web-src/`: `<feature>_frontend.ts`
+
 ## Required Node Contract
 Each node module in `nodes/` must export:
 - `NODE_CLASS_MAPPINGS`

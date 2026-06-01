@@ -5,7 +5,7 @@ import pytest
 import torch
 
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "nodes" / "node_control_light.py"
+MODULE_PATH = Path(__file__).resolve().parents[1] / "nodes" / "node_control_light_backend.py"
 SPEC = importlib.util.spec_from_file_location("avatary_control_light_node", MODULE_PATH)
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)

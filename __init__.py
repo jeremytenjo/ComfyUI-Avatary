@@ -27,10 +27,10 @@ _try_load_downloader_extension()
 
 def _try_load_controllight_extension() -> None:
     try:
-        from .extensions import control_light_extension as _control_light_extension  # noqa: F401
+        from .extensions import control_light_backend_extension as _control_light_extension  # noqa: F401
     except Exception:
         try:
-            import extensions.control_light_extension as _control_light_extension  # noqa: F401
+            import extensions.control_light_backend_extension as _control_light_extension  # noqa: F401
         except Exception as exc:
             print(
                 "[ComfyUI-Avatary] ControlLight extension not loaded in this runtime: "
@@ -61,8 +61,8 @@ try:
     from .nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
     from .nodes.node_load_images_avatary import NODE_CLASS_MAPPINGS as _MAPS_LOAD_IMAGE_BATCH
     from .nodes.node_load_images_avatary import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_IMAGE_BATCH
-    from .nodes.node_control_light import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
-    from .nodes.node_control_light import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
+    from .nodes.node_control_light_backend import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
+    from .nodes.node_control_light_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
 except ImportError:
     from nodes.node_group_bypasser import NODE_CLASS_MAPPINGS as _MAPS_GROUP_BYPASSER
     from nodes.node_group_bypasser import (
@@ -86,8 +86,8 @@ except ImportError:
     from nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
     from nodes.node_load_images_avatary import NODE_CLASS_MAPPINGS as _MAPS_LOAD_IMAGE_BATCH
     from nodes.node_load_images_avatary import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_IMAGE_BATCH
-    from nodes.node_control_light import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
-    from nodes.node_control_light import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
+    from nodes.node_control_light_backend import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
+    from nodes.node_control_light_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
 
 
 def _merge_mapping_dicts(*mapping_dicts: dict[str, object]) -> dict[str, object]:
