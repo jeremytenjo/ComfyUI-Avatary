@@ -27,7 +27,7 @@ class ControlLight:
                 "image": ("IMAGE",),
                 "scale": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "flux_2_klein_base_9B": ("MODEL", {"forceInput": True}),
-                "controllight": ("LORA", {"forceInput": True}),
+                "controllight": ("MODEL", {"forceInput": True}),
             },
             "hidden": {
                 "prompt": "PROMPT",
