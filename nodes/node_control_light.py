@@ -27,7 +27,7 @@ class ControlLight:
                 "image": ("IMAGE",),
                 "scale": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "flux_2_klein_base_9B": ("MODEL", {"forceInput": True}),
-                "controllight": ("CONTROL_NET", {"forceInput": True}),
+                "controllight": ("LORA", {"forceInput": True}),
             },
             "hidden": {
                 "prompt": "PROMPT",
@@ -92,8 +92,8 @@ class ControlLight:
         lora_raw = str(controllight or "").strip()
         model_resolved = folder_paths.get_full_path("diffusion_models", model_raw)
         lora_resolved = (
-            folder_paths.get_full_path("controlnet", lora_raw)
-            or folder_paths.get_full_path("loras", lora_raw)
+            folder_paths.get_full_path("loras", lora_raw)
+            or folder_paths.get_full_path("controlnet", lora_raw)
             or folder_paths.get_full_path("diffusion_models", lora_raw)
         )
         model_path = Path(model_resolved).resolve() if model_resolved else Path(model_raw).expanduser().resolve()

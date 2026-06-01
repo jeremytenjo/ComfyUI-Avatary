@@ -24,7 +24,7 @@ def _controllight_specs(flux_2_klein_base_9B: str, controllight: str) -> list[di
             "path": controllight,
             "url": "https://huggingface.co/ControlLight/ControlLight",
             "kind": "file",
-            "required_type": "Required type: controlnet / CONTROL_NET",
+            "required_type": "Required type: loras / LORA",
         },
     ]
 
