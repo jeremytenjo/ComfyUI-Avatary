@@ -21,6 +21,7 @@ class ControlLight:
     DEFAULT_BASE_MODEL_DIR = "FLUX.2-klein-base-9B"
     DEFAULT_LORA_FILE = "controllight.safetensors"
     _PIPELINE_CACHE: dict[tuple[str, str], object] = {}
+    _LFS_POINTER_PREFIX = b"version https://git-lfs.github.com/spec/"
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -64,8 +65,25 @@ class ControlLight:
         return ControlLightPipeline
 
     @classmethod
+    def _ensure_no_lfs_pointer_files(cls, model_path: Path) -> None:
+        # Catch incomplete git-lfs downloads early with a clear error message.
+        for candidate in model_path.rglob("*.safetensors"):
+            try:
+                with candidate.open("rb") as handle:
+                    header = handle.read(256)
+            except OSError:
+                continue
+            if header.startswith(cls._LFS_POINTER_PREFIX):
+                raise RuntimeError(
+                    "Detected Git LFS pointer files in ControlLight base model directory. "
+                    f"File: '{candidate}'. Install/enable git-lfs and run `git lfs pull` inside "
+                    f"'{model_path}', or re-download FLUX.2-klein-base-9B with complete weights."
+                )
+
+    @classmethod
     def _get_pipeline(cls, device: str, dtype: torch.dtype):
         model_path, lora_path = cls._resolve_model_paths()
+        cls._ensure_no_lfs_pointer_files(model_path)
         cache_key = (device, str(dtype), str(model_path), str(lora_path))
         cached = cls._PIPELINE_CACHE.get(cache_key)
         if cached is not None:
