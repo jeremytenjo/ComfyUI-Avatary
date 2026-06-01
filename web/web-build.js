@@ -5749,6 +5749,33 @@ function ensureMissingFilesStyles() {
       flex-direction: column;
       gap: 8px;
     }
+    .avatary-missing-files-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .avatary-missing-files-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .avatary-missing-files-field-label {
+      margin: 0;
+      font-size: 11px;
+      color: var(--component-node-foreground);
+    }
+    .avatary-missing-files-field-input {
+      width: 100%;
+      min-height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--component-node-widget-background-highlighted);
+      background: var(--component-node-widget-background);
+      color: var(--component-node-foreground);
+      font-size: 11px;
+      line-height: 1.2;
+      padding: 6px 8px;
+      box-sizing: border-box;
+    }
     .avatary-missing-files-item {
       display: flex;
       flex-direction: column;
@@ -5815,7 +5842,8 @@ function renderMissingFiles({
   container,
   title = "Missing Files",
   description = "",
-  items = []
+  items = [],
+  fields = []
 }) {
   ensureMissingFilesStyles();
   container.innerHTML = "";
@@ -5830,6 +5858,44 @@ function renderMissingFiles({
     copyEl.className = "avatary-missing-files-copy";
     copyEl.textContent = String(description);
     root.appendChild(copyEl);
+  }
+  if (Array.isArray(fields) && fields.length > 0) {
+    const fieldsRoot = document.createElement("div");
+    fieldsRoot.className = "avatary-missing-files-fields";
+    for (const field of fields) {
+      const fieldRow = document.createElement("div");
+      fieldRow.className = "avatary-missing-files-field";
+      const fieldLabel = document.createElement("p");
+      fieldLabel.className = "avatary-missing-files-field-label";
+      fieldLabel.textContent = String(field?.label || field?.key || "Value");
+      fieldRow.appendChild(fieldLabel);
+      const options = Array.isArray(field?.options) ? field.options : [];
+      const input = options.length > 0 ? document.createElement("select") : document.createElement("input");
+      input.className = "avatary-missing-files-field-input";
+      input.value = String(field?.value ?? "");
+      if (field?.placeholder && input instanceof HTMLInputElement) {
+        input.placeholder = String(field.placeholder);
+      }
+      if (options.length > 0 && input instanceof HTMLSelectElement) {
+        for (const optionValue of options) {
+          const option = document.createElement("option");
+          option.value = String(optionValue);
+          option.textContent = String(optionValue);
+          input.appendChild(option);
+        }
+        input.value = String(field?.value ?? "");
+      } else if (input instanceof HTMLInputElement) {
+        input.type = "text";
+      }
+      input.addEventListener("change", () => {
+        if (typeof field?.onChange === "function") {
+          field.onChange(String(input.value ?? ""));
+        }
+      });
+      fieldRow.appendChild(input);
+      fieldsRoot.appendChild(fieldRow);
+    }
+    root.appendChild(fieldsRoot);
   }
   if (!Array.isArray(items) || items.length === 0) {
     const emptyEl = document.createElement("p");
@@ -5927,6 +5993,20 @@ function getWidgetValue(node, name) {
   const widget = node?.widgets?.find((w) => w?.name === name);
   return String(widget?.value ?? "").trim();
 }
+function getWidgetOptions(node, name) {
+  const widget = node?.widgets?.find((w) => w?.name === name);
+  const values = widget?.options?.values;
+  return Array.isArray(values) ? values : [];
+}
+function setWidgetValue(node, name, value) {
+  const widget = node?.widgets?.find((w) => w?.name === name);
+  if (!widget) return;
+  widget.value = value;
+  if (typeof widget.callback === "function") {
+    widget.callback(value, node, widget);
+  }
+  node?.setDirtyCanvas?.(true, true);
+}
 async function fetchMissingFiles(node) {
   const params = new URLSearchParams({
     flux_2_klein_base_9B: getWidgetValue(node, "flux_2_klein_base_9B"),
@@ -5966,7 +6046,29 @@ async function refreshPanel(node) {
     renderMissingFiles({
       container: panel,
       title: "ControlLight Missing Files",
-      description: "Set both model paths in this node, then download the required assets from the URLs below.",
+      description: "Select both required models below, then download any missing assets from the URLs.",
+      fields: [
+        {
+          key: "flux_2_klein_base_9B",
+          label: "Base model (diffusion_models)",
+          value: getWidgetValue(node, "flux_2_klein_base_9B"),
+          options: getWidgetOptions(node, "flux_2_klein_base_9B"),
+          onChange: (value) => {
+            setWidgetValue(node, "flux_2_klein_base_9B", value);
+            refreshPanel(node);
+          }
+        },
+        {
+          key: "controllight",
+          label: "LoRA (loras)",
+          value: getWidgetValue(node, "controllight"),
+          options: getWidgetOptions(node, "controllight"),
+          onChange: (value) => {
+            setWidgetValue(node, "controllight", value);
+            refreshPanel(node);
+          }
+        }
+      ],
       items
     });
   } catch (err) {

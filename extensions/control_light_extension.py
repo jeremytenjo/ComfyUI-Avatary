@@ -4,6 +4,7 @@ from pathlib import Path
 
 from aiohttp import web
 
+import folder_paths
 from server import PromptServer
 
 
@@ -30,13 +31,15 @@ def _controllight_specs(flux_2_klein_base_9B: str, controllight: str) -> list[di
 async def controllight_missing_files(request: web.Request) -> web.Response:
     flux_2_klein_base_9B = str(request.query.get("flux_2_klein_base_9B", "")).strip()
     controllight = str(request.query.get("controllight", "")).strip()
+    resolved_model = folder_paths.get_full_path("diffusion_models", flux_2_klein_base_9B)
+    resolved_lora = folder_paths.get_full_path("loras", controllight)
     items = []
-    for spec in _controllight_specs(flux_2_klein_base_9B, controllight):
-        expected_path = Path(spec["path"])
+    for spec in _controllight_specs(
+        resolved_model or flux_2_klein_base_9B, resolved_lora or controllight
+    ):
+        expected_path = Path(spec["path"]).expanduser().resolve()
         kind = spec["kind"]
-        exists = bool(spec["path"]) and (
-            expected_path.is_dir() if kind == "directory" else expected_path.is_file()
-        )
+        exists = bool(spec["path"]) and expected_path.exists()
         items.append(
             {
                 "key": spec["key"],

@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+import folder_paths
 import torch
 
 
@@ -21,12 +22,14 @@ class ControlLight:
 
     @classmethod
     def INPUT_TYPES(cls):
+        diffusion_models = folder_paths.get_filename_list("diffusion_models")
+        lora_models = folder_paths.get_filename_list("loras")
         return {
             "required": {
                 "image": ("IMAGE",),
                 "scale": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
-                "flux_2_klein_base_9B": ("STRING", {"default": ""}),
-                "controllight": ("STRING", {"default": ""}),
+                "flux_2_klein_base_9B": (diffusion_models,),
+                "controllight": (lora_models,),
             }
         }
 
@@ -36,12 +39,14 @@ class ControlLight:
     CATEGORY = "👑 Avatary/Image"
 
     @classmethod
-    def _resolve_model_paths(
-        cls, flux_2_klein_base_9B: str, controllight: str
-    ) -> tuple[Path, Path]:
-        model_path = Path(str(flux_2_klein_base_9B or "")).expanduser().resolve()
-        lora_path = Path(str(controllight or "")).expanduser().resolve()
-        if not model_path.is_dir():
+    def _resolve_model_paths(cls, flux_2_klein_base_9B: str, controllight: str) -> tuple[Path, Path]:
+        model_raw = str(flux_2_klein_base_9B or "").strip()
+        lora_raw = str(controllight or "").strip()
+        model_resolved = folder_paths.get_full_path("diffusion_models", model_raw)
+        lora_resolved = folder_paths.get_full_path("loras", lora_raw)
+        model_path = Path(model_resolved).resolve() if model_resolved else Path(model_raw).expanduser().resolve()
+        lora_path = Path(lora_resolved).resolve() if lora_resolved else Path(lora_raw).expanduser().resolve()
+        if not model_path.exists():
             raise RuntimeError(
                 "ControlLight model path not found: "
                 f"'{model_path}'. Provide a valid path via flux_2_klein_base_9B."
@@ -75,14 +80,24 @@ class ControlLight:
             return cached
 
         ControlLightPipeline = cls._import_pipeline()
-        pipe = ControlLightPipeline.from_pretrained(
-            str(model_path),
-            torch_dtype=dtype,
-            default_lora_path=str(lora_path),
-            default_prompt=cls.DEFAULT_PROMPT,
-            default_num_inference_steps=cls.DEFAULT_STEPS,
-            default_guidance_scale=cls.DEFAULT_GUIDANCE,
-        )
+        model_path_str = str(model_path)
+        common_kwargs = {
+            "torch_dtype": dtype,
+            "default_lora_path": str(lora_path),
+            "default_prompt": cls.DEFAULT_PROMPT,
+            "default_num_inference_steps": cls.DEFAULT_STEPS,
+            "default_guidance_scale": cls.DEFAULT_GUIDANCE,
+        }
+        if model_path.is_dir():
+            pipe = ControlLightPipeline.from_pretrained(model_path_str, **common_kwargs)
+        else:
+            from_single_file = getattr(ControlLightPipeline, "from_single_file", None)
+            if not callable(from_single_file):
+                raise RuntimeError(
+                    "Selected base model is a file, but ControlLightPipeline.from_single_file is unavailable. "
+                    "Use a diffusers directory model or update the ControlLight diffusers package."
+                )
+            pipe = from_single_file(model_path_str, **common_kwargs)
         if device.startswith("cuda"):
             pipe.enable_model_cpu_offload(device=device)
         else:

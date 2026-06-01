@@ -48,6 +48,11 @@ def test_dependency_missing_error(monkeypatch, tmp_path: Path):
         raise RuntimeError("ControlLightPipeline is unavailable")
 
     monkeypatch.setattr(ControlLight, "_import_pipeline", staticmethod(_raise_import_error))
+    monkeypatch.setattr(
+        MODULE.folder_paths,
+        "get_full_path",
+        lambda folder_name, value: str(model_dir) if folder_name == "diffusion_models" else str(lora_path),
+    )
     with pytest.raises(RuntimeError, match="ControlLightPipeline is unavailable"):
         ControlLight._get_pipeline(
             device="cpu",
