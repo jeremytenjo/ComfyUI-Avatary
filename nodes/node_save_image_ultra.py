@@ -105,12 +105,11 @@ class SaveImageWithPromptToggle:
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
 
             metadata = None
-            if not args.disable_metadata and attach_prompt_metadata:
-                metadata = PngInfo()
-                if prompt is not None:
-                    prompt_text = self._extract_prompt_text(prompt)
-                    if prompt_text is not None:
-                        metadata.add_text("prompt", prompt_text)
+            if not args.disable_metadata and attach_prompt_metadata and prompt is not None:
+                prompt_text = self._extract_prompt_text(prompt)
+                if prompt_text is not None:
+                    metadata = PngInfo()
+                    metadata.add_text("prompt", prompt_text)
 
             filename_with_batch_num = filename.replace("%batch_num%", str(batch_number))
             file = f"{filename_with_batch_num}_{counter:05}_.png"
