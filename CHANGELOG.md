@@ -63,6 +63,13 @@ All notable changes to internal packs are documented in this file.
 
 ## Downloader
 
+### 2026-06-01
+
+- Improved Hugging Face auth-failure handling for downloads:
+  - When a Hugging Face download fails with auth/permission errors (such as HTTP 401/403), the UI now prompts for a Hugging Face token immediately.
+  - Entered token is saved for the current browser session and reused for subsequent download attempts.
+  - After entering a token in the prompt, the failed download is retried automatically.
+
 ### 2026-05-19
 
 - Added an `Export` button between `Download` and `Upload`.

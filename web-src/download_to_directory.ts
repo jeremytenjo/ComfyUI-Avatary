@@ -1493,6 +1493,49 @@
 		return formatHuggingFaceAuthMessage(raw);
 	}
 
+	function isHuggingFaceAuthError(url, message) {
+		const normalized = String(message || "").toLowerCase();
+		const isAuthError =
+			normalized.includes("401") ||
+			normalized.includes("403") ||
+			normalized.includes("unauthorized") ||
+			normalized.includes("forbidden") ||
+			normalized.includes("authentication") ||
+			normalized.includes("blocked");
+		return Boolean(isAuthError && isHuggingFaceUrl(url));
+	}
+
+	function getHfTokenInput() {
+		const input = document.getElementById("dtd-hf-token");
+		return input instanceof HTMLInputElement ? input : null;
+	}
+
+	function saveHuggingFaceTokenForSession(token) {
+		const trimmed = String(token || "").trim();
+		const input = getHfTokenInput();
+		if (input) input.value = trimmed;
+		writeSessionJson(HF_TOKEN_KEY, trimmed);
+	}
+
+	async function promptForHuggingFaceTokenIfNeeded(attempt, message) {
+		const hasExistingToken = Boolean(
+			String(attempt?.huggingface_token || "").trim(),
+		);
+		if (hasExistingToken || !isHuggingFaceAuthError(attempt?.url, message)) {
+			return null;
+		}
+
+		const userToken = window.prompt(
+			"Hugging Face token is required for this download.\nPaste token (hf_...) to retry now. Leave blank to cancel.",
+			String(readSessionJson(HF_TOKEN_KEY, "") || ""),
+		);
+		const trimmedToken = String(userToken || "").trim();
+		if (!trimmedToken) return null;
+
+		saveHuggingFaceTokenForSession(trimmedToken);
+		return trimmedToken;
+	}
+
 	function normalizeFolderValue(value) {
 		return String(value || "")
 			.trim()
@@ -2343,6 +2386,20 @@
 						`Download failed (${startResp.status})`,
 					),
 				);
+				const promptedToken = await promptForHuggingFaceTokenIfNeeded(
+					attempt,
+					message,
+				);
+				if (promptedToken) {
+					await handleDownload({
+						attempt: {
+							...attempt,
+							huggingface_token: promptedToken,
+						},
+						existingEntryId: historyTargetId,
+					});
+					return;
+				}
 				setStatus(message, "error");
 				if (historyTargetId) {
 					updateHistoryEntry(historyTargetId, {
