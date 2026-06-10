@@ -9,6 +9,14 @@ assert SPEC and SPEC.loader
 SPEC.loader.exec_module(MODULE)
 
 AspectRatio = MODULE.AspectRatio
+NODE_CLASS_MAPPINGS = MODULE.NODE_CLASS_MAPPINGS
+NODE_DISPLAY_NAME_MAPPINGS = MODULE.NODE_DISPLAY_NAME_MAPPINGS
+
+
+def test_aspect_ratio_mapping_and_metadata():
+    assert NODE_CLASS_MAPPINGS["AvataryAspectRatio"] is AspectRatio
+    assert NODE_DISPLAY_NAME_MAPPINGS["AvataryAspectRatio"] == "Aspect Ratio Avatary"
+    assert AspectRatio.CATEGORY == "👑 Avatary/Utilities"
 
 
 def test_aspect_ratio_returns_selected_dimensions():

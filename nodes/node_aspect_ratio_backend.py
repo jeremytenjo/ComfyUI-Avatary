@@ -70,5 +70,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "AvataryAspectRatio": "Aspect Ratio Avatar",
+    "AvataryAspectRatio": "Aspect Ratio Avatary",
 }

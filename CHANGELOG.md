@@ -6,7 +6,7 @@ All notable changes to internal packs are documented in this file.
 
 ### 2026-06-10
 
-- Added new `Aspect Ratio Avatar` node:
+- Added new `Aspect Ratio Avatary` node:
   - Provides preset width/height outputs for common aspect ratios.
   - Supports optional positive `width` and `height` inputs that override the selected preset only when both are greater than zero.
 
