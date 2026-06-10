@@ -12,6 +12,28 @@ ASPECT_RATIO_DIMENSIONS = {
     "3:2: 1584×1056": (1584, 1056),
     "2:3: 1056×1584": (1056, 1584),
 }
+ASPECT_RATIO_TYPE = "AVATARY_ASPECT_RATIO"
+DEFAULT_ASPECT_RATIO = "9:16: 928×1664"
+
+
+class AspectRatioSelector:
+    @classmethod
+    def INPUT_TYPES(cls) -> dict[str, Any]:
+        return {
+            "required": {
+                "aspect_ratio": (list(ASPECT_RATIO_DIMENSIONS.keys()),),
+            },
+        }
+
+    RETURN_TYPES = (ASPECT_RATIO_TYPE,)
+    RETURN_NAMES = ("aspect_ratio",)
+    FUNCTION = "select"
+    CATEGORY = "👑 Avatary/Utilities"
+
+    def select(self, aspect_ratio: str) -> tuple[str]:
+        if aspect_ratio not in ASPECT_RATIO_DIMENSIONS:
+            return (DEFAULT_ASPECT_RATIO,)
+        return (aspect_ratio,)
 
 
 class AspectRatio:
@@ -19,9 +41,10 @@ class AspectRatio:
     def INPUT_TYPES(cls) -> dict[str, Any]:
         return {
             "required": {
-                "aspect_ratio": (list(ASPECT_RATIO_DIMENSIONS.keys()),),
+                "aspect_ratio_selector": (list(ASPECT_RATIO_DIMENSIONS.keys()),),
             },
             "optional": {
+                "aspect_ratio": (ASPECT_RATIO_TYPE,),
                 "width": (
                     "INT",
                     {
@@ -50,13 +73,15 @@ class AspectRatio:
 
     def resolve(
         self,
-        aspect_ratio: str,
+        aspect_ratio_selector: str,
+        aspect_ratio: str | None = None,
         width: int = 0,
         height: int = 0,
     ) -> tuple[int, int]:
+        selected_aspect_ratio = aspect_ratio or aspect_ratio_selector
         selected_width, selected_height = ASPECT_RATIO_DIMENSIONS.get(
-            aspect_ratio,
-            ASPECT_RATIO_DIMENSIONS["9:16: 928×1664"],
+            selected_aspect_ratio,
+            ASPECT_RATIO_DIMENSIONS[DEFAULT_ASPECT_RATIO],
         )
 
         if int(width or 0) > 0 and int(height or 0) > 0:
@@ -67,8 +92,10 @@ class AspectRatio:
 
 NODE_CLASS_MAPPINGS = {
     "AvataryAspectRatio": AspectRatio,
+    "AvataryAspectRatioSelector": AspectRatioSelector,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "AvataryAspectRatio": "Aspect Ratio Avatary",
+    "AvataryAspectRatioSelector": "Aspect Ratio Selector Avatary",
 }
