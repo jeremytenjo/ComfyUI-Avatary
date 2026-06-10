@@ -4,6 +4,12 @@ All notable changes to internal packs are documented in this file.
 
 ## Avatary Core
 
+### 2026-06-10
+
+- Added new `Aspect Ratio Avatar` node:
+  - Provides preset width/height outputs for common aspect ratios.
+  - Supports optional positive `width` and `height` inputs that override the selected preset only when both are greater than zero.
+
 ### 2026-05-31
 
 - Added new `ControlLight Avatary` node for low-light enhancement with a strict minimal interface:

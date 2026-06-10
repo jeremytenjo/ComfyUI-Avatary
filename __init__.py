@@ -63,6 +63,8 @@ try:
     from .nodes.node_load_images_avatary import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_IMAGE_BATCH
     from .nodes.node_control_light_backend import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
     from .nodes.node_control_light_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
+    from .nodes.node_aspect_ratio_backend import NODE_CLASS_MAPPINGS as _MAPS_ASPECT_RATIO
+    from .nodes.node_aspect_ratio_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_ASPECT_RATIO
 except ImportError:
     from nodes.node_group_bypasser import NODE_CLASS_MAPPINGS as _MAPS_GROUP_BYPASSER
     from nodes.node_group_bypasser import (
@@ -88,6 +90,8 @@ except ImportError:
     from nodes.node_load_images_avatary import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_IMAGE_BATCH
     from nodes.node_control_light_backend import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
     from nodes.node_control_light_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
+    from nodes.node_aspect_ratio_backend import NODE_CLASS_MAPPINGS as _MAPS_ASPECT_RATIO
+    from nodes.node_aspect_ratio_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_ASPECT_RATIO
 
 
 def _merge_mapping_dicts(*mapping_dicts: dict[str, object]) -> dict[str, object]:
@@ -112,6 +116,7 @@ NODE_CLASS_MAPPINGS = _merge_mapping_dicts(
     _MAPS_SWITCH,
     _MAPS_LOAD_IMAGE_BATCH,
     _MAPS_CONTROL_LIGHT,
+    _MAPS_ASPECT_RATIO,
 )
 
 NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
@@ -123,6 +128,7 @@ NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
     _NAMES_SWITCH,
     _NAMES_LOAD_IMAGE_BATCH,
     _NAMES_CONTROL_LIGHT,
+    _NAMES_ASPECT_RATIO,
 )
 
 WEB_DIRECTORY = "./web"
