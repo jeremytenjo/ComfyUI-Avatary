@@ -5571,7 +5571,7 @@ function renderPanel2(node) {
       actionsOverlay.className = "avatary-lb-thumb-actions";
       const replaceBtn = document.createElement("button");
       replaceBtn.className = "avatary-lb-replace";
-      replaceBtn.innerHTML = '<i class="icon-[lucide--refresh-cw]"></i>';
+      replaceBtn.innerHTML = '<i class="icon-[lucide--upload]"></i>';
       replaceBtn.title = "Replace image";
       replaceBtn.disabled = state.isUploading;
       replaceBtn.onclick = async (e) => {
