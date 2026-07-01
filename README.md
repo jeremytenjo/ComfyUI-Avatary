@@ -2,7 +2,7 @@
 
 A collection of ComfyUI nodes to speed up your process and reduce headaches.
 
-## Included Nodes
+## Nodes
 
 - `Carousel Split Avatary`
 - `Prompt List Avatary`
