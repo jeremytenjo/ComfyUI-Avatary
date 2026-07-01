@@ -4,14 +4,14 @@ A collection of ComfyUI nodes to speed up your process and reduce headaches.
 
 ## Included Nodes
 
-- `Group Bypasser Avatary`
-- `Features Avatary`
-- `Load Images Avatary`
-- `Nano Banana Pro Avatary`
+- `Carousel Split Avatary`
 - `Prompt List Avatary`
+- `Load Images Avatary`
+- `Features Avatary`
 - `Save Image Ultra Avatary`
+- `Aspect Ratio Avatary`
+- `Group Bypasser Avatary`
+- `Nano Banana Pro Avatary`
 - `Switch Avatary`
 - `ControlLight Avatary`
-- `Aspect Ratio Avatary`
 - `Aspect Ratio Selector Avatary`
-- `Carousel Split Avatary`
