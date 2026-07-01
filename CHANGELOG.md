@@ -7,6 +7,7 @@ All notable changes to internal packs are documented in this file.
 ### 2026-07-01
 
 - Added new `Carousel Split Avatary` node:
+  - Uses an image-only interface with fully automatic detection; manual direction controls were removed.
   - Auto-detects carousel/grid separators using solid-gutter detection first, then seamless global seam projection as fallback.
   - Outputs split `images` as a ComfyUI list output so uneven panels preserve full native dimensions without black padding or center cropping.
   - Provides a `preview` output with red panel boxes for checking detected cuts.
