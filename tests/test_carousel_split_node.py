@@ -51,8 +51,9 @@ def _make_horizontal_grid_image(width: int = 64, panel_height: int = 64, panels:
 def test_carousel_split_mapping_and_metadata():
     assert NODE_CLASS_MAPPINGS["GridSplit"] is CarouselSplit
     assert NODE_DISPLAY_NAME_MAPPINGS["GridSplit"] == "Carousel Split Avatary"
-    assert CarouselSplit.RETURN_TYPES == ("IMAGE", "INT", "IMAGE")
-    assert CarouselSplit.RETURN_NAMES == ("panels", "count", "preview")
+    assert CarouselSplit.RETURN_TYPES == ("IMAGE", "IMAGE")
+    assert CarouselSplit.RETURN_NAMES == ("images", "preview")
+    assert CarouselSplit.OUTPUT_IS_LIST == (True, False)
     assert CarouselSplit.CATEGORY == "👑 Avatary/Image"
     assert set(CarouselSplit.INPUT_TYPES()["required"].keys()) == {"image", "direction"}
 
@@ -61,14 +62,13 @@ def test_auto_detects_three_zero_gap_panels_and_draws_preview_lines():
     node = CarouselSplit()
     image = _make_grid_image()
 
-    panels, count, preview = node.split(image)
+    images, preview = node.split(image)
 
-    assert count == 3
-    assert panels.shape == (3, 64, 64, 3)
+    assert len(images) == 3
     assert preview.shape == image.shape
-    assert torch.allclose(panels[0], image[0, :, 0:64, :])
-    assert torch.allclose(panels[1], image[0, :, 64:128, :])
-    assert torch.allclose(panels[2], image[0, :, 128:192, :])
+    assert torch.allclose(images[0][0], image[0, :, 0:64, :])
+    assert torch.allclose(images[1][0], image[0, :, 64:128, :])
+    assert torch.allclose(images[2][0], image[0, :, 128:192, :])
     assert torch.all(preview[0, :, 63:66, 0] == 1.0)
     assert torch.all(preview[0, :, 127:130, 0] == 1.0)
     assert torch.all(preview[0, :, 63:66, 1:] == 0.0)
@@ -78,14 +78,13 @@ def test_horizontal_direction_detects_stacked_panels_and_draws_preview_lines():
     node = CarouselSplit()
     image = _make_horizontal_grid_image()
 
-    panels, count, preview = node.split(image, direction="horizontal")
+    images, preview = node.split(image, direction="horizontal")
 
-    assert count == 3
-    assert panels.shape == (3, 64, 64, 3)
+    assert len(images) == 3
     assert preview.shape == image.shape
-    assert torch.allclose(panels[0], image[0, 0:64, :, :])
-    assert torch.allclose(panels[1], image[0, 64:128, :, :])
-    assert torch.allclose(panels[2], image[0, 128:192, :, :])
+    assert torch.allclose(images[0][0], image[0, 0:64, :, :])
+    assert torch.allclose(images[1][0], image[0, 64:128, :, :])
+    assert torch.allclose(images[2][0], image[0, 128:192, :, :])
     assert torch.all(preview[0, 63:66, :, 0] == 1.0)
     assert torch.all(preview[0, 127:130, :, 0] == 1.0)
     assert torch.all(preview[0, 63:66, :, 1:] == 0.0)
@@ -95,13 +94,12 @@ def test_auto_detects_and_excludes_separator_gap_pixels():
     node = CarouselSplit()
     image = _make_grid_image_with_gaps()
 
-    panels, count, preview = node.split(image)
+    images, preview = node.split(image)
 
-    assert count == 3
-    assert panels.shape == (3, 64, 64, 3)
-    assert torch.allclose(panels[0], image[0, :, 0:64, :])
-    assert torch.allclose(panels[1], image[0, :, 68:132, :])
-    assert torch.allclose(panels[2], image[0, :, 136:200, :])
+    assert len(images) == 3
+    assert torch.allclose(images[0][0], image[0, :, 0:64, :])
+    assert torch.allclose(images[1][0], image[0, :, 68:132, :])
+    assert torch.allclose(images[2][0], image[0, :, 136:200, :])
     assert torch.all(preview[0, :, 63:66, 0] == 1.0)
     assert torch.all(preview[0, :, 67:70, 0] == 1.0)
     assert torch.all(preview[0, :, 131:134, 0] == 1.0)
@@ -114,10 +112,27 @@ def test_auto_ignores_partial_height_internal_edges():
     image[0, 12:36, 32:34, :] = 0.0
     image[0, 28:52, 160:162, :] = 0.0
 
-    panels, count, _preview = node.split(image)
+    images, _preview = node.split(image)
 
-    assert count == 3
-    assert panels.shape == (3, 64, 64, 3)
+    assert len(images) == 3
+
+
+def test_uneven_detected_panel_widths_are_preserved_without_black_padding():
+    node = CarouselSplit()
+    left = torch.full((64, 64, 3), 0.25, dtype=torch.float32)
+    middle = torch.full((64, 66, 3), 0.5, dtype=torch.float32)
+    right = torch.full((64, 64, 3), 0.75, dtype=torch.float32)
+    image = torch.cat([left, middle, right], dim=1).unsqueeze(0)
+
+    images, _preview = node.split(image)
+
+    assert len(images) == 3
+    assert images[0].shape == (1, 64, 64, 3)
+    assert images[1].shape == (1, 64, 66, 3)
+    assert images[2].shape == (1, 64, 64, 3)
+    assert torch.all(images[0][0, :, -1, :] == 0.25)
+    assert torch.all(images[1][0, :, -1, :] == 0.5)
+    assert torch.all(images[2][0, :, -1, :] == 0.75)
 
 
 def test_invalid_image_rank_raises_clear_error():
@@ -130,9 +145,9 @@ def test_no_detected_seams_returns_original_image_as_single_panel():
     node = CarouselSplit()
     image = torch.full((1, 64, 192, 3), 0.5, dtype=torch.float32)
 
-    panels, count, preview = node.split(image)
+    images, preview = node.split(image)
 
-    assert count == 1
-    assert panels.shape == image.shape
-    assert torch.allclose(panels, image)
+    assert len(images) == 1
+    assert images[0].shape == image.shape
+    assert torch.allclose(images[0], image)
     assert torch.allclose(preview, image)

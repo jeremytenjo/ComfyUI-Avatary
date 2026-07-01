@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import torch
-import torch.nn.functional as F
 
 
 class CarouselSplit:
@@ -14,8 +13,9 @@ class CarouselSplit:
             },
         }
 
-    RETURN_TYPES = ("IMAGE", "INT", "IMAGE")
-    RETURN_NAMES = ("panels", "count", "preview")
+    RETURN_TYPES = ("IMAGE", "IMAGE")
+    RETURN_NAMES = ("images", "preview")
+    OUTPUT_IS_LIST = (True, False)
     FUNCTION = "split"
     CATEGORY = "👑 Avatary/Image"
 
@@ -187,17 +187,6 @@ class CarouselSplit:
             preview[start:end, :, :] = red
         return preview
 
-    @staticmethod
-    def _pad_to_batch(panels: list[torch.Tensor]) -> torch.Tensor:
-        max_height = max(int(panel.shape[0]) for panel in panels)
-        max_width = max(int(panel.shape[1]) for panel in panels)
-        padded_panels = []
-        for panel in panels:
-            pad_height = max_height - int(panel.shape[0])
-            pad_width = max_width - int(panel.shape[1])
-            padded_panels.append(F.pad(panel, (0, 0, 0, pad_width, 0, pad_height)))
-        return torch.stack(padded_panels, dim=0)
-
     def split(
         self,
         image: torch.Tensor,
@@ -237,9 +226,9 @@ class CarouselSplit:
                 )
             )
 
-        panel_batch = self._pad_to_batch(all_panels)
+        panel_images = [panel.unsqueeze(0) for panel in all_panels]
         preview_batch = torch.stack(previews, dim=0)
-        return (panel_batch, int(panel_batch.shape[0]), preview_batch)
+        return (panel_images, preview_batch)
 
 
 NODE_CLASS_MAPPINGS = {
