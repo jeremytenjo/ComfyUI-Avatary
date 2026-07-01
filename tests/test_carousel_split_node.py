@@ -40,13 +40,21 @@ def _make_grid_image_with_gaps(
     return torch.cat(panel_images, dim=1).unsqueeze(0)
 
 
+def _make_horizontal_grid_image(width: int = 64, panel_height: int = 64, panels: int = 3) -> torch.Tensor:
+    panel_images = []
+    for panel_index in range(panels):
+        value = (panel_index + 1) / 4.0
+        panel_images.append(torch.full((panel_height, width, 3), value, dtype=torch.float32))
+    return torch.cat(panel_images, dim=0).unsqueeze(0)
+
+
 def test_carousel_split_mapping_and_metadata():
     assert NODE_CLASS_MAPPINGS["GridSplit"] is CarouselSplit
     assert NODE_DISPLAY_NAME_MAPPINGS["GridSplit"] == "Carousel Split Avatary"
     assert CarouselSplit.RETURN_TYPES == ("IMAGE", "INT", "IMAGE")
     assert CarouselSplit.RETURN_NAMES == ("panels", "count", "preview")
     assert CarouselSplit.CATEGORY == "👑 Avatary/Image"
-    assert set(CarouselSplit.INPUT_TYPES()["required"].keys()) == {"image"}
+    assert set(CarouselSplit.INPUT_TYPES()["required"].keys()) == {"image", "direction"}
 
 
 def test_auto_detects_three_zero_gap_panels_and_draws_preview_lines():
@@ -64,6 +72,23 @@ def test_auto_detects_three_zero_gap_panels_and_draws_preview_lines():
     assert torch.all(preview[0, :, 63:66, 0] == 1.0)
     assert torch.all(preview[0, :, 127:130, 0] == 1.0)
     assert torch.all(preview[0, :, 63:66, 1:] == 0.0)
+
+
+def test_horizontal_direction_detects_stacked_panels_and_draws_preview_lines():
+    node = CarouselSplit()
+    image = _make_horizontal_grid_image()
+
+    panels, count, preview = node.split(image, direction="horizontal")
+
+    assert count == 3
+    assert panels.shape == (3, 64, 64, 3)
+    assert preview.shape == image.shape
+    assert torch.allclose(panels[0], image[0, 0:64, :, :])
+    assert torch.allclose(panels[1], image[0, 64:128, :, :])
+    assert torch.allclose(panels[2], image[0, 128:192, :, :])
+    assert torch.all(preview[0, 63:66, :, 0] == 1.0)
+    assert torch.all(preview[0, 127:130, :, 0] == 1.0)
+    assert torch.all(preview[0, 63:66, :, 1:] == 0.0)
 
 
 def test_auto_detects_and_excludes_separator_gap_pixels():

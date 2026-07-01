@@ -10,6 +10,7 @@ class CarouselSplit:
         return {
             "required": {
                 "image": ("IMAGE",),
+                "direction": (["vertical", "horizontal"], {"default": "vertical"}),
             },
         }
 
@@ -200,17 +201,26 @@ class CarouselSplit:
     def split(
         self,
         image: torch.Tensor,
+        direction: str = "vertical",
         **_ignored,
     ):
         self._validate_image(image)
+        direction = str(direction or "vertical").lower()
 
         all_panels: list[torch.Tensor] = []
         previews: list[torch.Tensor] = []
         for batch_index in range(image.shape[0]):
             single_image = image[batch_index]
-            x_separators, x_boundaries = self._detect_separator_ranges(single_image, axis="x")
-            x_spans = self._spans_from_separator_ranges(int(single_image.shape[1]), x_separators)
-            y_spans = [(0, int(single_image.shape[0]))]
+            if direction == "horizontal":
+                y_separators, y_boundaries = self._detect_separator_ranges(single_image, axis="y")
+                x_boundaries: list[int] = []
+                x_spans = [(0, int(single_image.shape[1]))]
+                y_spans = self._spans_from_separator_ranges(int(single_image.shape[0]), y_separators)
+            else:
+                x_separators, x_boundaries = self._detect_separator_ranges(single_image, axis="x")
+                y_boundaries = []
+                x_spans = self._spans_from_separator_ranges(int(single_image.shape[1]), x_separators)
+                y_spans = [(0, int(single_image.shape[0]))]
 
             all_panels.extend(
                 self._crop_panels(
@@ -223,7 +233,7 @@ class CarouselSplit:
                 self._draw_preview(
                     single_image,
                     x_boundaries=x_boundaries,
-                    y_boundaries=[],
+                    y_boundaries=y_boundaries,
                 )
             )
 
