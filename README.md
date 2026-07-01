@@ -1,12 +1,5 @@
 # ComfyUI-Avatary
 
-`ComfyUI-Avatary` now uses a Pixaroma-style explicit registry:
-
-- Unified node modules live in `nodes/`
-- Non-node backend/frontend utilities live in `extensions/`
-- Root `__init__.py` explicitly imports and merges node mappings
-- Downloader is loaded as an explicit side-effect extension
-
 ## Included Nodes
 
 - `Group Bypasser Avatary`
@@ -35,3 +28,7 @@ Frontend assets are consolidated under `web/` and exposed via:
 - `Aspect Ratio Avatary` outputs width and height from common aspect-ratio presets, accepts `Aspect Ratio Selector Avatary` output through its optional `aspect_ratio` input, and supports optional positive width/height inputs for explicit overrides.
 - `Carousel Split Avatary` has an image-only UI and auto-detects carousel/grid separators using solid-gutter detection with seamless seam fallback. It outputs split `images` as a list so uneven panels keep their native dimensions, and provides a marked `preview`.
 - This refactor is branding-first and may require workflow UI metadata adjustments for renamed display/category labels.
+- Unified node modules live in `nodes/`
+- Non-node backend/frontend utilities live in `extensions/`
+- Root `__init__.py` explicitly imports and merges node mappings
+- Downloader is loaded as an explicit side-effect extension
