@@ -4,6 +4,13 @@ All notable changes to internal packs are documented in this file.
 
 ## Avatary Core
 
+### 2026-07-01
+
+- Added new `Carousel Split Avatary` node:
+  - Auto-detects carousel separators in `vertical` or `horizontal` direction.
+  - Outputs split `images` as a ComfyUI list output so uneven panels preserve full native dimensions without black padding or center cropping.
+  - Provides a `preview` output with red separator markers for checking detected cuts.
+
 ### 2026-06-10
 
 - Added new `Aspect Ratio Avatary` node:
