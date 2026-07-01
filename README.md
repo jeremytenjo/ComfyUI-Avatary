@@ -1,6 +1,6 @@
 # ComfyUI-Avatary
 
-A collection of ComfyUI nodes to speed up your process.
+A collection of ComfyUI nodes to speed up your process and reduce headaches.
 
 ## Included Nodes
 
