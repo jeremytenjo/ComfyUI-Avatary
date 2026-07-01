@@ -21,15 +21,6 @@
 - `Aspect Ratio Selector Avatary`
 - `Carousel Split Avatary`
 
-## Category Taxonomy
-
-Nodes are grouped under a branded Pixaroma-like root:
-
-- `👑 Avatary/Utilities`
-- `👑 Avatary/API`
-- `👑 Avatary/Text`
-- `👑 Avatary/Image`
-
 ## Web Assets
 
 Frontend assets are consolidated under `web/` and exposed via:
