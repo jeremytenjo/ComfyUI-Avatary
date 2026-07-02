@@ -237,6 +237,54 @@ class _FakeRequest:
         return self._body
 
 
+def test_start_download_rejects_duplicate_active_destination(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    destination_path = str(tmp_path / "models" / "turbo.safetensors")
+    prepared = {
+        "mode": "download",
+        "download_url": "https://huggingface.co/krea/Krea-2-Turbo/resolve/main/turbo.safetensors?download=true",
+        "root_key": "models/diffusion_models",
+        "destination_path": destination_path,
+        "huggingface_token": "",
+        "overwrite": False,
+        "prefer_remote_filename": False,
+    }
+    started_threads = []
+
+    class _NoopThread:
+        def __init__(self, target=None, args=(), daemon=None):
+            self.target = target
+            self.args = args
+            self.daemon = daemon
+
+        def start(self):
+            started_threads.append(self)
+
+    monkeypatch.setattr(dtd, "_prepare_download_request", lambda _body: dict(prepared))
+    monkeypatch.setattr(dtd.threading, "Thread", _NoopThread)
+
+    with dtd.DOWNLOAD_JOBS_LOCK:
+        dtd.DOWNLOAD_JOBS.clear()
+
+    first_response = asyncio.run(dtd.start_download_to_directory(_FakeRequest({})))
+    first_payload = json.loads(first_response.text)
+    second_response = asyncio.run(dtd.start_download_to_directory(_FakeRequest({})))
+    second_payload = json.loads(second_response.text)
+
+    assert first_response.status == 200
+    assert first_payload["ok"] is True
+    assert first_payload["job_id"]
+    assert second_response.status == 409
+    assert second_payload["ok"] is False
+    assert second_payload["job_id"] == first_payload["job_id"]
+    assert second_payload["destination_path"] == destination_path
+    assert len(started_threads) == 1
+    with dtd.DOWNLOAD_JOBS_LOCK:
+        assert len(dtd.DOWNLOAD_JOBS) == 1
+        dtd.DOWNLOAD_JOBS.clear()
+
+
 def test_delete_downloaded_file_deletes_and_is_idempotent(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

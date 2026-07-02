@@ -30,6 +30,7 @@ NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 DOWNLOAD_JOBS: dict[str, dict] = {}
 DOWNLOAD_JOBS_LOCK = threading.Lock()
+ACTIVE_DOWNLOAD_STATUSES = {"queued", "running"}
 EXPORT_JOBS: dict[str, dict] = {}
 EXPORT_JOBS_LOCK = threading.Lock()
 MISSING_INSTALL_JOBS: dict[str, dict] = {}
@@ -655,6 +656,23 @@ def _prune_old_jobs() -> None:
             DOWNLOAD_JOBS.pop(job_id, None)
 
 
+def _normalize_destination_key(destination_path: str) -> str:
+    return os.path.normcase(os.path.abspath(destination_path))
+
+
+def _find_active_download_for_destination(destination_path: str) -> dict | None:
+    destination_key = _normalize_destination_key(destination_path)
+    for job in DOWNLOAD_JOBS.values():
+        if job.get("status") not in ACTIVE_DOWNLOAD_STATUSES:
+            continue
+        job_destination = str(job.get("destination_path", "") or "")
+        if not job_destination:
+            continue
+        if _normalize_destination_key(job_destination) == destination_key:
+            return dict(job)
+    return None
+
+
 def _prune_old_missing_install_jobs() -> None:
     now = time.time()
     with MISSING_INSTALL_JOBS_LOCK:
@@ -1150,6 +1168,19 @@ async def start_download_to_directory(request: web.Request) -> web.Response:
     job_id = uuid.uuid4().hex
     now = time.time()
     with DOWNLOAD_JOBS_LOCK:
+        active_job = _find_active_download_for_destination(prepared["destination_path"])
+        if active_job is not None:
+            return web.json_response(
+                {
+                    "ok": False,
+                    "error": "A download to this destination is already running.",
+                    "job_id": str(active_job.get("job_id", "")),
+                    "destination_path": prepared["destination_path"],
+                    "root_key": prepared["root_key"],
+                },
+                status=409,
+            )
+
         DOWNLOAD_JOBS[job_id] = {
             "job_id": job_id,
             "status": "queued",
