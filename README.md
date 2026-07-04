@@ -18,7 +18,7 @@ Drop, paste, or point at a folder and feed ordered image sets straight into your
 
 #### `Features Avatary`
 
-Adds clean feature flags so experiments can be enabled, disabled, or bypassed fast.
+Adds clean feature flags so experiments can be enabled, disabled, or bypassed fast. Feature rules can also target matching groups or nodes by regex through `Toggle Group` and `Toggle Node`.
 
 #### `Save Image Ultra Avatary`
 

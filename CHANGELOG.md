@@ -4,6 +4,13 @@ All notable changes to internal packs are documented in this file.
 
 ## Avatary Core
 
+### 2026-07-04
+
+- Enhanced `Features Avatary` with per-feature rules:
+  - Added a compact `Rules` button beside each feature toggle.
+  - Added rule modals for creating regex-based `Toggle Group` and `Toggle Node` rules.
+  - `Toggle Group` targets matching group names; `Toggle Node` targets matching node titles/types.
+
 ### 2026-07-01
 
 - Added new `Carousel Split Avatary` node:
