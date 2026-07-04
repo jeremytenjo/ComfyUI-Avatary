@@ -280,6 +280,47 @@ function getEntryByKey(node, key) {
 	return collectGroupsByTitle(node).find((entry) => entry.key === key) || null;
 }
 
+function getNodeLabel(node) {
+	return String(node?.title || node?.type || node?.comfyClass || "").trim();
+}
+
+function collectNamedNodes(node) {
+	const rootGraph = getCurrentGraph(node);
+	if (!rootGraph) {
+		return [];
+	}
+
+	const collected = [];
+	const seenNodeIds = new WeakMap();
+
+	for (const graph of collectNestedGraphs(rootGraph)) {
+		if (!graph) {
+			continue;
+		}
+		let graphSeenIds = seenNodeIds.get(graph);
+		if (!graphSeenIds) {
+			graphSeenIds = new Set();
+			seenNodeIds.set(graph, graphSeenIds);
+		}
+		for (const graphNode of graph._nodes || []) {
+			if (!(graphNode && Number.isInteger(graphNode.id) && graphNode.id >= 0)) {
+				continue;
+			}
+			if (graphSeenIds.has(graphNode.id)) {
+				continue;
+			}
+			const label = getNodeLabel(graphNode);
+			if (!label) {
+				continue;
+			}
+			graphSeenIds.add(graphNode.id);
+			collected.push({ graph, node: graphNode, label });
+		}
+	}
+
+	return collected;
+}
+
 function computeSignature(groupsByTitle) {
 	return groupsByTitle.map((entry) => entry.key).join("|");
 }
@@ -366,6 +407,16 @@ function ensureStyles() {
 		}
 		.avatary-features-modal-button:hover {
 			background: var(--component-node-widget-background-hovered);
+		}
+		.avatary-features-rule-option {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+		.avatary-features-rule-description {
+			color: var(--component-node-foreground-secondary);
+			font-size: 12px;
+			line-height: 1.35;
 		}
 		.avatary-features-modal-button-primary {
 			background: var(--p-primary-color);
@@ -591,9 +642,14 @@ function getFeatureRules(node, featureKey) {
 		store[featureKey] = [];
 	}
 	store[featureKey] = store[featureKey]
-		.filter((rule) => rule?.type === "toggle")
+		.filter((rule) =>
+			[
+				"toggle",
+				"toggle_node",
+			].includes(rule?.type),
+		)
 		.map((rule) => ({
-			type: "toggle",
+			type: rule.type === "toggle_node" ? "toggle_node" : "toggle",
 			pattern: String(rule.pattern || ""),
 		}));
 	return store[featureKey];
@@ -605,13 +661,39 @@ function removeFeatureRule(node, featureKey, index) {
 	app.graph?.setDirtyCanvas?.(true, true);
 }
 
-function openToggleRegexModal(node, entry) {
-	const { body } = createModal("Toggle Rule");
+function ruleTypeLabel(type) {
+	if (type === "toggle_node") {
+		return "Toggle Node";
+	}
+	return "Toggle";
+}
+
+function ruleTypeDescription(type) {
+	if (type === "toggle_node") {
+		return "Matches node names by regex. Feature on bypasses matches; feature off activates them.";
+	}
+	return "Matches group names by regex. Feature on bypasses matches; feature off activates them.";
+}
+
+function createDescription(text) {
+	const description = document.createElement("div");
+	description.className = "avatary-features-rule-description";
+	description.textContent = text;
+	return description;
+}
+
+function openToggleRegexModal(node, entry, type = "toggle") {
+	const normalizedType = type === "toggle_node" ? "toggle_node" : "toggle";
+	const { body } = createModal(`${ruleTypeLabel(normalizedType)} Rule`);
+
+	body.appendChild(createDescription(ruleTypeDescription(normalizedType)));
 
 	const input = document.createElement("input");
 	input.type = "text";
 	input.className = "avatary-features-regex-input";
-	input.placeholder = "Group name regex";
+	input.placeholder = normalizedType.includes("_node")
+		? "Node name regex"
+		: "Group name regex";
 	input.addEventListener("pointerdown", stopCanvasEvent);
 	input.addEventListener("mousedown", stopCanvasEvent);
 	input.addEventListener("touchstart", stopCanvasEvent);
@@ -645,7 +727,7 @@ function openToggleRegexModal(node, entry) {
 			error.textContent = err?.message || "Invalid regex.";
 			return;
 		}
-		getFeatureRules(node, entry.key).push({ type: "toggle", pattern });
+		getFeatureRules(node, entry.key).push({ type: normalizedType, pattern });
 		app.graph?.setDirtyCanvas?.(true, true);
 		openRulesModal(node, entry);
 	});
@@ -669,13 +751,26 @@ function openToggleRegexModal(node, entry) {
 function openAddRuleModal(node, entry) {
 	const { body } = createModal("Add Rule");
 
-	const toggle = document.createElement("button");
-	toggle.type = "button";
-	toggle.className = "avatary-features-modal-button";
-	toggle.textContent = "Toggle";
-	toggle.addEventListener("click", () => openToggleRegexModal(node, entry));
+	function createRuleOption(type) {
+		const wrap = document.createElement("div");
+		wrap.className = "avatary-features-rule-option";
 
-	body.appendChild(toggle);
+		const button = document.createElement("button");
+		button.type = "button";
+		button.className = "avatary-features-modal-button";
+		button.textContent = ruleTypeLabel(type);
+		button.addEventListener("click", () => openToggleRegexModal(node, entry, type));
+
+		const description = createDescription(ruleTypeDescription(type));
+
+		wrap.append(button, description);
+		return wrap;
+	}
+
+	body.append(
+		createRuleOption("toggle"),
+		createRuleOption("toggle_node"),
+	);
 }
 
 function openRulesModal(node, entry) {
@@ -698,7 +793,7 @@ function openRulesModal(node, entry) {
 
 		const type = document.createElement("div");
 		type.className = "avatary-features-rule-type";
-		type.textContent = "Toggle";
+		type.textContent = ruleTypeLabel(rule.type);
 
 		const label = document.createElement("div");
 		label.className = "avatary-features-rule-label";
@@ -732,14 +827,20 @@ function openRulesModal(node, entry) {
 	body.append(list, footer);
 }
 
-function applyFeatureRules(node, entry) {
+function applyFeatureRules(node, entry, featureEnabled) {
 	const rules = getFeatureRules(node, entry.key);
 	if (!rules.length) {
 		return;
 	}
 	const groupsByTitle = collectGroupsByTitle(node);
+	const namedNodes = collectNamedNodes(node);
 	for (const rule of rules) {
-		if (rule.type !== "toggle") {
+		if (
+			![
+				"toggle",
+				"toggle_node",
+			].includes(rule.type)
+		) {
 			continue;
 		}
 		let regex = null;
@@ -748,15 +849,29 @@ function applyFeatureRules(node, entry) {
 		} catch (_error) {
 			continue;
 		}
+		const targetEnabled =
+			!featureEnabled;
+
+		if (rule.type === "toggle_node") {
+			for (const target of namedNodes) {
+				regex.lastIndex = 0;
+				if (!regex.test(target.label)) {
+					continue;
+				}
+				target.node.mode = targetEnabled ? MODE_ACTIVE : MODE_BYPASS;
+				target.graph.setDirtyCanvas?.(true, true);
+			}
+			continue;
+		}
+
 		for (const targetEntry of groupsByTitle) {
 			regex.lastIndex = 0;
 			if (!regex.test(targetEntry.title)) {
 				continue;
 			}
-			const enabled = resolveEnabledFromGroups(node, targetEntry);
-			applyModeToGroupTitle(node, targetEntry, !enabled);
+			applyModeToGroupTitle(node, targetEntry, targetEnabled);
 			const stateStore = ensureStateStore(node);
-			stateStore[targetEntry.key] = !enabled;
+			stateStore[targetEntry.key] = targetEnabled;
 		}
 	}
 }
@@ -843,7 +958,7 @@ function renderPanel(node, groupsByTitle, stateStore) {
 				const enabled = !asBoolean(stateStore[entry.key]);
 				stateStore[entry.key] = enabled;
 				applyModeToGroupTitle(node, latestEntry, enabled);
-				applyFeatureRules(node, latestEntry);
+				applyFeatureRules(node, latestEntry, enabled);
 				renderPanel(node, collectGroupsByTitle(node), stateStore);
 			},
 		});
