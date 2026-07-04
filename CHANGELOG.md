@@ -85,6 +85,13 @@ All notable changes to internal packs are documented in this file.
 
 ## Downloader
 
+### 2026-07-04
+
+- Improved Hugging Face auth handling in Downloader:
+  - Prompt for a Hugging Face token immediately when an async download fails with auth/access errors.
+  - Retry the same download automatically after a token is entered.
+  - Allow replacing an existing expired/invalid token before showing the failed history state.
+
 ### 2026-06-01
 
 - Improved Hugging Face auth-failure handling for downloads:

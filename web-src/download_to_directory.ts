@@ -1545,17 +1545,16 @@
 	}
 
 	async function promptForHuggingFaceTokenIfNeeded(attempt, message) {
-		const hasExistingToken = Boolean(
-			String(attempt?.huggingface_token || "").trim(),
-		);
-		if (hasExistingToken || !isHuggingFaceAuthError(attempt?.url, message)) {
+		if (!isHuggingFaceAuthError(attempt?.url, message)) {
 			return null;
 		}
 
 		revealHuggingFaceTokenInput();
 		const userToken = window.prompt(
 			"Hugging Face token is required for this download.\nPaste token (hf_...) to retry now. Leave blank to cancel.",
-			String(readSessionJson(HF_TOKEN_KEY, "") || ""),
+			String(
+				attempt?.huggingface_token || readSessionJson(HF_TOKEN_KEY, "") || "",
+			),
 		);
 		const trimmedToken = String(userToken || "").trim();
 		if (!trimmedToken) return null;
@@ -2353,6 +2352,11 @@
 			const totalBytes =
 				data.total_bytes == null ? null : Number(data.total_bytes);
 			const percent = Number(data.progress_percent);
+
+			if (status === "failed") {
+				throw new Error(String(data.error || "Download failed."));
+			}
+
 			updateHistoryEntry(historyEntryId, {
 				status,
 				bytes_written: bytesWritten,
@@ -2362,8 +2366,6 @@
 
 			if (status === "completed") {
 				return data;
-			} else if (status === "failed") {
-				throw new Error(String(data.error || "Download failed."));
 			}
 
 			await sleep(350);
@@ -2549,6 +2551,31 @@
 				attempt.url,
 				err?.message || String(err),
 			);
+			const promptedToken = await promptForHuggingFaceTokenIfNeeded(
+				attempt,
+				message,
+			);
+			if (promptedToken) {
+				const retryEntryId = historyTargetId || trackedJobId;
+				if (retryEntryId) {
+					updateHistoryEntry(retryEntryId, {
+						status: "queued",
+						error: "",
+						bytes_written: 0,
+						total_bytes: null,
+						progress_percent: 0,
+						huggingface_token: promptedToken,
+					});
+				}
+				await handleDownload({
+					attempt: {
+						...attempt,
+						huggingface_token: promptedToken,
+					},
+					existingEntryId: retryEntryId,
+				});
+				return;
+			}
 			setStatus(message, "error");
 			if (trackedJobId) {
 				updateHistoryEntry(historyTargetId || trackedJobId, {
