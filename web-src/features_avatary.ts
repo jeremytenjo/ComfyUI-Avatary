@@ -665,7 +665,7 @@ function ruleTypeLabel(type) {
 	if (type === "toggle_node") {
 		return "Toggle Node";
 	}
-	return "Toggle";
+	return "Toggle Group";
 }
 
 function ruleTypeDescription(type) {
