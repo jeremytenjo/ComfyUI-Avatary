@@ -26,7 +26,7 @@ def test_aspect_ratio_mapping_and_metadata():
 def test_aspect_ratio_returns_selected_dimensions():
     node = AspectRatio()
 
-    assert node.resolve("16:9: 1664×928") == (1664, 928)
+    assert node.resolve("16:9: 1920×1080") == (1920, 1080)
     assert node.resolve("1:1: 1328×1328") == (1328, 1328)
     assert node.resolve("2:3: 1056×1584") == (1056, 1584)
 
@@ -35,7 +35,7 @@ def test_aspect_ratio_accepts_selector_output():
     node = AspectRatio()
 
     assert node.resolve(
-        "9:16: 928×1664",
+        "9:16: 1080×1920",
         aspect_ratio="3:4: 1104×1472",
     ) == (1104, 1472)
 
@@ -43,9 +43,9 @@ def test_aspect_ratio_accepts_selector_output():
 def test_aspect_ratio_overrides_only_when_width_and_height_are_positive():
     node = AspectRatio()
 
-    assert node.resolve("9:16: 928×1664", width=1024, height=768) == (1024, 768)
-    assert node.resolve("9:16: 928×1664", width=1024, height=0) == (928, 1664)
-    assert node.resolve("9:16: 928×1664", width=0, height=768) == (928, 1664)
+    assert node.resolve("9:16: 1080×1920", width=1024, height=768) == (1024, 768)
+    assert node.resolve("9:16: 1080×1920", width=1024, height=0) == (1080, 1920)
+    assert node.resolve("9:16: 1080×1920", width=0, height=768) == (1080, 1920)
 
 
 def test_aspect_ratio_selector_returns_selected_option():
