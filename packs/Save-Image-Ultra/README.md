@@ -26,7 +26,7 @@ This node writes PNG text chunks (`tEXt`) using ComfyUI's standard behavior.
 
 When `attach_prompt_metadata = true`:
 
-- `prompt`: plain prompt text (best match extracted from prompt `text` fields).
+- `prompt`: plain prompt text extracted from prompt-like fields.
 
 When `attach_prompt_metadata = false`:
 

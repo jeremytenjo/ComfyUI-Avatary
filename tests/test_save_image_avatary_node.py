@@ -39,9 +39,14 @@ def _load_module(tmp_path: Path, disable_metadata: bool):
     return module
 
 
-def _run_save(node, attach_prompt_metadata: bool, prompt):
+def _run_save(node, attach_prompt_metadata: bool, prompt, extra_pnginfo=None):
     image = _FakeTensor(np.zeros((4, 4, 3), dtype=np.float32))
-    result = node.save_images([image], attach_prompt_metadata=attach_prompt_metadata, prompt=prompt)
+    result = node.save_images(
+        [image],
+        attach_prompt_metadata=attach_prompt_metadata,
+        prompt=prompt,
+        extra_pnginfo=extra_pnginfo,
+    )
     filename = result["ui"]["images"][0]["filename"]
     return filename
 
@@ -57,14 +62,32 @@ def test_save_image_ultra_strips_metadata_by_default(tmp_path: Path):
     assert "workflow" not in img.info
 
 
-def test_save_image_ultra_writes_only_prompt_metadata_when_enabled(tmp_path: Path):
+def test_save_image_ultra_writes_prompt_metadata_when_enabled(tmp_path: Path):
     module = _load_module(tmp_path, disable_metadata=False)
     node = module.SaveImageWithPromptToggle()
 
+    prompt = {"node": {"inputs": {"text": "portrait prompt"}}}
     filename = _run_save(
         node,
         attach_prompt_metadata=True,
-        prompt={"node": {"text": "portrait prompt"}},
+        prompt=prompt,
+    )
+    img = Image.open(tmp_path / filename)
+
+    assert img.info == {"prompt": "portrait prompt"}
+
+
+def test_save_image_ultra_does_not_write_extra_pnginfo_when_enabled(tmp_path: Path):
+    module = _load_module(tmp_path, disable_metadata=False)
+    node = module.SaveImageWithPromptToggle()
+
+    prompt = {"node": {"inputs": {"text": "portrait prompt"}}}
+    workflow = {"nodes": [{"id": 1, "type": "SaveImageWithPromptToggle"}]}
+    filename = _run_save(
+        node,
+        attach_prompt_metadata=True,
+        prompt=prompt,
+        extra_pnginfo={"workflow": workflow},
     )
     img = Image.open(tmp_path / filename)
 

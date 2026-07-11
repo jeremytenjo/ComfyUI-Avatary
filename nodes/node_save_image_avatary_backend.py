@@ -56,13 +56,20 @@ class SaveImageWithPromptToggle:
         if not isinstance(prompt, (dict, list)):
             return None
 
+        prompt_keys = {
+            "text",
+            "prompt",
+            "positive",
+            "positive_prompt",
+            "prompt_positive",
+        }
         text_values = []
         stack = [prompt]
         while stack:
             current = stack.pop()
             if isinstance(current, dict):
                 for key, value in current.items():
-                    if key == "text" and isinstance(value, str):
+                    if key in prompt_keys and isinstance(value, str):
                         text = value.strip()
                         if text:
                             text_values.append(text)
@@ -72,16 +79,21 @@ class SaveImageWithPromptToggle:
                 for value in current:
                     if isinstance(value, (dict, list)):
                         stack.append(value)
-                    elif isinstance(value, str):
-                        text = value.strip()
-                        if text:
-                            text_values.append(text)
 
         if not text_values:
             return None
 
-        # Prefer the most descriptive prompt candidate when multiple text fields exist.
         return max(text_values, key=len)
+
+    @classmethod
+    def _build_metadata(cls, prompt):
+        prompt_text = cls._extract_prompt_text(prompt)
+        if prompt_text is None:
+            return None
+
+        metadata = PngInfo()
+        metadata.add_text("prompt", prompt_text)
+        return metadata
 
     def save_images(
         self,
@@ -105,11 +117,8 @@ class SaveImageWithPromptToggle:
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
 
             metadata = None
-            if not args.disable_metadata and attach_prompt_metadata and prompt is not None:
-                prompt_text = self._extract_prompt_text(prompt)
-                if prompt_text is not None:
-                    metadata = PngInfo()
-                    metadata.add_text("prompt", prompt_text)
+            if not args.disable_metadata and attach_prompt_metadata:
+                metadata = self._build_metadata(prompt)
 
             filename_with_batch_num = filename.replace("%batch_num%", str(batch_number))
             file = f"{filename_with_batch_num}_{counter:05}_.png"
