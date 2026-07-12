@@ -43,7 +43,3 @@ Routes variations through one clean switch instead of rewiring your graph.
 #### `ControlLight Avatary`
 
 Rescues dark images with ControlLight enhancement while keeping the node simple.
-
-#### `Aspect Ratio Selector Avatary`
-
-Picks reusable preset sizes for any graph section that needs consistent dimensions.

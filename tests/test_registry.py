@@ -48,7 +48,6 @@ def test_root_registry_contains_expected_nodes():
         "AvataryLoadImageBatch",
         "ControlLight",
         "AvataryAspectRatio",
-        "AvataryAspectRatioSelector",
         "GridSplit",
     }
     assert set(module.NODE_CLASS_MAPPINGS.keys()) == expected_keys

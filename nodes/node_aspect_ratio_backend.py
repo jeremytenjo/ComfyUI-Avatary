@@ -16,26 +16,6 @@ ASPECT_RATIO_TYPE = "AVATARY_ASPECT_RATIO"
 DEFAULT_ASPECT_RATIO = "9:16: 1080×1920"
 
 
-class AspectRatioSelector:
-    @classmethod
-    def INPUT_TYPES(cls) -> dict[str, Any]:
-        return {
-            "required": {
-                "aspect_ratio": (list(ASPECT_RATIO_DIMENSIONS.keys()),),
-            },
-        }
-
-    RETURN_TYPES = (ASPECT_RATIO_TYPE,)
-    RETURN_NAMES = ("aspect_ratio",)
-    FUNCTION = "select"
-    CATEGORY = "👑 Avatary/Utilities"
-
-    def select(self, aspect_ratio: str) -> tuple[str]:
-        if aspect_ratio not in ASPECT_RATIO_DIMENSIONS:
-            return (DEFAULT_ASPECT_RATIO,)
-        return (aspect_ratio,)
-
-
 class AspectRatio:
     @classmethod
     def INPUT_TYPES(cls) -> dict[str, Any]:
@@ -92,10 +72,8 @@ class AspectRatio:
 
 NODE_CLASS_MAPPINGS = {
     "AvataryAspectRatio": AspectRatio,
-    "AvataryAspectRatioSelector": AspectRatioSelector,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "AvataryAspectRatio": "Aspect Ratio Avatary",
-    "AvataryAspectRatioSelector": "Aspect Ratio Selector Avatary",
 }

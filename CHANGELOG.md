@@ -4,6 +4,10 @@ All notable changes to internal packs are documented in this file.
 
 ## Avatary Core
 
+### 2026-07-12
+
+- Removed the `Aspect Ratio Selector Avatary` node from the explicit node registry.
+
 ### 2026-07-04
 
 - Enhanced `Features Avatary` with per-feature rules:
