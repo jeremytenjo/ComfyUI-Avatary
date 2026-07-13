@@ -91,9 +91,29 @@ function ensureStyles() {
 			grid-template-columns: 22px 38px minmax(0, 1fr) 72px 30px;
 			min-height: 34px;
 			padding: 0;
+			position: relative;
 		}
 		.avatary-lora-stack-row.dragging {
 			opacity: 0.55;
+		}
+		.avatary-lora-stack-row.drop-before::before,
+		.avatary-lora-stack-row.drop-after::after {
+			background: var(--p-primary-color, #60a5fa);
+			border-radius: 999px;
+			box-shadow: 0 0 0 1px var(--component-node-widget-background-highlighted, #4b5563);
+			content: "";
+			height: 3px;
+			left: 0;
+			pointer-events: none;
+			position: absolute;
+			right: 0;
+			z-index: 2;
+		}
+		.avatary-lora-stack-row.drop-before::before {
+			top: -5px;
+		}
+		.avatary-lora-stack-row.drop-after::after {
+			bottom: -5px;
 		}
 		.avatary-lora-stack-handle {
 			align-items: center;
@@ -269,6 +289,22 @@ function moveRow(rows, fromIndex, toIndex) {
 	return next;
 }
 
+function moveRowToInsertIndex(rows, fromIndex, insertIndex) {
+	if (fromIndex < 0 || insertIndex < 0) return rows;
+	const next = rows.slice();
+	const [item] = next.splice(fromIndex, 1);
+	const adjustedIndex = fromIndex < insertIndex ? insertIndex - 1 : insertIndex;
+	next.splice(Math.max(0, Math.min(next.length, adjustedIndex)), 0, item);
+	return next;
+}
+
+function clearDropIndicators(list) {
+	for (const row of list.querySelectorAll(".avatary-lora-stack-row")) {
+		row.classList.remove("drop-before", "drop-after");
+		delete row.dataset.dropPosition;
+	}
+}
+
 function getPanelHeight(node) {
 	const rowCount = readRows(node).length;
 	const listHeight = rowCount
@@ -294,6 +330,11 @@ function renderPanel(node) {
 
 	const list = document.createElement("div");
 	list.className = "avatary-lora-stack-list";
+	list.addEventListener("dragleave", (event) => {
+		if (!list.contains(event.relatedTarget)) {
+			clearDropIndicators(list);
+		}
+	});
 	if (!rows.length) {
 		const empty = document.createElement("div");
 		empty.className = "avatary-lora-stack-empty";
@@ -316,13 +357,22 @@ function renderPanel(node) {
 		item.addEventListener("dragover", (event) => {
 			event.preventDefault();
 			event.dataTransfer.dropEffect = "move";
+			const rect = item.getBoundingClientRect();
+			const position =
+				event.clientY > rect.top + rect.height * 0.5 ? "after" : "before";
+			clearDropIndicators(list);
+			item.dataset.dropPosition = position;
+			item.classList.add(position === "after" ? "drop-after" : "drop-before");
 		});
 		item.addEventListener("drop", (event) => {
 			event.preventDefault();
 			const fromIndex = Number(event.dataTransfer.getData("text/plain"));
 			const toIndex = Number(item.dataset.index);
 			if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex)) return;
-			writeRows(node, moveRow(readRows(node), fromIndex, toIndex));
+			const insertIndex =
+				item.dataset.dropPosition === "after" ? toIndex + 1 : toIndex;
+			clearDropIndicators(list);
+			writeRows(node, moveRowToInsertIndex(readRows(node), fromIndex, insertIndex));
 			renderPanel(node);
 		});
 

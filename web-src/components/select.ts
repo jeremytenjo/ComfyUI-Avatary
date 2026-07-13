@@ -28,6 +28,8 @@ export function createSelect({
 	].join(" ");
 
 	select.className = `${comfyClasses} ${className}`.trim();
+	select.style.appearance = "none";
+	select.style.backgroundImage = "none";
 	select.disabled = disabled;
 	if (title) select.title = title;
 
