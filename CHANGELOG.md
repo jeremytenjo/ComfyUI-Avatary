@@ -4,6 +4,13 @@ All notable changes to internal packs are documented in this file.
 
 ## Avatary Core
 
+### 2026-07-13
+
+- Added new `Lora Stack Avatary` node:
+  - Takes a `model` input and returns the LoRA-applied `model`.
+  - Provides an inline custom UI for LoRA dropdown selection, strength editing, enable toggles, row removal, and drag-and-drop ordering.
+  - Added reusable frontend `select` and `numberfield` components for future node UIs.
+
 ### 2026-07-12
 
 - Removed the `Aspect Ratio Selector Avatary` node from the explicit node registry.

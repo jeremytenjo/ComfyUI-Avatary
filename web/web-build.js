@@ -6584,7 +6584,7 @@ function ensureStyles4() {
 			align-items: center;
 			background: var(--component-node-widget-background);
 			border-radius: 6px;
-			color: var(--component-node-foreground-secondary);
+			color: color-mix(in srgb, var(--component-node-foreground-secondary) 78%, white);
 			cursor: grab;
 			display: flex;
 			font-size: 16px;
@@ -6593,6 +6593,7 @@ function ensureStyles4() {
 			user-select: none;
 		}
 		.avatary-lora-stack-remove {
+			color: color-mix(in srgb, var(--component-node-foreground-secondary) 78%, white);
 			padding: 0;
 			width: 30px;
 		}

@@ -20,6 +20,10 @@ Drop, paste, or point at a folder and feed ordered image sets straight into your
 
 Adds clean feature flags so experiments can be enabled, disabled, or bypassed fast. Feature rules can also target matching groups or nodes by regex through `Toggle Group` and `Toggle Node`.
 
+#### `Lora Stack Avatary`
+
+Applies an ordered list of LoRAs to a model with inline dropdown selection, strength controls, enable toggles, drag-and-drop sorting, and row removal.
+
 #### `Save Image Ultra Avatary`
 
 Saves final images with cleaner names, prompt metadata, and fewer output-folder chores.
