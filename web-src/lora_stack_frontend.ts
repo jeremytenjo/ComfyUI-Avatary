@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { app } from '/scripts/app.js';
+import { createNumberField } from './components/numberfield.js';
 import { createSelect } from './components/select.js';
 import { createToggle, ensureToggleStyles } from './components/toggle.js';
 
@@ -33,22 +34,6 @@ function ensureStyles() {
 			height: 100%;
 			overflow: hidden;
 			padding: 1px;
-		}
-		.avatary-lora-stack-number {
-			min-width: 0;
-			border: 0;
-			border-radius: 6px;
-			background: var(--component-node-widget-background);
-			color: var(--component-node-foreground);
-			font-size: 12px;
-			height: 28px;
-			padding: 0 8px;
-			box-sizing: border-box;
-		}
-		.avatary-lora-stack-number:hover,
-		.avatary-lora-stack-number:focus {
-			background: var(--component-node-widget-background-hovered);
-			outline: none;
 		}
 		.avatary-lora-stack-button {
 			align-items: center;
@@ -419,19 +404,18 @@ function renderPanel(node) {
       },
     });
 
-    const strength = document.createElement('input');
-    strength.type = 'number';
-    strength.className = 'avatary-lora-stack-number';
-    strength.title = 'Strength';
-    strength.step = '0.05';
-    strength.min = '-20';
-    strength.max = '20';
-    strength.value = String(row.strength);
-    strength.addEventListener('change', () => {
-      const next = readRows(node);
-      next[index].strength = Number(strength.value);
-      writeRows(node, next);
-      renderPanel(node);
+    const strength = createNumberField({
+      value: row.strength,
+      min: -20,
+      max: 20,
+      step: 0.05,
+      title: 'Strength',
+      onChange: (value) => {
+        const next = readRows(node);
+        next[index].strength = value;
+        writeRows(node, next);
+        renderPanel(node);
+      },
     });
 
     const remove = document.createElement('button');

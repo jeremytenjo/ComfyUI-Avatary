@@ -25,6 +25,7 @@ export function createSelect({
 		"transition-colors",
 		"hover:bg-component-node-widget-background-hovered",
 		"focus:bg-component-node-widget-background-hovered",
+		"cursor-pointer",
 	].join(" ");
 
 	select.className = `${comfyClasses} ${className}`.trim();

@@ -6396,6 +6396,49 @@ if (!app4._avataryLoadImagesGraphToPromptWrapped) {
 // web-src/lora_stack_frontend.ts
 import { app as app5 } from "/scripts/app.js";
 
+// web-src/components/numberfield.ts
+function createNumberField({
+  value = 0,
+  min,
+  max,
+  step,
+  disabled = false,
+  title = "",
+  className = "",
+  onInput,
+  onChange
+}) {
+  const input = document.createElement("input");
+  input.type = "number";
+  const comfyClasses = [
+    // Mirrors ComfyUI_frontend widget input conventions.
+    "w-full",
+    "min-w-0",
+    "h-7",
+    "rounded-lg",
+    "border-none",
+    "bg-component-node-widget-background",
+    "text-component-node-foreground",
+    "px-4",
+    "text-xs",
+    "outline-none",
+    "transition-colors",
+    "hover:bg-component-node-widget-background-hovered",
+    "focus:bg-component-node-widget-background-hovered",
+    "cursor-pointer"
+  ].join(" ");
+  input.className = `${comfyClasses} ${className}`.trim();
+  input.value = String(value ?? 0);
+  if (min !== void 0) input.min = String(min);
+  if (max !== void 0) input.max = String(max);
+  if (step !== void 0) input.step = String(step);
+  input.disabled = disabled;
+  if (title) input.title = title;
+  input.addEventListener("input", () => onInput?.(Number(input.value)));
+  input.addEventListener("change", () => onChange?.(Number(input.value)));
+  return input;
+}
+
 // web-src/components/select.ts
 function createSelect({
   options = [],
@@ -6420,7 +6463,8 @@ function createSelect({
     "outline-none",
     "transition-colors",
     "hover:bg-component-node-widget-background-hovered",
-    "focus:bg-component-node-widget-background-hovered"
+    "focus:bg-component-node-widget-background-hovered",
+    "cursor-pointer"
   ].join(" ");
   select.className = `${comfyClasses} ${className}`.trim();
   select.style.appearance = "none";
@@ -6470,22 +6514,6 @@ function ensureStyles4() {
 			height: 100%;
 			overflow: hidden;
 			padding: 1px;
-		}
-		.avatary-lora-stack-number {
-			min-width: 0;
-			border: 0;
-			border-radius: 6px;
-			background: var(--component-node-widget-background);
-			color: var(--component-node-foreground);
-			font-size: 12px;
-			height: 28px;
-			padding: 0 8px;
-			box-sizing: border-box;
-		}
-		.avatary-lora-stack-number:hover,
-		.avatary-lora-stack-number:focus {
-			background: var(--component-node-widget-background-hovered);
-			outline: none;
 		}
 		.avatary-lora-stack-button {
 			align-items: center;
@@ -6758,7 +6786,10 @@ function renderPanel4(node) {
       if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex)) return;
       const insertIndex = item.dataset.dropPosition === "after" ? toIndex + 1 : toIndex;
       clearDropIndicators(list);
-      writeRows(node, moveRowToInsertIndex(readRows(node), fromIndex, insertIndex));
+      writeRows(
+        node,
+        moveRowToInsertIndex(readRows(node), fromIndex, insertIndex)
+      );
       renderPanel4(node);
     });
     const handle = document.createElement("div");
@@ -6771,7 +6802,7 @@ function renderPanel4(node) {
       title: row.enabled ? "Enabled" : "Disabled",
       onToggle: () => {
         const next = readRows(node);
-        next[index].enabled = !Boolean(next[index].enabled);
+        next[index].enabled = !next[index].enabled;
         writeRows(node, next);
         renderPanel4(node);
       }
@@ -6791,19 +6822,18 @@ function renderPanel4(node) {
         renderPanel4(node);
       }
     });
-    const strength = document.createElement("input");
-    strength.type = "number";
-    strength.className = "avatary-lora-stack-number";
-    strength.title = "Strength";
-    strength.step = "0.05";
-    strength.min = "-20";
-    strength.max = "20";
-    strength.value = String(row.strength);
-    strength.addEventListener("change", () => {
-      const next = readRows(node);
-      next[index].strength = Number(strength.value);
-      writeRows(node, next);
-      renderPanel4(node);
+    const strength = createNumberField({
+      value: row.strength,
+      min: -20,
+      max: 20,
+      step: 0.05,
+      title: "Strength",
+      onChange: (value) => {
+        const next = readRows(node);
+        next[index].strength = value;
+        writeRows(node, next);
+        renderPanel4(node);
+      }
     });
     const remove = document.createElement("button");
     remove.type = "button";
