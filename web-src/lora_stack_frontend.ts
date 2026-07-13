@@ -32,7 +32,7 @@ function ensureStyles() {
 			flex-direction: column;
 			gap: 8px;
 			height: 100%;
-			overflow: hidden;
+			overflow: visible;
 			padding: 1px;
 		}
 		.avatary-lora-stack-button {
@@ -397,6 +397,7 @@ function renderPanel(node) {
       options,
       value: row.name,
       title: 'LoRA',
+      chooserLabel: 'Choose a lora',
       onChange: (value) => {
         const next = readRows(node);
         next[index].name = String(value || '').trim();
