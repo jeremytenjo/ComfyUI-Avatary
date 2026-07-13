@@ -61,6 +61,8 @@ try:
     from .nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
     from .nodes.node_load_images_avatary import NODE_CLASS_MAPPINGS as _MAPS_LOAD_IMAGE_BATCH
     from .nodes.node_load_images_avatary import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_IMAGE_BATCH
+    from .nodes.node_lora_stack_backend import NODE_CLASS_MAPPINGS as _MAPS_LORA_STACK
+    from .nodes.node_lora_stack_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LORA_STACK
     from .nodes.node_control_light_backend import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
     from .nodes.node_control_light_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
     from .nodes.node_aspect_ratio_backend import NODE_CLASS_MAPPINGS as _MAPS_ASPECT_RATIO
@@ -90,6 +92,8 @@ except ImportError:
     from nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
     from nodes.node_load_images_avatary import NODE_CLASS_MAPPINGS as _MAPS_LOAD_IMAGE_BATCH
     from nodes.node_load_images_avatary import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_IMAGE_BATCH
+    from nodes.node_lora_stack_backend import NODE_CLASS_MAPPINGS as _MAPS_LORA_STACK
+    from nodes.node_lora_stack_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LORA_STACK
     from nodes.node_control_light_backend import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
     from nodes.node_control_light_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
     from nodes.node_aspect_ratio_backend import NODE_CLASS_MAPPINGS as _MAPS_ASPECT_RATIO
@@ -119,6 +123,7 @@ NODE_CLASS_MAPPINGS = _merge_mapping_dicts(
     _MAPS_SAVE_IMAGE_ULTRA,
     _MAPS_SWITCH,
     _MAPS_LOAD_IMAGE_BATCH,
+    _MAPS_LORA_STACK,
     _MAPS_CONTROL_LIGHT,
     _MAPS_ASPECT_RATIO,
     _MAPS_CAROUSEL_SPLIT,
@@ -132,6 +137,7 @@ NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
     _NAMES_SAVE_IMAGE_ULTRA,
     _NAMES_SWITCH,
     _NAMES_LOAD_IMAGE_BATCH,
+    _NAMES_LORA_STACK,
     _NAMES_CONTROL_LIGHT,
     _NAMES_ASPECT_RATIO,
     _NAMES_CAROUSEL_SPLIT,

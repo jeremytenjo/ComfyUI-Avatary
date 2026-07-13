@@ -15,6 +15,7 @@ def _load_root_module_for_test():
     # Lightweight stubs so imports that expect ComfyUI runtime modules can load.
     fake_folder_paths = types.SimpleNamespace(
         get_output_directory=lambda: "/tmp",
+        get_filename_list=lambda _kind: ["portrait.safetensors"],
     )
     fake_cli_args = types.SimpleNamespace(args=types.SimpleNamespace(disable_metadata=False))
 
@@ -46,6 +47,7 @@ def test_root_registry_contains_expected_nodes():
         "SaveImageWithPromptToggle",
         "AvatarySwitch",
         "AvataryLoadImageBatch",
+        "AvataryLoraStack",
         "ControlLight",
         "AvataryAspectRatio",
         "GridSplit",
