@@ -91,8 +91,8 @@ function ensureSelectStyles() {
     }
     .avatary-select-option:hover,
     .avatary-select-option.active {
-      background: var(--p-primary-color, #60a5fa);
-      color: var(--p-primary-contrast-color, #111);
+      background: var(--component-node-widget-background-hovered);
+      color: var(--component-node-foreground);
     }
     .avatary-select-empty {
       color: var(--component-node-foreground-secondary);
