@@ -389,9 +389,28 @@ function ensureStyles() {
 			outline: none;
 			cursor: pointer;
 			padding: 0 10px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
 		}
 		.avatary-features-rules-button:hover {
 			background: var(--component-node-widget-background-hovered);
+		}
+		.avatary-features-rules-badge {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 16px;
+			height: 16px;
+			border-radius: 999px;
+			box-sizing: border-box;
+			background: var(--component-node-foreground);
+			color: var(--component-node-background);
+			font-size: 10px;
+			font-weight: 700;
+			line-height: 1;
+			padding: 0 5px;
 		}
 		.avatary-features-modal-button {
 			height: 34px;
@@ -661,6 +680,15 @@ function removeFeatureRule(node, featureKey, index) {
 	app.graph?.setDirtyCanvas?.(true, true);
 }
 
+function refreshRulesBadge(node) {
+	if (!isTargetNodeInstance(node)) {
+		return;
+	}
+	node.__featuresAvataryForceRefresh = true;
+	renderPanel(node, collectGroupsByTitle(node), ensureStateStore(node));
+	app.graph?.setDirtyCanvas?.(true, true);
+}
+
 function ruleTypeLabel(type) {
 	if (type === "toggle_node") {
 		return "Toggle Node";
@@ -729,6 +757,7 @@ function openToggleRegexModal(node, entry, type = "toggle") {
 		}
 		getFeatureRules(node, entry.key).push({ type: normalizedType, pattern });
 		app.graph?.setDirtyCanvas?.(true, true);
+		refreshRulesBadge(node);
 		openRulesModal(node, entry);
 	});
 
@@ -806,6 +835,7 @@ function openRulesModal(node, entry) {
 		remove.textContent = "Remove";
 		remove.addEventListener("click", () => {
 			removeFeatureRule(node, entry.key, index);
+			refreshRulesBadge(node);
 			openRulesModal(node, entry);
 		});
 
@@ -969,8 +999,17 @@ function renderPanel(node, groupsByTitle, stateStore) {
 		const rules = document.createElement("button");
 		rules.type = "button";
 		rules.className = "avatary-features-rules-button";
-		rules.textContent = "Rules";
 		rules.title = `Open rules for ${entry.title}`;
+		const rulesText = document.createElement("span");
+		rulesText.textContent = "Rules";
+		rules.appendChild(rulesText);
+		const ruleCount = getFeatureRules(node, entry.key).length;
+		if (ruleCount > 0) {
+			const badge = document.createElement("span");
+			badge.className = "avatary-features-rules-badge";
+			badge.textContent = String(ruleCount);
+			rules.appendChild(badge);
+		}
 		rules.addEventListener("pointerdown", stopCanvasEvent);
 		rules.addEventListener("mousedown", stopCanvasEvent);
 		rules.addEventListener("touchstart", stopCanvasEvent);
