@@ -6564,6 +6564,8 @@ function createSelect({
   const normalizedOptions = normalizeOptions(options);
   let selectedValue = String(value ?? "");
   let isOpen = false;
+  let filteredOptions = [];
+  let activeIndex = -1;
   const root = document.createElement("div");
   root.className = `avatary-select ${className}`.trim();
   if (title) root.title = title;
@@ -6591,24 +6593,34 @@ function createSelect({
   function close() {
     isOpen = false;
     menu.hidden = true;
+    activeIndex = -1;
   }
   function renderOptions(filterText = "") {
     const filter = String(filterText || "").toLowerCase();
-    const matches = normalizedOptions.filter(
+    filteredOptions = normalizedOptions.filter(
       (option) => option.label.toLowerCase().includes(filter) || option.value.toLowerCase().includes(filter)
     );
     optionList.innerHTML = "";
-    if (!matches.length) {
+    if (!filteredOptions.length) {
+      activeIndex = -1;
+    } else {
+      const selectedIndex = filteredOptions.findIndex(
+        (option) => option.value === selectedValue
+      );
+      activeIndex = selectedIndex >= 0 ? selectedIndex : 0;
+    }
+    if (!filteredOptions.length) {
       const empty = document.createElement("div");
       empty.className = "avatary-select-option avatary-select-empty";
       empty.textContent = "No matches";
       optionList.appendChild(empty);
       return;
     }
-    for (const option of matches) {
+    for (const [index, option] of filteredOptions.entries()) {
       const item = document.createElement("div");
       item.className = "avatary-select-option";
-      if (option.value === selectedValue) item.classList.add("active");
+      if (index === activeIndex) item.classList.add("active");
+      item.dataset.index = String(index);
       item.textContent = option.label;
       item.title = option.label;
       item.addEventListener("mousedown", (event) => event.preventDefault());
@@ -6629,6 +6641,15 @@ function createSelect({
     renderOptions("");
     requestAnimationFrame(() => filterInput.focus());
   }
+  function updateActiveOption(nextIndex) {
+    if (!filteredOptions.length) return;
+    activeIndex = (nextIndex % filteredOptions.length + filteredOptions.length) % filteredOptions.length;
+    for (const item of optionList.querySelectorAll(".avatary-select-option")) {
+      const isActive = Number(item.dataset.index) === activeIndex;
+      item.classList.toggle("active", isActive);
+      if (isActive) item.scrollIntoView({ block: "nearest" });
+    }
+  }
   trigger.addEventListener("click", () => {
     if (isOpen) {
       close();
@@ -6644,13 +6665,22 @@ function createSelect({
       trigger.focus();
     }
     if (event.key === "Enter") {
-      const firstOption = optionList.querySelector(
-        ".avatary-select-option:not(.avatary-select-empty)"
-      );
-      if (firstOption) {
+      const activeOption = filteredOptions[activeIndex];
+      if (activeOption) {
         event.preventDefault();
-        firstOption.click();
+        selectedValue = activeOption.value;
+        trigger.textContent = selectedValue;
+        close();
+        onChange?.(selectedValue);
       }
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      updateActiveOption(activeIndex + 1);
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      updateActiveOption(activeIndex - 1);
     }
   });
   const handleDocumentMouseDown = (event) => {
