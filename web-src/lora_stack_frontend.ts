@@ -81,7 +81,7 @@ function ensureStyles() {
 			flex-direction: column;
 			gap: 6px;
 			min-height: 0;
-			overflow: auto;
+			overflow: visible;
 		}
 		.avatary-lora-stack-row {
 			align-items: center;
@@ -110,10 +110,10 @@ function ensureStyles() {
 			z-index: 2;
 		}
 		.avatary-lora-stack-row.drop-before::before {
-			top: -5px;
+			top: -4px;
 		}
 		.avatary-lora-stack-row.drop-after::after {
-			bottom: -5px;
+			bottom: -4px;
 		}
 		.avatary-lora-stack-handle {
 			align-items: center;
