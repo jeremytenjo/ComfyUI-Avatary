@@ -6697,9 +6697,19 @@ function getPanelHeight2(node) {
   return PANEL_PADDING_Y + listHeight + PANEL_GAP + ADD_BUTTON_HEIGHT;
 }
 function fitNodeHeight(node) {
-  node.size[0] = Math.max(node.size?.[0] || 0, DEFAULT_W2);
-  node.size[1] = Math.max(140, getPanelHeight2(node) + NODE_VERTICAL_CHROME);
-  node.setDirtyCanvas?.(true, true);
+  const width = Math.max(node.size?.[0] || 0, DEFAULT_W2);
+  const height = Math.max(140, getPanelHeight2(node) + NODE_VERTICAL_CHROME);
+  if (typeof node.setSize === "function") {
+    node.setSize([width, height]);
+  } else {
+    node.size[0] = width;
+    node.size[1] = height;
+  }
+  node.graph?.setDirtyCanvas?.(true, true);
+  app5.graph?.setDirtyCanvas?.(true, true);
+}
+function scheduleFitNodeHeight(node) {
+  requestAnimationFrame(() => fitNodeHeight(node));
 }
 function renderPanel4(node) {
   migrateLegacyWidgets(node);
@@ -6848,6 +6858,7 @@ function renderPanel4(node) {
   });
   panel.appendChild(addButton);
   fitNodeHeight(node);
+  scheduleFitNodeHeight(node);
 }
 function bindNode3(node) {
   if (!isTargetNode(node)) return;
