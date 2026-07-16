@@ -5,7 +5,7 @@
   const RECENT_FOLDERS_KEY = "download-to-directory-recent-folders-v1";
   const ADVANCED_OPEN_KEY = "download-to-directory-advanced-open-v1";
   const HISTORY_KEY = "download-to-directory-history-v1";
-  const HF_TOKEN_KEY2 = "download-to-directory-hf-token-v1";
+  const HF_TOKEN_KEY = "download-to-directory-hf-token-v1";
   const DEFAULT_DOWNLOAD_ROOT = "models/loras";
   const MAX_RECENT_FOLDERS = 8;
   const MAX_HISTORY_ITEMS = 100;
@@ -28,7 +28,7 @@
   let exportPathResolver = null;
   let hotReloadTimer = null;
   let lastHotReloadStamp = null;
-  function ensureStyles5() {
+  function ensureStyles4() {
     if (document.getElementById("download-to-directory-style")) return;
     const style = document.createElement("style");
     style.id = "download-to-directory-style";
@@ -821,7 +821,7 @@
     const trimmed = String(token || "").trim();
     const input = getHfTokenInput();
     if (input) input.value = trimmed;
-    writeSessionJson(HF_TOKEN_KEY2, trimmed);
+    writeSessionJson(HF_TOKEN_KEY, trimmed);
   }
   function revealHuggingFaceTokenInput() {
     const advanced = document.getElementById("dtd-advanced");
@@ -845,7 +845,7 @@
     const userToken = window.prompt(
       "Hugging Face token is required for this download.\nPaste token (hf_...) to retry now. Leave blank to cancel.",
       String(
-        attempt?.huggingface_token || readSessionJson(HF_TOKEN_KEY2, "") || ""
+        attempt?.huggingface_token || readSessionJson(HF_TOKEN_KEY, "") || ""
       )
     );
     const trimmedToken = String(userToken || "").trim();
@@ -1223,7 +1223,7 @@
         tokenInput.dataset.action = "edit-hf-token";
         tokenInput.dataset.id = entry.id;
         tokenInput.placeholder = "Hugging Face token (hf_...)";
-        tokenInput.value = String(entry?.huggingface_token || "").trim() || String(readSessionJson(HF_TOKEN_KEY2, "") || "").trim();
+        tokenInput.value = String(entry?.huggingface_token || "").trim() || String(readSessionJson(HF_TOKEN_KEY, "") || "").trim();
         item.append(tokenInput);
       }
       const retryBtn = document.createElement("button");
@@ -2230,7 +2230,7 @@ ${copy}`.trim()));
     dialog.addEventListener("animationend", onAnimEnd);
   }
   function renderUi() {
-    ensureStyles5();
+    ensureStyles4();
     writeHistoryEntries(readHistoryEntries());
     if (!state.toggleEl) {
       const toggle2 = document.createElement("button");
@@ -2382,10 +2382,10 @@ ${copy}`.trim()));
     }
     const hfTokenInput = document.getElementById("dtd-hf-token");
     if (hfTokenInput instanceof HTMLInputElement) {
-      const savedToken = String(readSessionJson(HF_TOKEN_KEY2, "") || "");
+      const savedToken = String(readSessionJson(HF_TOKEN_KEY, "") || "");
       hfTokenInput.value = savedToken;
       hfTokenInput.addEventListener("input", () => {
-        writeSessionJson(HF_TOKEN_KEY2, String(hfTokenInput.value || "").trim());
+        writeSessionJson(HF_TOKEN_KEY, String(hfTokenInput.value || "").trim());
       });
     }
     renderHistory();
@@ -4152,625 +4152,18 @@ app2.registerExtension({
   }
 });
 
-// web-src/switch/index.ts
-import { app as app3 } from "/scripts/app.js";
-
-// web-src/components/textfield.ts
-function createTextfield({
-  value = "",
-  placeholder = "",
-  disabled = false,
-  title = "",
-  className = "",
-  onInput,
-  onChange
-}) {
-  const input = document.createElement("input");
-  input.type = "text";
-  const comfyClasses = [
-    // Mirrors ComfyUI_frontend widget input conventions.
-    "w-full",
-    "min-w-0",
-    "h-7",
-    "rounded-lg",
-    "border-none",
-    "bg-component-node-widget-background",
-    "text-component-node-foreground",
-    "px-4",
-    "text-xs",
-    "outline-none",
-    "transition-colors",
-    "hover:bg-component-node-widget-background-hovered",
-    "focus:bg-component-node-widget-background-hovered"
-  ].join(" ");
-  input.className = `${comfyClasses} ${className}`.trim();
-  input.value = value;
-  input.placeholder = placeholder;
-  input.disabled = disabled;
-  if (title) input.title = title;
-  input.addEventListener("input", () => onInput?.(input.value));
-  input.addEventListener("change", () => onChange?.(input.value));
-  return input;
-}
-
-// web-src/switch/index.ts
-var NODE_CLASS = "AvatarySwitch";
-var STATE_KEY3 = "switchState";
-var HIDDEN_INPUT_NAME = "SwitchState";
-var HIDDEN_BYPASS_NAME = "BypassOthers";
-var MAX_INPUTS = 32;
-var DEFAULT_W = 340;
-var PANEL_HEIGHT = 220;
-var STYLE_ID2 = "avatary-switch-panel-styles";
-var TOGGLE_STYLE_ID_FALLBACK = "avatary-switch-toggle-styles-fallback";
-function ensureToggleStylesFallback() {
-  if (document.getElementById(TOGGLE_STYLE_ID_FALLBACK)) return;
-  const style = document.createElement("style");
-  style.id = TOGGLE_STYLE_ID_FALLBACK;
-  style.textContent = `
-    .avatary-switch-toggle {
-      flex: 0 0 auto;
-      width: 44px;
-      height: 24px;
-      border-radius: 999px;
-      border: 1px solid #555d71;
-      background: #2e3442;
-      position: relative;
-      cursor: pointer;
-      box-sizing: border-box;
-      transition: background .15s ease, border-color .15s ease;
-    }
-    .avatary-switch-toggle .knob {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 18px;
-      height: 18px;
-      border-radius: 999px;
-      background: #f1f3f7;
-      box-shadow: 0 1px 2px rgba(0,0,0,.35);
-      transition: left .15s ease;
-    }
-    .avatary-switch-toggle.active {
-      background: var(--p-primary-color, #60A5FA);
-      border-color: var(--p-primary-color, #60A5FA);
-    }
-    .avatary-switch-toggle.active .knob { left: 22px; }
-    .avatary-switch-toggle.disabled {
-      opacity: .4;
-      cursor: default;
-    }
-  `;
-  document.head.appendChild(style);
-}
-function createToggleFallback({ active, disabled, title, onToggle }) {
-  const toggle = document.createElement("div");
-  toggle.setAttribute("role", "switch");
-  toggle.setAttribute("aria-checked", active ? "true" : "false");
-  if (title) toggle.title = title;
-  toggle.className = "avatary-switch-toggle";
-  if (active) toggle.classList.add("active");
-  if (disabled) toggle.classList.add("disabled");
-  const knob = document.createElement("span");
-  knob.className = "knob";
-  toggle.appendChild(knob);
-  toggle.addEventListener("click", () => {
-    if (disabled) return;
-    onToggle?.();
-  });
-  return toggle;
-}
-var _toggleApi = {
-  ensureToggleStyles: ensureToggleStyles || ensureToggleStylesFallback,
-  createToggle: createToggle || createToggleFallback
-};
-function rowName(i) {
-  return `input_${i}`;
-}
-function getState(node) {
-  if (!node.properties) node.properties = {};
-  if (!node.properties[STATE_KEY3]) {
-    node.properties[STATE_KEY3] = {
-      activeIndex: 1,
-      activeLinkId: null,
-      labels: {},
-      visibleCount: 1,
-      bypassOthers: true
-    };
-  }
-  const state = node.properties[STATE_KEY3];
-  if (typeof state.bypassOthers !== "boolean") state.bypassOthers = true;
-  return state;
-}
-function _iterGraphLinks(graph) {
-  const links = graph?.links;
-  if (!links) return [];
-  if (typeof links.values === "function") {
-    return Array.from(links.values());
-  }
-  return Object.values(links);
-}
-function isInputConnected(node, slotIdx0) {
-  const slot = node.inputs?.[slotIdx0];
-  if (slot && slot.link != null) return true;
-  const nodeId = node?.id;
-  if (nodeId == null) return false;
-  for (const link of _iterGraphLinks(node.graph)) {
-    if (!link) continue;
-    if (link.target_id === nodeId && link.target_slot === slotIdx0) return true;
-  }
-  return false;
-}
-function connectedCount(node) {
-  let n = 0;
-  const inputs = node.inputs || [];
-  for (let i = 0; i < inputs.length; i++) {
-    if (isInputConnected(node, i)) n += 1;
-  }
-  return n;
-}
-function connectionSignature(node) {
-  const parts = [];
-  const inputs = node.inputs || [];
-  for (let i = 0; i < inputs.length; i++) {
-    const link = inputs[i]?.link;
-    parts.push(`${i + 1}:${link == null ? "x" : String(link)}`);
-  }
-  return parts.join("|");
-}
-function forEachSwitchNode(fn) {
-  const seen = /* @__PURE__ */ new Set();
-  const visit = (graph) => {
-    if (!graph || seen.has(graph)) return;
-    seen.add(graph);
-    const nodes = graph._nodes || graph.nodes || [];
-    for (const n of nodes) {
-      if (!n) continue;
-      if (n.comfyClass === NODE_CLASS || n.type === NODE_CLASS) fn(n);
-      const inner = n.subgraph || n.graph || n._graph;
-      if (inner && inner !== graph) visit(inner);
-    }
-  };
-  visit(app3.graph);
-}
-function syncSwitchStateWidget(node) {
-  const state = getState(node);
-  const w = node.widgets?.find((wgt) => wgt.name === HIDDEN_INPUT_NAME);
-  if (w) w.value = String(state.activeIndex || 1);
-  const bypass = node.widgets?.find((wgt) => wgt.name === HIDDEN_BYPASS_NAME);
-  if (bypass) bypass.value = state.bypassOthers ? "1" : "0";
-}
-function normalizeInputs(node) {
-  if (!node.inputs) node.inputs = [];
-  const state = getState(node);
-  const connected = connectedCount(node);
-  const target = Math.min(
-    Math.max(connected + (connected < MAX_INPUTS ? 1 : 0), 1),
-    MAX_INPUTS
-  );
-  while (node.inputs.length > target) {
-    const lastIdx = node.inputs.length - 1;
-    if (isInputConnected(node, lastIdx)) break;
-    node.removeInput(node.inputs.length - 1);
-  }
-  while (node.inputs.length < target) {
-    node.addInput(rowName(node.inputs.length + 1), "*");
-  }
-  for (let i = 0; i < node.inputs.length; i++) {
-    const slot = node.inputs[i];
-    slot.name = rowName(i + 1);
-    slot.type = "*";
-    slot.label = "\u200B";
-  }
-  state.visibleCount = node.inputs.length;
-  if (state.activeIndex < 1 || state.activeIndex > node.inputs.length) {
-    const firstConnected = (node.inputs || []).findIndex(
-      (_, idx) => isInputConnected(node, idx)
-    );
-    state.activeIndex = firstConnected >= 0 ? firstConnected + 1 : 1;
-  }
-  for (const key of Object.keys(state.labels || {})) {
-    const idx = Number(key);
-    if (!Number.isFinite(idx) || idx < 1 || idx > node.inputs.length)
-      delete state.labels[key];
-  }
-  syncSwitchStateWidget(node);
-}
-function upstreamType(node, idx1) {
-  const slot = node.inputs?.[idx1 - 1];
-  const linkId = slot?.link;
-  if (linkId == null) return "";
-  let link = node.graph?.links?.[linkId];
-  if (!link && typeof node.graph?.links?.get === "function")
-    link = node.graph.links.get(linkId);
-  if (!link) return "";
-  const up = node.graph?.getNodeById?.(link.origin_id);
-  return up?.outputs?.[link.origin_slot]?.type || "";
-}
-function getUpstreamNode(node, idx1) {
-  const slot = node.inputs?.[idx1 - 1];
-  const linkId = slot?.link;
-  if (linkId == null) return null;
-  let link = node.graph?.links?.[linkId];
-  if (!link && typeof node.graph?.links?.get === "function")
-    link = node.graph.links.get(linkId);
-  if (!link) return null;
-  return node.graph?.getNodeById?.(link.origin_id) || null;
-}
-function syncUpstreamBypass(node, activeIdx) {
-  const state = getState(node);
-  const inputs = node.inputs || [];
-  for (let i = 0; i < inputs.length; i++) {
-    const up = getUpstreamNode(node, i + 1);
-    if (!up) continue;
-    if (!state.bypassOthers) {
-      up.mode = 0;
-    } else {
-      up.mode = i + 1 === activeIdx ? 0 : 4;
-    }
-  }
-  app3.graph?.setDirtyCanvas?.(true, true);
-}
-function getRows(node) {
-  const state = getState(node);
-  const rows = [];
-  for (let i = 1; i <= (node.inputs?.length || 0); i++) {
-    const connected = isInputConnected(node, i - 1);
-    const trailing = !connected && i === node.inputs.length;
-    const upType = upstreamType(node, i) || "";
-    if (trailing) continue;
-    rows.push({
-      i,
-      connected,
-      trailing,
-      active: state.activeIndex === i,
-      label: state.labels[i] || "",
-      type: upType
-    });
-  }
-  return rows;
-}
-function ensurePanelWidget2(node) {
-  if (node._avatarySwitchPanel && node.widgets?.some((w) => w?._avatarySwitchPanelWidget)) {
-    return node._avatarySwitchPanel;
-  }
-  if (node.widgets) {
-    node.widgets = node.widgets.filter((w) => !w?._avatarySwitchPanelWidget);
-  }
-  node._avatarySwitchPanel = null;
-  const panel = document.createElement("div");
-  panel.className = "avatary-switch-panel";
-  panel.style.cssText = [
-    "display:flex",
-    "flex-direction:column",
-    "gap:8px",
-    "padding:1px",
-    "height:100%",
-    "overflow:auto",
-    "box-sizing:border-box",
-    "font:12px Inter, system-ui, sans-serif"
-  ].join(";");
-  node._avatarySwitchPanel = panel;
-  if (typeof node.addDOMWidget === "function") {
-    const w = node.addDOMWidget("Switch", "switch_panel", panel, {
-      serialize: false,
-      hideOnZoom: false,
-      getMinHeight: () => PANEL_HEIGHT
-    });
-    if (w) {
-      w._avatarySwitchPanelWidget = true;
-      w.serialize = false;
-      node._avatarySwitchUsesDom = true;
-      return panel;
-    }
-  }
-  node._avatarySwitchUsesDom = false;
-  return null;
-}
-function ensureStyles2() {
-  if (document.getElementById(STYLE_ID2)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_ID2;
-  style.textContent = `
-    .avatary-switch-panel { font-family: Inter, system-ui, sans-serif; }
-    .avatary-switch-row { display:flex; align-items:center; gap:10px; margin-bottom:0px; }
-    .avatary-switch-input {
-      flex: 1 1 auto;
-      min-width: 0;
-      min-height: 30px;
-      height: 30px;
-      border-radius: 10px;
-      font-size: 12px;
-      letter-spacing: 0;
-      text-transform: none;
-      padding: 0 10px;
-    }
-  `;
-  document.head.appendChild(style);
-}
-function renderPanel2(node) {
-  const state = getState(node);
-  ensureStyles2();
-  _toggleApi.ensureToggleStyles();
-  const panel = ensurePanelWidget2(node);
-  const rows = getRows(node);
-  if (!panel) {
-    renderFallbackWidgets(node, rows, state);
-    return;
-  }
-  clearFallbackWidgets(node);
-  panel.innerHTML = "";
-  const policyRow = document.createElement("div");
-  policyRow.className = "avatary-switch-row";
-  const policyLabel = document.createElement("div");
-  policyLabel.textContent = "Bypass Others";
-  policyLabel.style.cssText = "flex:1 1 auto;min-width:0;color:var(--input-text,#d0d6e2);padding-left:2px;user-select:none;";
-  const policyToggle = _toggleApi.createToggle({
-    active: state.bypassOthers,
-    disabled: false,
-    title: "Disable to stop bypassing non-selected upstream nodes",
-    onToggle: () => {
-      state.bypassOthers = !state.bypassOthers;
-      syncSwitchStateWidget(node);
-      syncUpstreamBypass(node, state.activeIndex);
-      app3.graph?.setDirtyCanvas?.(true, true);
-      renderPanel2(node);
-    }
-  });
-  policyRow.appendChild(policyLabel);
-  policyRow.appendChild(policyToggle);
-  panel.appendChild(policyRow);
-  if (rows.length === 0) {
-    const empty = document.createElement("div");
-    empty.textContent = "Connect an input to start";
-    empty.style.cssText = "color:#8d95a8;font-size:12px;padding:6px 2px;user-select:none;";
-    panel.appendChild(empty);
-    return;
-  }
-  for (const row of rows) {
-    const wrap = document.createElement("div");
-    wrap.className = "avatary-switch-row";
-    const input = createTextfield({
-      value: row.label,
-      placeholder: row.type || "Label",
-      disabled: row.trailing,
-      className: "avatary-switch-input",
-      onInput: (nextValue) => {
-        const v = String(nextValue || "").trim();
-        if (!v) delete state.labels[row.i];
-        else state.labels[row.i] = v;
-      },
-      onChange: (nextValue) => {
-        const v = String(nextValue || "").trim();
-        if (!v) delete state.labels[row.i];
-        else state.labels[row.i] = v;
-        app3.graph?.setDirtyCanvas?.(true, true);
-        renderPanel2(node);
-      }
-    });
-    const disabled = row.trailing || !row.connected;
-    const toggle = _toggleApi.createToggle({
-      active: row.active,
-      disabled,
-      title: row.label || row.type || `Row ${row.i}`,
-      onToggle: () => {
-        state.activeIndex = row.i;
-        syncUpstreamBypass(node, row.i);
-        syncSwitchStateWidget(node);
-        app3.graph?.setDirtyCanvas?.(true, true);
-        renderPanel2(node);
-      }
-    });
-    wrap.appendChild(input);
-    wrap.appendChild(toggle);
-    panel.appendChild(wrap);
-  }
-}
-function clearFallbackWidgets(node) {
-  if (!node.widgets) return;
-  node.widgets = node.widgets.filter((w) => !w?._avatarySwitchFallbackWidget);
-}
-function renderFallbackWidgets(node, rows, state) {
-  clearFallbackWidgets(node);
-  const bypass = node.addWidget(
-    "toggle",
-    "Bypass Others",
-    state.bypassOthers,
-    (v) => {
-      state.bypassOthers = Boolean(v);
-      syncSwitchStateWidget(node);
-      syncUpstreamBypass(node, state.activeIndex);
-      renderPanel2(node);
-    }
-  );
-  bypass._avatarySwitchFallbackWidget = true;
-  bypass.serialize = false;
-  for (const row of rows) {
-    const disabled = row.trailing || !row.connected;
-    const label = node.addWidget(
-      "text",
-      `Label ${row.i}`,
-      row.label || "",
-      (v) => {
-        const s = String(v || "").trim();
-        if (!s) delete state.labels[row.i];
-        else state.labels[row.i] = s;
-      },
-      { placeholder: row.type || "Label", disabled }
-    );
-    label._avatarySwitchFallbackWidget = true;
-    label.serialize = false;
-    const btnText = disabled ? "Waiting" : state.activeIndex === row.i ? "ON" : "OFF";
-    const btn = node.addWidget(
-      "button",
-      `Switch ${row.i}: ${btnText}`,
-      null,
-      () => {
-        if (disabled) return;
-        state.activeIndex = row.i;
-        syncUpstreamBypass(node, row.i);
-        syncSwitchStateWidget(node);
-        renderPanel2(node);
-      }
-    );
-    btn._avatarySwitchFallbackWidget = true;
-    btn.serialize = false;
-  }
-}
-function clearLegacySwitchWidgets(node) {
-  if (!node.widgets) return;
-  node.widgets = node.widgets.filter(
-    (w) => !w?._avatarySwitchLegacyWidget && !w?._avatarySwitchFallbackWidget
-  );
-}
-function refreshNode3(node) {
-  normalizeInputs(node);
-  clearLegacySwitchWidgets(node);
-  renderPanel2(node);
-  node.size[0] = Math.max(node.size?.[0] || 0, DEFAULT_W);
-  node.size[1] = Math.max(node.size?.[1] || 0, PANEL_HEIGHT + 90);
-  node._avatarySwitchConnSig = connectionSignature(node);
-  app3.graph?.setDirtyCanvas?.(true, true);
-}
-app3.registerExtension({
-  name: "Avatary.Switch.Nodes2CustomPanel",
-  async beforeRegisterNodeDef(nodeType, nodeData) {
-    if (nodeData.name !== NODE_CLASS) return;
-    const _origCreated = nodeType.prototype.onNodeCreated;
-    nodeType.prototype.onNodeCreated = function(...args) {
-      _origCreated?.apply(this, args);
-      refreshNode3(this);
-      setTimeout(() => {
-        try {
-          refreshNode3(this);
-        } catch (_e) {
-        }
-      }, 0);
-      setTimeout(() => {
-        try {
-          refreshNode3(this);
-        } catch (_e) {
-        }
-      }, 200);
-    };
-    const _origConfigure = nodeType.prototype.onConfigure;
-    nodeType.prototype.onConfigure = function(...args) {
-      const r = _origConfigure?.apply(this, args);
-      refreshNode3(this);
-      return r;
-    };
-    const _origConn = nodeType.prototype.onConnectionsChange;
-    nodeType.prototype.onConnectionsChange = function(...args) {
-      const r = _origConn?.apply(this, args);
-      refreshNode3(this);
-      return r;
-    };
-    const _origDraw = nodeType.prototype.onDrawForeground;
-    nodeType.prototype.onDrawForeground = function(...args) {
-      const r = _origDraw?.apply(this, args);
-      const sig = connectionSignature(this);
-      if (sig !== this._avatarySwitchConnSig) {
-        try {
-          refreshNode3(this);
-        } catch (_e) {
-        }
-      }
-      return r;
-    };
-    const _origRemoved = nodeType.prototype.onRemoved;
-    nodeType.prototype.onRemoved = function(...args) {
-      if (this._avatarySwitchPanel?.isConnected)
-        this._avatarySwitchPanel.remove();
-      this._avatarySwitchPanel = null;
-      if (this.widgets) {
-        this.widgets = this.widgets.filter(
-          (w) => !w?._avatarySwitchPanelWidget
-        );
-      }
-      return _origRemoved?.apply(this, args);
-    };
-  }
-});
-if (app3?.loadGraphData && !app3._avatarySwitchLoadGraphWrapped) {
-  app3._avatarySwitchLoadGraphWrapped = true;
-  const _origLoadGraphData = app3.loadGraphData.bind(app3);
-  app3.loadGraphData = (...args) => {
-    const result = _origLoadGraphData(...args);
-    Promise.resolve(result).finally(() => {
-      setTimeout(() => {
-        forEachSwitchNode((node) => {
-          try {
-            refreshNode3(node);
-          } catch (_e) {
-          }
-        });
-      }, 250);
-      setTimeout(() => {
-        forEachSwitchNode((node) => {
-          try {
-            refreshNode3(node);
-          } catch (_e) {
-          }
-        });
-      }, 900);
-    });
-    return result;
-  };
-}
-function buildNodeIndex() {
-  const map = /* @__PURE__ */ new Map();
-  const visit = (graph) => {
-    if (!graph) return;
-    const nodes = graph._nodes || graph.nodes || [];
-    for (const n of nodes) {
-      if (!n) continue;
-      if (n.comfyClass === NODE_CLASS || n.type === NODE_CLASS)
-        map.set(String(n.id), n);
-      const inner = n.subgraph || n.graph || n._graph;
-      if (inner && inner !== graph) visit(inner);
-    }
-  };
-  visit(app3.graph);
-  return map;
-}
-function resolveNode(map, promptId) {
-  const id = String(promptId);
-  if (map.has(id)) return map.get(id);
-  const tail = id.includes(":") ? id.slice(id.lastIndexOf(":") + 1) : null;
-  if (tail && map.has(tail)) return map.get(tail);
-  return null;
-}
-var _origGraphToPrompt = app3.graphToPrompt.bind(app3);
-app3.graphToPrompt = async (...args) => {
-  const result = await _origGraphToPrompt(...args);
-  const out = result?.output;
-  if (!out) return result;
-  let index = null;
-  for (const id in out) {
-    const entry = out[id];
-    if (!entry || entry.class_type !== NODE_CLASS) continue;
-    if (!index) index = buildNodeIndex();
-    const node = resolveNode(index, id);
-    const state = node?.properties?.[STATE_KEY3];
-    entry.inputs = entry.inputs || {};
-    entry.inputs[HIDDEN_INPUT_NAME] = String(state?.activeIndex || 1);
-    entry.inputs[HIDDEN_BYPASS_NAME] = state?.bypassOthers === false ? "0" : "1";
-  }
-  return result;
-};
-
 // web-src/load_images_avatary.ts
-import { app as app4 } from "/scripts/app.js";
-var NODE_CLASS2 = "AvataryLoadImageBatch";
-var STATE_KEY4 = "avataryLoadImageBatch";
-var HIDDEN_INPUT_NAME2 = "UploadState";
+import { app as app3 } from "/scripts/app.js";
+var NODE_CLASS = "AvataryLoadImageBatch";
+var STATE_KEY3 = "avataryLoadImageBatch";
+var HIDDEN_INPUT_NAME = "UploadState";
 var MANAGED_SUBFOLDER = "avatary_load_image_batch";
-var PANEL_HEIGHT2 = 260;
+var PANEL_HEIGHT = 260;
 var VIEWER_ID = "avatary-lb-viewer";
 var ACCEPTED_TYPES = [".png", ".jpg", ".jpeg", ".webp", "image/*"];
 var FIXED_NODE_WIDTH = 340;
 var FIXED_NODE_HEIGHT = 380;
-function ensureStyles3() {
+function ensureStyles2() {
   let style = document.getElementById("avatary-load-image-batch-styles");
   if (!style) {
     style = document.createElement("style");
@@ -4953,10 +4346,10 @@ function ensureStyles3() {
     }
   `;
 }
-function getState2(node) {
+function getState(node) {
   if (!node.properties) node.properties = {};
-  if (!node.properties[STATE_KEY4]) {
-    node.properties[STATE_KEY4] = {
+  if (!node.properties[STATE_KEY3]) {
+    node.properties[STATE_KEY3] = {
       subfolder: MANAGED_SUBFOLDER,
       files: [],
       uploadedAt: {},
@@ -4970,7 +4363,7 @@ function getState2(node) {
       previewSubfolder: MANAGED_SUBFOLDER
     };
   }
-  const state = node.properties[STATE_KEY4];
+  const state = node.properties[STATE_KEY3];
   if (!Array.isArray(state.files)) state.files = [];
   if (!state.uploadedAt || typeof state.uploadedAt !== "object")
     state.uploadedAt = {};
@@ -4996,10 +4389,10 @@ function getFilesLatestFirst(state) {
   });
 }
 function getHiddenWidget(node) {
-  return node.widgets?.find((w) => w.name === HIDDEN_INPUT_NAME2) || null;
+  return node.widgets?.find((w) => w.name === HIDDEN_INPUT_NAME) || null;
 }
 function syncUploadState(node) {
-  const state = getState2(node);
+  const state = getState(node);
   const hidden = getHiddenWidget(node);
   state.files = getFilesLatestFirst(state);
   if (hidden)
@@ -5020,7 +4413,7 @@ function managedPreviewUrl(fileName, subfolder) {
   return `/view?${params.toString()}`;
 }
 function previewUrl(node, fileName) {
-  const state = getState2(node);
+  const state = getState(node);
   if (state.previewKind === "input") {
     return managedPreviewUrl(fileName, state.previewSubfolder || "");
   }
@@ -5033,7 +4426,7 @@ function previewUrl(node, fileName) {
   }
   return managedPreviewUrl(fileName, state.subfolder);
 }
-function ensurePanelWidget3(node) {
+function ensurePanelWidget2(node) {
   if (node._avataryLbPanel && node.widgets?.some((w) => w?._avataryLbPanelWidget))
     return node._avataryLbPanel;
   if (node.widgets)
@@ -5046,7 +4439,7 @@ function ensurePanelWidget3(node) {
     const w = node.addDOMWidget("Uploads", "upload_panel", panel, {
       serialize: false,
       hideOnZoom: false,
-      getMinHeight: () => PANEL_HEIGHT2
+      getMinHeight: () => PANEL_HEIGHT
     });
     if (w) {
       w._avataryLbPanelWidget = true;
@@ -5172,7 +4565,7 @@ async function fetchDraggedAssetFiles(event) {
 async function uploadFiles(node, files) {
   const selectedFiles = filterImageFiles(files);
   if (!selectedFiles.length) return;
-  const state = getState2(node);
+  const state = getState(node);
   if (state.isUploading) return;
   state.mode = "upload";
   state.sourceDir = "";
@@ -5182,8 +4575,8 @@ async function uploadFiles(node, files) {
   state.isUploading = true;
   state.uploadDone = 0;
   state.uploadTotal = selectedFiles.length;
-  renderPanel3(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
   try {
     for (const file of selectedFiles) {
       const uploaded = await uploadSingle(file);
@@ -5194,7 +4587,7 @@ async function uploadFiles(node, files) {
       state.uploadedAt[name] = Date.now();
       state.files.unshift(name);
       state.uploadDone += 1;
-      renderPanel3(node);
+      renderPanel2(node);
     }
   } finally {
     state.isUploading = false;
@@ -5202,8 +4595,8 @@ async function uploadFiles(node, files) {
     state.uploadTotal = 0;
   }
   syncUploadState(node);
-  renderPanel3(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
 }
 async function handleUpload(node) {
   const picker = document.createElement("input");
@@ -5239,7 +4632,7 @@ async function handlePaste(node) {
   await uploadFiles(node, files);
 }
 async function removeFile(node, name) {
-  const state = getState2(node);
+  const state = getState(node);
   if (state.isUploading) return;
   try {
     await deleteFilesFromDisk([name]);
@@ -5251,22 +4644,22 @@ async function removeFile(node, name) {
     delete state.uploadedAt[name];
   }
   syncUploadState(node);
-  renderPanel3(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
 }
 function forgetMissingFile(node, name) {
-  const state = getState2(node);
+  const state = getState(node);
   if (!state.files.includes(name)) return;
   state.files = state.files.filter((file) => file !== name);
   if (state.uploadedAt && Object.hasOwn(state.uploadedAt, name)) {
     delete state.uploadedAt[name];
   }
   syncUploadState(node);
-  renderPanel3(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
 }
 async function replaceFile(node, oldName) {
-  const state = getState2(node);
+  const state = getState(node);
   if (state.isUploading) return;
   const picker = document.createElement("input");
   picker.type = "file";
@@ -5278,8 +4671,8 @@ async function replaceFile(node, oldName) {
     state.isUploading = true;
     state.uploadDone = 0;
     state.uploadTotal = 1;
-    renderPanel3(node);
-    app4.graph?.setDirtyCanvas?.(true, true);
+    renderPanel2(node);
+    app3.graph?.setDirtyCanvas?.(true, true);
     try {
       const uploaded = await uploadSingle(picked[0]);
       const newName = uploaded?.name || uploaded?.filename || picked[0].name;
@@ -5307,13 +4700,13 @@ async function replaceFile(node, oldName) {
       state.uploadTotal = 0;
     }
     syncUploadState(node);
-    renderPanel3(node);
-    app4.graph?.setDirtyCanvas?.(true, true);
+    renderPanel2(node);
+    app3.graph?.setDirtyCanvas?.(true, true);
   };
   picker.click();
 }
 async function replaceFileFromClipboard(node, oldName) {
-  const state = getState2(node);
+  const state = getState(node);
   if (state.isUploading) return;
   const files = await readClipboardImageFiles();
   if (!files.length) return;
@@ -5321,8 +4714,8 @@ async function replaceFileFromClipboard(node, oldName) {
   state.isUploading = true;
   state.uploadDone = 0;
   state.uploadTotal = 1;
-  renderPanel3(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
   try {
     const uploaded = await uploadSingle(replacement);
     const newName = uploaded?.name || uploaded?.filename || replacement.name;
@@ -5356,11 +4749,11 @@ async function replaceFileFromClipboard(node, oldName) {
     state.uploadTotal = 0;
   }
   syncUploadState(node);
-  renderPanel3(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
 }
 async function clearAll(node) {
-  const state = getState2(node);
+  const state = getState(node);
   if (state.isUploading) return;
   const filesToDelete = [...state.files];
   try {
@@ -5371,8 +4764,8 @@ async function clearAll(node) {
   state.files = [];
   state.uploadedAt = {};
   syncUploadState(node);
-  renderPanel3(node);
-  app4.graph?.setDirtyCanvas?.(true, true);
+  renderPanel2(node);
+  app3.graph?.setDirtyCanvas?.(true, true);
 }
 function applyGridColumns(list, count) {
   if (!list) return;
@@ -5478,11 +4871,11 @@ function openViewer(src, alt = "") {
   });
   observer.observe(document.body, { childList: true });
 }
-function renderPanel3(node) {
-  ensureStyles3();
-  const panel = ensurePanelWidget3(node);
+function renderPanel2(node) {
+  ensureStyles2();
+  const panel = ensurePanelWidget2(node);
   if (!panel) return;
-  const state = getState2(node);
+  const state = getState(node);
   state.files = getFilesLatestFirst(state);
   panel.innerHTML = "";
   const actions = document.createElement("div");
@@ -5550,8 +4943,8 @@ function renderPanel3(node) {
     if (state.mode === "path") {
       state.folderPath = "";
       syncUploadState(node);
-      renderPanel3(node);
-      app4.graph?.setDirtyCanvas?.(true, true);
+      renderPanel2(node);
+      app3.graph?.setDirtyCanvas?.(true, true);
       return;
     }
     await clearAll(node);
@@ -5565,7 +4958,7 @@ function renderPanel3(node) {
     if (state.isUploading) return;
     state.mode = state.mode === "upload" ? "path" : "upload";
     syncUploadState(node);
-    renderPanel3(node);
+    renderPanel2(node);
   };
   if (state.mode === "upload") {
     actions.appendChild(uploadBtn);
@@ -5588,7 +4981,7 @@ function renderPanel3(node) {
     pathInput.oninput = () => {
       state.folderPath = pathInput.value;
       syncUploadState(node);
-      app4.graph?.setDirtyCanvas?.(true, true);
+      app3.graph?.setDirtyCanvas?.(true, true);
     };
     pathWrap.appendChild(pathInput);
     panel.appendChild(pathWrap);
@@ -5692,19 +5085,19 @@ function renderPanel3(node) {
   syncUploadState(node);
   lockNodeSize(node);
 }
-app4.registerExtension({
+app3.registerExtension({
   name: "Avatary.LoadImageBatch.MultiUploadPreview",
   async beforeRegisterNodeDef(nodeType, nodeData) {
-    if (nodeData.name !== NODE_CLASS2) return;
+    if (nodeData.name !== NODE_CLASS) return;
     const origCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function(...args) {
       const r = origCreated?.apply(this, args);
       lockNodeSize(this);
-      renderPanel3(this);
+      renderPanel2(this);
       setTimeout(() => {
         try {
           lockNodeSize(this);
-          renderPanel3(this);
+          renderPanel2(this);
         } catch (_err) {
         }
       }, 60);
@@ -5714,7 +5107,7 @@ app4.registerExtension({
     nodeType.prototype.onConfigure = function(...args) {
       const r = origConfigure?.apply(this, args);
       lockNodeSize(this);
-      renderPanel3(this);
+      renderPanel2(this);
       return r;
     };
     const origRemoved = nodeType.prototype.onRemoved;
@@ -5726,52 +5119,52 @@ app4.registerExtension({
     };
   },
   loadedGraphNode(node) {
-    const isTarget = node?.comfyClass === NODE_CLASS2 || node?.type === NODE_CLASS2 || node?.constructor?.type === NODE_CLASS2;
+    const isTarget = node?.comfyClass === NODE_CLASS || node?.type === NODE_CLASS || node?.constructor?.type === NODE_CLASS;
     if (!isTarget) return;
     lockNodeSize(node);
-    renderPanel3(node);
+    renderPanel2(node);
   }
 });
-function buildNodeIndex2() {
+function buildNodeIndex() {
   const map = /* @__PURE__ */ new Map();
   const visit = (graph) => {
     if (!graph) return;
     const nodes = graph._nodes || graph.nodes || [];
     for (const n of nodes) {
       if (!n) continue;
-      if (n.comfyClass === NODE_CLASS2 || n.type === NODE_CLASS2) {
+      if (n.comfyClass === NODE_CLASS || n.type === NODE_CLASS) {
         map.set(String(n.id), n);
       }
       const inner = n.subgraph || n.graph || n._graph;
       if (inner && inner !== graph) visit(inner);
     }
   };
-  visit(app4.graph);
+  visit(app3.graph);
   return map;
 }
-function resolveNode2(map, promptId) {
+function resolveNode(map, promptId) {
   const id = String(promptId);
   if (map.has(id)) return map.get(id);
   const tail = id.includes(":") ? id.slice(id.lastIndexOf(":") + 1) : null;
   if (tail && map.has(tail)) return map.get(tail);
   return null;
 }
-if (!app4._avataryLoadImagesGraphToPromptWrapped) {
-  app4._avataryLoadImagesGraphToPromptWrapped = true;
-  const _origGraphToPrompt3 = app4.graphToPrompt.bind(app4);
-  app4.graphToPrompt = async (...args) => {
-    const result = await _origGraphToPrompt3(...args);
+if (!app3._avataryLoadImagesGraphToPromptWrapped) {
+  app3._avataryLoadImagesGraphToPromptWrapped = true;
+  const _origGraphToPrompt2 = app3.graphToPrompt.bind(app3);
+  app3.graphToPrompt = async (...args) => {
+    const result = await _origGraphToPrompt2(...args);
     const out = result?.output;
     if (!out) return result;
     let index = null;
     for (const id in out) {
       const entry = out[id];
-      if (!entry || entry.class_type !== NODE_CLASS2) continue;
-      if (!index) index = buildNodeIndex2();
-      const node = resolveNode2(index, id);
-      const state = node?.properties?.[STATE_KEY4] || {};
+      if (!entry || entry.class_type !== NODE_CLASS) continue;
+      if (!index) index = buildNodeIndex();
+      const node = resolveNode(index, id);
+      const state = node?.properties?.[STATE_KEY3] || {};
       entry.inputs = entry.inputs || {};
-      entry.inputs[HIDDEN_INPUT_NAME2] = JSON.stringify({
+      entry.inputs[HIDDEN_INPUT_NAME] = JSON.stringify({
         subfolder: state.subfolder || MANAGED_SUBFOLDER,
         files: Array.isArray(state.files) ? state.files : [],
         mode: state.mode === "path" ? "path" : "upload",
@@ -5784,7 +5177,7 @@ if (!app4._avataryLoadImagesGraphToPromptWrapped) {
 }
 
 // web-src/lora_stack_frontend.ts
-import { app as app5 } from "/scripts/app.js";
+import { app as app4 } from "/scripts/app.js";
 
 // web-src/components/numberfield.ts
 function createNumberField({
@@ -5830,11 +5223,11 @@ function createNumberField({
 }
 
 // web-src/components/select.ts
-var STYLE_ID3 = "avatary-select-component-styles";
+var STYLE_ID2 = "avatary-select-component-styles";
 function ensureSelectStyles() {
-  if (document.getElementById(STYLE_ID3)) return;
+  if (document.getElementById(STYLE_ID2)) return;
   const style = document.createElement("style");
-  style.id = STYLE_ID3;
+  style.id = STYLE_ID2;
   style.textContent = `
     .avatary-select {
       min-width: 0;
@@ -6087,14 +5480,14 @@ function createSelect({
 }
 
 // web-src/lora_stack_frontend.ts
-var NODE_CLASS3 = "AvataryLoraStack";
+var NODE_CLASS2 = "AvataryLoraStack";
 var STATE_INPUT = "LoraStackState";
 var CATALOG_INPUT = "LoraCatalog";
 var LEGACY_JSON_WIDGET = "lora_stack_json";
 var LEGACY_CATALOG_WIDGET = "lora_catalog";
-var STATE_KEY5 = "lora_stack_avatary_rows";
-var DEFAULT_W2 = 420;
-var STYLE_ID4 = "avatary-lora-stack-styles";
+var STATE_KEY4 = "lora_stack_avatary_rows";
+var DEFAULT_W = 420;
+var STYLE_ID3 = "avatary-lora-stack-styles";
 var NONE_LORA = "None";
 var PANEL_PADDING_Y = 2;
 var PANEL_GAP = 8;
@@ -6103,10 +5496,10 @@ var ROW_GAP = 6;
 var EMPTY_HEIGHT = 34;
 var ADD_BUTTON_HEIGHT = 28;
 var NODE_VERTICAL_CHROME = 95;
-function ensureStyles4() {
-  if (document.getElementById(STYLE_ID4)) return;
+function ensureStyles3() {
+  if (document.getElementById(STYLE_ID3)) return;
   const style = document.createElement("style");
-  style.id = STYLE_ID4;
+  style.id = STYLE_ID3;
   style.textContent = `
 		.avatary-lora-stack-panel {
 			box-sizing: border-box;
@@ -6213,7 +5606,7 @@ function ensureStyles4() {
   document.head.appendChild(style);
 }
 function isTargetNode(node) {
-  return node?.comfyClass === NODE_CLASS3 || node?.type === NODE_CLASS3 || node?.constructor?.type === NODE_CLASS3;
+  return node?.comfyClass === NODE_CLASS2 || node?.type === NODE_CLASS2 || node?.constructor?.type === NODE_CLASS2;
 }
 function findWidget3(node, name) {
   return (node.widgets || []).find((widget) => widget?.name === name);
@@ -6243,7 +5636,7 @@ function normalizeRow(row) {
 }
 function readRows(node) {
   if (!node) return [];
-  const propertyRows = node.properties?.[STATE_KEY5];
+  const propertyRows = node.properties?.[STATE_KEY4];
   if (Array.isArray(propertyRows)) {
     return propertyRows.map(normalizeRow).filter((row) => row.name);
   }
@@ -6259,13 +5652,13 @@ function writeRows(node, rows) {
   if (!node.properties || typeof node.properties !== "object") {
     node.properties = {};
   }
-  node.properties[STATE_KEY5] = rows.map(normalizeRow);
+  node.properties[STATE_KEY4] = rows.map(normalizeRow);
   node.setDirtyCanvas?.(true, true);
 }
 function migrateLegacyWidgets(node) {
   if (!node) return;
   const legacyState = findWidget3(node, LEGACY_JSON_WIDGET);
-  if (!Array.isArray(node.properties?.[STATE_KEY5]) && legacyState?.value) {
+  if (!Array.isArray(node.properties?.[STATE_KEY4]) && legacyState?.value) {
     try {
       const parsed = JSON.parse(String(legacyState.value || "[]"));
       if (Array.isArray(parsed)) {
@@ -6280,7 +5673,7 @@ function migrateLegacyWidgets(node) {
     );
   }
 }
-function ensurePanelWidget4(node) {
+function ensurePanelWidget3(node) {
   if (node._avataryLoraStackPanel && node.widgets?.some((widget) => widget?._avataryLoraStackPanelWidget)) {
     return node._avataryLoraStackPanel;
   }
@@ -6289,7 +5682,7 @@ function ensurePanelWidget4(node) {
       (widget) => !widget?._avataryLoraStackPanelWidget
     );
   }
-  ensureStyles4();
+  ensureStyles3();
   ensureToggleStyles();
   const panel = document.createElement("div");
   panel.className = "avatary-lora-stack-panel";
@@ -6328,7 +5721,7 @@ function getPanelHeight2(node) {
   return PANEL_PADDING_Y + listHeight + PANEL_GAP + ADD_BUTTON_HEIGHT;
 }
 function fitNodeHeight(node) {
-  const width = Math.max(node.size?.[0] || 0, DEFAULT_W2);
+  const width = Math.max(node.size?.[0] || 0, DEFAULT_W);
   const height = Math.max(140, getPanelHeight2(node) + NODE_VERTICAL_CHROME);
   if (typeof node.setSize === "function") {
     node.setSize([width, height]);
@@ -6337,14 +5730,14 @@ function fitNodeHeight(node) {
     node.size[1] = height;
   }
   node.graph?.setDirtyCanvas?.(true, true);
-  app5.graph?.setDirtyCanvas?.(true, true);
+  app4.graph?.setDirtyCanvas?.(true, true);
 }
 function scheduleFitNodeHeight(node) {
   requestAnimationFrame(() => fitNodeHeight(node));
 }
-function renderPanel4(node) {
+function renderPanel3(node) {
   migrateLegacyWidgets(node);
-  const panel = ensurePanelWidget4(node);
+  const panel = ensurePanelWidget3(node);
   if (!panel) return;
   const catalog = getCatalog(node);
   const rows = readRows(node);
@@ -6393,7 +5786,7 @@ function renderPanel4(node) {
         node,
         moveRowToInsertIndex(readRows(node), fromIndex, insertIndex)
       );
-      renderPanel4(node);
+      renderPanel3(node);
     });
     const handle = document.createElement("div");
     handle.className = "avatary-lora-stack-handle";
@@ -6407,7 +5800,7 @@ function renderPanel4(node) {
         const next = readRows(node);
         next[index].enabled = !next[index].enabled;
         writeRows(node, next);
-        renderPanel4(node);
+        renderPanel3(node);
       }
     });
     toggle.addEventListener("pointerdown", (event) => event.stopPropagation());
@@ -6423,7 +5816,7 @@ function renderPanel4(node) {
         const next = readRows(node);
         next[index].name = String(value || "").trim();
         writeRows(node, next);
-        renderPanel4(node);
+        renderPanel3(node);
       }
     });
     const strength = createNumberField({
@@ -6436,7 +5829,7 @@ function renderPanel4(node) {
         const next = readRows(node);
         next[index].strength = value;
         writeRows(node, next);
-        renderPanel4(node);
+        renderPanel3(node);
       }
     });
     const remove = document.createElement("button");
@@ -6456,7 +5849,7 @@ function renderPanel4(node) {
       const next = readRows(node);
       next.splice(index, 1);
       writeRows(node, next);
-      renderPanel4(node);
+      renderPanel3(node);
     });
     item.append(handle, toggle, loraSelect, strength, remove);
     list.appendChild(item);
@@ -6488,7 +5881,7 @@ function renderPanel4(node) {
         strength: 1
       }
     ]);
-    renderPanel4(node);
+    renderPanel3(node);
   });
   panel.appendChild(addButton);
   fitNodeHeight(node);
@@ -6496,13 +5889,13 @@ function renderPanel4(node) {
 }
 function bindNode3(node) {
   if (!isTargetNode(node)) return;
-  renderPanel4(node);
-  setTimeout(() => renderPanel4(node), 80);
+  renderPanel3(node);
+  setTimeout(() => renderPanel3(node), 80);
 }
-app5.registerExtension({
+app4.registerExtension({
   name: "Avatary.LoraStack",
   async beforeRegisterNodeDef(nodeType, nodeData) {
-    if (nodeData.name !== NODE_CLASS3) return;
+    if (nodeData.name !== NODE_CLASS2) return;
     nodeType.__avataryLoraCatalog = extractValuesFromInputSpec(
       nodeData?.input?.hidden?.[CATALOG_INPUT]
     );
@@ -6536,7 +5929,7 @@ app5.registerExtension({
     bindNode3(node);
   }
 });
-function buildNodeIndex3() {
+function buildNodeIndex2() {
   const map = /* @__PURE__ */ new Map();
   const visit = (graph) => {
     if (!graph) return;
@@ -6550,521 +5943,29 @@ function buildNodeIndex3() {
       if (inner && inner !== graph) visit(inner);
     }
   };
-  visit(app5.graph);
+  visit(app4.graph);
   return map;
 }
-function resolveNode3(map, promptId) {
+function resolveNode2(map, promptId) {
   const id = String(promptId);
   if (map.has(id)) return map.get(id);
   const tail = id.includes(":") ? id.slice(id.lastIndexOf(":") + 1) : null;
   if (tail && map.has(tail)) return map.get(tail);
   return null;
 }
-var _origGraphToPrompt2 = app5.graphToPrompt.bind(app5);
-app5.graphToPrompt = async (...args) => {
-  const result = await _origGraphToPrompt2(...args);
+var _origGraphToPrompt = app4.graphToPrompt.bind(app4);
+app4.graphToPrompt = async (...args) => {
+  const result = await _origGraphToPrompt(...args);
   const out = result?.output;
   if (!out) return result;
   let index = null;
   for (const id in out) {
     const entry = out[id];
-    if (!entry || entry.class_type !== NODE_CLASS3) continue;
-    if (!index) index = buildNodeIndex3();
-    const node = resolveNode3(index, id);
+    if (!entry || entry.class_type !== NODE_CLASS2) continue;
+    if (!index) index = buildNodeIndex2();
+    const node = resolveNode2(index, id);
     entry.inputs = entry.inputs || {};
     entry.inputs[STATE_INPUT] = JSON.stringify(readRows(node));
   }
   return result;
 };
-
-// web-src/control_light_frontend.ts
-import { app as app6 } from "/scripts/app.js";
-
-// web-src/components/missing_files.ts
-var STYLE_ID5 = "avatary-missing-files-styles";
-function ensureMissingFilesStyles() {
-  if (document.getElementById(STYLE_ID5)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_ID5;
-  style.textContent = `
-    .avatary-missing-files {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 8px;
-      border-radius: 10px;
-      background: var(--component-node-widget-background);
-    }
-    .avatary-missing-files-title {
-      margin: 0;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--component-node-foreground);
-    }
-    .avatary-missing-files-copy {
-      margin: 0;
-      font-size: 11px;
-      color: var(--component-node-foreground-secondary);
-      line-height: 1.4;
-    }
-    .avatary-missing-files-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .avatary-missing-files-fields {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .avatary-missing-files-field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .avatary-missing-files-field-label {
-      margin: 0;
-      font-size: 11px;
-      color: var(--component-node-foreground);
-    }
-    .avatary-missing-files-field-input {
-      width: 100%;
-      min-height: 30px;
-      border-radius: 8px;
-      border: 1px solid var(--component-node-widget-background-highlighted);
-      background: var(--component-node-widget-background);
-      color: var(--component-node-foreground);
-      font-size: 11px;
-      line-height: 1.2;
-      padding: 6px 8px;
-      box-sizing: border-box;
-    }
-    .avatary-missing-files-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding: 8px;
-      border-radius: 8px;
-      border: 1px solid var(--component-node-widget-background-highlighted);
-      background: var(--component-node-background);
-    }
-    .avatary-missing-files-item-title {
-      margin: 0;
-      font-size: 11px;
-      color: var(--component-node-foreground);
-      word-break: break-word;
-    }
-    .avatary-missing-files-item-url {
-      margin: 0;
-      font-size: 10px;
-      color: var(--component-node-foreground-secondary);
-      word-break: break-all;
-    }
-    .avatary-missing-files-item-url-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 6px;
-    }
-    .avatary-missing-files-item-meta {
-      margin: 0;
-      font-size: 10px;
-      color: var(--component-node-foreground-secondary);
-      line-height: 1.35;
-    }
-    .avatary-missing-files-copy-btn {
-      flex: 0 0 auto;
-      width: 20px;
-      height: 20px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      background: transparent;
-      color: var(--component-node-foreground-secondary);
-      transition: background .12s ease, color .12s ease;
-      margin-top: 1px;
-    }
-    .avatary-missing-files-copy-btn:hover {
-      background: var(--component-node-widget-background-hovered);
-      color: var(--component-node-foreground);
-    }
-    .avatary-missing-files-copy-btn.copied {
-      color: var(--p-primary-color);
-    }
-    .avatary-missing-files-copy-btn i {
-      width: 12px;
-      height: 12px;
-      font-size: 12px;
-      display: inline-block;
-    }
-    .avatary-missing-files-empty {
-      margin: 0;
-      font-size: 11px;
-      color: var(--component-node-foreground-secondary);
-    }
-    .avatary-missing-files-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 2px;
-    }
-    .avatary-missing-files-action-btn {
-      width: fit-content;
-      min-width: 0;
-      height: 28px;
-      border-radius: 8px;
-      border: 1px solid var(--component-node-widget-background-highlighted);
-      background: var(--component-node-widget-background);
-      color: var(--component-node-foreground);
-      padding: 0 10px;
-      font-size: 11px;
-      line-height: 1;
-      cursor: pointer;
-    }
-    .avatary-missing-files-action-btn:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-    }
-  `;
-  document.head.appendChild(style);
-}
-function renderMissingFiles({
-  container,
-  title = "Missing Files",
-  description = "",
-  items = [],
-  fields = [],
-  allRequiredConnected = false,
-  primaryAction = null
-}) {
-  ensureMissingFilesStyles();
-  container.innerHTML = "";
-  if (allRequiredConnected) {
-    return;
-  }
-  const root = document.createElement("div");
-  root.className = "avatary-missing-files";
-  const titleEl = document.createElement("p");
-  titleEl.className = "avatary-missing-files-title";
-  titleEl.textContent = `\u26A0\uFE0F ${String(title || "Missing Files")}`;
-  root.appendChild(titleEl);
-  if (description) {
-    const copyEl = document.createElement("p");
-    copyEl.className = "avatary-missing-files-copy";
-    copyEl.textContent = String(description);
-    root.appendChild(copyEl);
-  } else if (String(title || "") === "ControlLight Missing Files") {
-    const copyEl = document.createElement("p");
-    copyEl.className = "avatary-missing-files-copy";
-    copyEl.textContent = "Connect nodes and run again";
-    root.appendChild(copyEl);
-  }
-  if (Array.isArray(fields) && fields.length > 0) {
-    const fieldsRoot = document.createElement("div");
-    fieldsRoot.className = "avatary-missing-files-fields";
-    for (const field of fields) {
-      const fieldRow = document.createElement("div");
-      fieldRow.className = "avatary-missing-files-field";
-      const fieldLabel = document.createElement("p");
-      fieldLabel.className = "avatary-missing-files-field-label";
-      fieldLabel.textContent = String(field?.label || field?.key || "Value");
-      fieldRow.appendChild(fieldLabel);
-      const options = Array.isArray(field?.options) ? field.options : [];
-      const input = options.length > 0 ? document.createElement("select") : document.createElement("input");
-      input.className = "avatary-missing-files-field-input";
-      input.value = String(field?.value ?? "");
-      if (field?.placeholder && input instanceof HTMLInputElement) {
-        input.placeholder = String(field.placeholder);
-      }
-      if (options.length > 0 && input instanceof HTMLSelectElement) {
-        for (const optionValue of options) {
-          const option = document.createElement("option");
-          option.value = String(optionValue);
-          option.textContent = String(optionValue);
-          input.appendChild(option);
-        }
-        input.value = String(field?.value ?? "");
-      } else if (input instanceof HTMLInputElement) {
-        input.type = "text";
-      }
-      input.addEventListener("change", () => {
-        if (typeof field?.onChange === "function") {
-          field.onChange(String(input.value ?? ""));
-        }
-      });
-      fieldRow.appendChild(input);
-      fieldsRoot.appendChild(fieldRow);
-    }
-    root.appendChild(fieldsRoot);
-  }
-  if (primaryAction && typeof primaryAction === "object") {
-    const actions = document.createElement("div");
-    actions.className = "avatary-missing-files-actions";
-    const btn = document.createElement("button");
-    btn.className = "avatary-missing-files-action-btn";
-    btn.type = "button";
-    btn.disabled = Boolean(primaryAction?.disabled);
-    btn.textContent = String(primaryAction?.label || "Action");
-    btn.addEventListener("click", async () => {
-      if (typeof primaryAction?.onClick === "function") {
-        await primaryAction.onClick();
-      }
-    });
-    actions.appendChild(btn);
-    root.appendChild(actions);
-  }
-  if (!Array.isArray(items) || items.length === 0) {
-    const emptyEl = document.createElement("p");
-    emptyEl.className = "avatary-missing-files-empty";
-    emptyEl.textContent = "All required files are available.";
-    root.appendChild(emptyEl);
-    container.appendChild(root);
-    return;
-  }
-  const list = document.createElement("div");
-  list.className = "avatary-missing-files-list";
-  for (const item of items) {
-    const row = document.createElement("div");
-    row.className = "avatary-missing-files-item";
-    const itemTitle = document.createElement("p");
-    itemTitle.className = "avatary-missing-files-item-title";
-    itemTitle.textContent = String(item?.label || "Missing file");
-    row.appendChild(itemTitle);
-    const itemUrlRow = document.createElement("div");
-    itemUrlRow.className = "avatary-missing-files-item-url-row";
-    const itemUrl = document.createElement("a");
-    itemUrl.className = "avatary-missing-files-item-url";
-    itemUrl.href = String(item?.url || "").trim();
-    itemUrl.target = "_blank";
-    itemUrl.rel = "noopener noreferrer";
-    itemUrl.textContent = String(item?.url || "");
-    itemUrlRow.appendChild(itemUrl);
-    const copyBtn = document.createElement("button");
-    copyBtn.className = "avatary-missing-files-copy-btn";
-    copyBtn.type = "button";
-    copyBtn.title = "Copy download URL";
-    copyBtn.innerHTML = '<i class="icon-[lucide--copy]"></i>';
-    copyBtn.addEventListener("click", async () => {
-      const urlText = String(item?.url || "").trim();
-      if (!urlText) return;
-      try {
-        await navigator.clipboard.writeText(urlText);
-        copyBtn.classList.add("copied");
-        copyBtn.title = "Copied";
-        copyBtn.innerHTML = '<i class="icon-[lucide--check]"></i>';
-        setTimeout(() => {
-          copyBtn.classList.remove("copied");
-          copyBtn.title = "Copy download URL";
-          copyBtn.innerHTML = '<i class="icon-[lucide--copy]"></i>';
-        }, 1200);
-      } catch (_err) {
-      }
-    });
-    itemUrlRow.appendChild(copyBtn);
-    row.appendChild(itemUrlRow);
-    const requiredType = String(item?.required_type || "").trim();
-    if (requiredType) {
-      const meta = document.createElement("p");
-      meta.className = "avatary-missing-files-item-meta";
-      meta.textContent = requiredType;
-      row.appendChild(meta);
-    }
-    const reason = String(item?.reason || "").trim();
-    if (reason) {
-      const reasonEl = document.createElement("p");
-      reasonEl.className = "avatary-missing-files-item-meta";
-      reasonEl.textContent = `Issue: ${reason}`;
-      row.appendChild(reasonEl);
-    }
-    list.appendChild(row);
-  }
-  root.appendChild(list);
-  container.appendChild(root);
-}
-
-// web-src/control_light_frontend.ts
-var NODE_CLASS4 = "ControlLight";
-var PANEL_HEIGHT3 = 210;
-var DEFAULT_W3 = 340;
-var ROUTE = "/avatary/controllight/missing-files";
-var INIT_ROUTE = "/avatary/controllight/initialize";
-var HF_TOKEN_KEY = "avatary-controllight-hf-token-v1";
-function ensurePanelWidget5(node) {
-  if (node._avataryControlLightPanel && node.widgets?.some((w) => w?._avataryControlLightPanelWidget)) {
-    return node._avataryControlLightPanel;
-  }
-  if (node.widgets) {
-    node.widgets = node.widgets.filter((w) => !w?._avataryControlLightPanelWidget);
-  }
-  const panel = document.createElement("div");
-  panel.style.cssText = [
-    "display:flex",
-    "flex-direction:column",
-    "gap:8px",
-    "padding:1px",
-    "height:100%",
-    "overflow:auto",
-    "box-sizing:border-box"
-  ].join(";");
-  node._avataryControlLightPanel = panel;
-  if (typeof node.addDOMWidget === "function") {
-    const w = node.addDOMWidget("ControlLight", "control_light_panel", panel, {
-      serialize: false,
-      hideOnZoom: false,
-      getMinHeight: () => PANEL_HEIGHT3
-    });
-    if (w) {
-      w._avataryControlLightPanelWidget = true;
-      w.serialize = false;
-      return panel;
-    }
-  }
-  return null;
-}
-async function fetchMissingFiles() {
-  const response = await fetch(ROUTE, { method: "GET" });
-  if (!response.ok) {
-    throw new Error(`Missing-files request failed (${response.status})`);
-  }
-  return await response.json();
-}
-async function initializeAssets(hfToken = "") {
-  const response = await fetch(INIT_ROUTE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ hf_token: String(hfToken || "").trim() })
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !payload?.ok) {
-    throw new Error(
-      String(payload?.error || `Initialize failed (${response.status})`)
-    );
-  }
-  return payload;
-}
-function renderLoading(panel) {
-  panel.innerHTML = "";
-  const copy = document.createElement("div");
-  copy.className = "text-component-node-foreground-secondary text-xs";
-  copy.textContent = "Checking ControlLight files...";
-  panel.appendChild(copy);
-}
-function renderError(panel, message) {
-  panel.innerHTML = "";
-  const copy = document.createElement("div");
-  copy.className = "text-component-node-foreground-secondary text-xs";
-  copy.textContent = String(message || "Failed to check required files.");
-  panel.appendChild(copy);
-}
-async function refreshPanel(node) {
-  const panel = ensurePanelWidget5(node);
-  if (!panel) return;
-  if (node._avataryControlLightBusy) return;
-  node._avataryControlLightBusy = true;
-  renderLoading(panel);
-  try {
-    const payload = await fetchMissingFiles();
-    const items = (Array.isArray(payload?.items) ? payload.items : []).filter(
-      (item) => Boolean(item?.missing)
-    );
-    const isInitializing = Boolean(node?._avataryControlLightInitializing);
-    renderMissingFiles({
-      container: panel,
-      title: "ControlLight Missing Files",
-      items,
-      primaryAction: items.length > 0 ? {
-        label: isInitializing ? "Initializing..." : "Initialize",
-        disabled: isInitializing,
-        onClick: async () => {
-          if (node._avataryControlLightInitializing) return;
-          node._avataryControlLightInitializing = true;
-          await refreshPanel(node);
-          try {
-            const savedToken = String(
-              localStorage.getItem(HF_TOKEN_KEY) || ""
-            ).trim();
-            try {
-              await initializeAssets(savedToken);
-            } catch (firstErr) {
-              const msg = String(firstErr?.message || firstErr || "");
-              const needsAuth = msg.includes("401") || msg.includes("403") || msg.toLowerCase().includes("unauthorized") || msg.toLowerCase().includes("forbidden") || msg.toLowerCase().includes("authentication");
-              if (!needsAuth) throw firstErr;
-              const prompted = window.prompt(
-                "Hugging Face token needed for Initialize. Paste hf_... token:",
-                savedToken
-              );
-              const nextToken = String(prompted || "").trim();
-              if (!nextToken) throw firstErr;
-              localStorage.setItem(HF_TOKEN_KEY, nextToken);
-              await initializeAssets(nextToken);
-            }
-          } finally {
-            node._avataryControlLightInitializing = false;
-            await refreshPanel(node);
-          }
-        }
-      } : null
-    });
-  } catch (err) {
-    renderError(panel, err?.message || String(err));
-  } finally {
-    node._avataryControlLightBusy = false;
-  }
-}
-function startPolling(node) {
-  if (node._avataryControlLightTimer) return;
-  node._avataryControlLightTimer = setInterval(() => {
-    try {
-      refreshPanel(node);
-    } catch (_err) {
-    }
-  }, 8e3);
-}
-app6.registerExtension({
-  name: "Avatary.ControlLight.MissingFiles",
-  async beforeRegisterNodeDef(nodeType, nodeData) {
-    if (nodeData.name !== NODE_CLASS4) return;
-    const origCreated = nodeType.prototype.onNodeCreated;
-    nodeType.prototype.onNodeCreated = function(...args) {
-      const r = origCreated?.apply(this, args);
-      this.size[0] = Math.max(this.size?.[0] || 0, DEFAULT_W3);
-      this.size[1] = Math.max(this.size?.[1] || 0, PANEL_HEIGHT3 + 110);
-      refreshPanel(this);
-      startPolling(this);
-      return r;
-    };
-    const origConfigure = nodeType.prototype.onConfigure;
-    nodeType.prototype.onConfigure = function(...args) {
-      const r = origConfigure?.apply(this, args);
-      refreshPanel(this);
-      startPolling(this);
-      return r;
-    };
-    const origRemoved = nodeType.prototype.onRemoved;
-    nodeType.prototype.onRemoved = function(...args) {
-      if (this._avataryControlLightTimer) {
-        clearInterval(this._avataryControlLightTimer);
-        this._avataryControlLightTimer = null;
-      }
-      if (this._avataryControlLightPanel?.isConnected) {
-        this._avataryControlLightPanel.remove();
-      }
-      this._avataryControlLightPanel = null;
-      if (this.widgets) {
-        this.widgets = this.widgets.filter(
-          (w) => !w?._avataryControlLightPanelWidget
-        );
-      }
-      return origRemoved?.apply(this, args);
-    };
-  },
-  loadedGraphNode(node) {
-    const isTarget = node?.comfyClass === NODE_CLASS4 || node?.type === NODE_CLASS4 || node?.constructor?.type === NODE_CLASS4;
-    if (!isTarget) return;
-    node.size[0] = Math.max(node.size?.[0] || 0, DEFAULT_W3);
-    node.size[1] = Math.max(node.size?.[1] || 0, PANEL_HEIGHT3 + 110);
-    refreshPanel(node);
-    startPolling(node);
-  }
-});

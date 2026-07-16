@@ -43,11 +43,3 @@ Toggles whole workflow sections from one place for faster iteration.
 #### `Nano Banana Pro Avatary`
 
 Generates or edits images through Nano Banana Pro directly inside your ComfyUI graph.
-
-#### `Switch Avatary`
-
-Routes variations through one clean switch instead of rewiring your graph.
-
-#### `ControlLight Avatary`
-
-Rescues dark images with ControlLight enhancement while keeping the node simple.

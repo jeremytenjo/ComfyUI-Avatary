@@ -10,6 +10,8 @@ All notable changes to internal packs are documented in this file.
   - Shows one dropdown combining files from `checkpoints` and `diffusion_models`.
   - Outputs `model`, `clip`, and `vae`.
   - Checkpoint selections load model, CLIP, and VAE; diffusion-model selections load the model and leave CLIP/VAE empty.
+- Removed `Switch Avatary` and `ControlLight Avatary` from the active node set:
+  - Removed their Python node modules, registry wiring, frontend entries, tests, and ControlLight backend routes.
 
 ### 2026-07-13
 

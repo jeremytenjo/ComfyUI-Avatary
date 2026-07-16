@@ -24,22 +24,6 @@ def _try_load_downloader_extension() -> None:
 
 _try_load_downloader_extension()
 
-
-def _try_load_controllight_extension() -> None:
-    try:
-        from .extensions import control_light_backend_extension as _control_light_extension  # noqa: F401
-    except Exception:
-        try:
-            import extensions.control_light_backend_extension as _control_light_extension  # noqa: F401
-        except Exception as exc:
-            print(
-                "[ComfyUI-Avatary] ControlLight extension not loaded in this runtime: "
-                f"{exc}"
-            )
-
-
-_try_load_controllight_extension()
-
 try:
     from .nodes.node_group_bypasser import NODE_CLASS_MAPPINGS as _MAPS_GROUP_BYPASSER
     from .nodes.node_group_bypasser import (
@@ -57,14 +41,10 @@ try:
         NODE_CLASS_MAPPINGS as _MAPS_SAVE_IMAGE_ULTRA,
     )
     from .nodes.node_save_image_avatary_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SAVE_IMAGE_ULTRA
-    from .nodes.node_switch import NODE_CLASS_MAPPINGS as _MAPS_SWITCH
-    from .nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
     from .nodes.node_load_images_avatary import NODE_CLASS_MAPPINGS as _MAPS_LOAD_IMAGE_BATCH
     from .nodes.node_load_images_avatary import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_IMAGE_BATCH
     from .nodes.node_lora_stack_backend import NODE_CLASS_MAPPINGS as _MAPS_LORA_STACK
     from .nodes.node_lora_stack_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LORA_STACK
-    from .nodes.node_control_light_backend import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
-    from .nodes.node_control_light_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
     from .nodes.node_aspect_ratio_backend import NODE_CLASS_MAPPINGS as _MAPS_ASPECT_RATIO
     from .nodes.node_aspect_ratio_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_ASPECT_RATIO
     from .nodes.node_carousel_split_backend import NODE_CLASS_MAPPINGS as _MAPS_CAROUSEL_SPLIT
@@ -94,14 +74,10 @@ except ImportError:
     from nodes.node_save_image_avatary_backend import (
         NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SAVE_IMAGE_ULTRA,
     )
-    from nodes.node_switch import NODE_CLASS_MAPPINGS as _MAPS_SWITCH
-    from nodes.node_switch import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_SWITCH
     from nodes.node_load_images_avatary import NODE_CLASS_MAPPINGS as _MAPS_LOAD_IMAGE_BATCH
     from nodes.node_load_images_avatary import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_IMAGE_BATCH
     from nodes.node_lora_stack_backend import NODE_CLASS_MAPPINGS as _MAPS_LORA_STACK
     from nodes.node_lora_stack_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LORA_STACK
-    from nodes.node_control_light_backend import NODE_CLASS_MAPPINGS as _MAPS_CONTROL_LIGHT
-    from nodes.node_control_light_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CONTROL_LIGHT
     from nodes.node_aspect_ratio_backend import NODE_CLASS_MAPPINGS as _MAPS_ASPECT_RATIO
     from nodes.node_aspect_ratio_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_ASPECT_RATIO
     from nodes.node_carousel_split_backend import NODE_CLASS_MAPPINGS as _MAPS_CAROUSEL_SPLIT
@@ -133,10 +109,8 @@ NODE_CLASS_MAPPINGS = _merge_mapping_dicts(
     _MAPS_NANO_BANANA,
     _MAPS_PROMPT_LIST,
     _MAPS_SAVE_IMAGE_ULTRA,
-    _MAPS_SWITCH,
     _MAPS_LOAD_IMAGE_BATCH,
     _MAPS_LORA_STACK,
-    _MAPS_CONTROL_LIGHT,
     _MAPS_ASPECT_RATIO,
     _MAPS_CAROUSEL_SPLIT,
     _MAPS_LOAD_CHECKPOINT_OR_DIFFUSION_MODEL,
@@ -148,10 +122,8 @@ NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
     _NAMES_NANO_BANANA,
     _NAMES_PROMPT_LIST,
     _NAMES_SAVE_IMAGE_ULTRA,
-    _NAMES_SWITCH,
     _NAMES_LOAD_IMAGE_BATCH,
     _NAMES_LORA_STACK,
-    _NAMES_CONTROL_LIGHT,
     _NAMES_ASPECT_RATIO,
     _NAMES_CAROUSEL_SPLIT,
     _NAMES_LOAD_CHECKPOINT_OR_DIFFUSION_MODEL,
