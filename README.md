@@ -24,6 +24,10 @@ Adds clean feature flags so experiments can be enabled, disabled, or bypassed fa
 
 Applies an ordered list of LoRAs to a model with inline dropdown selection, strength controls, enable toggles, drag-and-drop sorting, and row removal.
 
+#### `Load Checkpoint or Diffusion Model Avatary`
+
+Loads either a checkpoint or standalone diffusion model from one dropdown. Checkpoints output model, CLIP, and VAE; diffusion model files output the model and leave CLIP/VAE empty.
+
 #### `Save Image Ultra Avatary`
 
 Saves final images with cleaner names, prompt metadata, and fewer output-folder chores.

@@ -4,6 +4,13 @@ All notable changes to internal packs are documented in this file.
 
 ## Avatary Core
 
+### 2026-07-16
+
+- Added new `Load Checkpoint or Diffusion Model Avatary` node:
+  - Shows one dropdown combining files from `checkpoints` and `diffusion_models`.
+  - Outputs `model`, `clip`, and `vae`.
+  - Checkpoint selections load model, CLIP, and VAE; diffusion-model selections load the model and leave CLIP/VAE empty.
+
 ### 2026-07-13
 
 - Added new `Lora Stack Avatary` node:

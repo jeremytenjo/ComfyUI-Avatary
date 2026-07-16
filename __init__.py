@@ -69,6 +69,12 @@ try:
     from .nodes.node_aspect_ratio_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_ASPECT_RATIO
     from .nodes.node_carousel_split_backend import NODE_CLASS_MAPPINGS as _MAPS_CAROUSEL_SPLIT
     from .nodes.node_carousel_split_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CAROUSEL_SPLIT
+    from .nodes.node_load_checkpoint_or_diffusion_model_backend import (
+        NODE_CLASS_MAPPINGS as _MAPS_LOAD_CHECKPOINT_OR_DIFFUSION_MODEL,
+    )
+    from .nodes.node_load_checkpoint_or_diffusion_model_backend import (
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_CHECKPOINT_OR_DIFFUSION_MODEL,
+    )
 except ImportError:
     from nodes.node_group_bypasser import NODE_CLASS_MAPPINGS as _MAPS_GROUP_BYPASSER
     from nodes.node_group_bypasser import (
@@ -100,6 +106,12 @@ except ImportError:
     from nodes.node_aspect_ratio_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_ASPECT_RATIO
     from nodes.node_carousel_split_backend import NODE_CLASS_MAPPINGS as _MAPS_CAROUSEL_SPLIT
     from nodes.node_carousel_split_backend import NODE_DISPLAY_NAME_MAPPINGS as _NAMES_CAROUSEL_SPLIT
+    from nodes.node_load_checkpoint_or_diffusion_model_backend import (
+        NODE_CLASS_MAPPINGS as _MAPS_LOAD_CHECKPOINT_OR_DIFFUSION_MODEL,
+    )
+    from nodes.node_load_checkpoint_or_diffusion_model_backend import (
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES_LOAD_CHECKPOINT_OR_DIFFUSION_MODEL,
+    )
 
 
 def _merge_mapping_dicts(*mapping_dicts: dict[str, object]) -> dict[str, object]:
@@ -127,6 +139,7 @@ NODE_CLASS_MAPPINGS = _merge_mapping_dicts(
     _MAPS_CONTROL_LIGHT,
     _MAPS_ASPECT_RATIO,
     _MAPS_CAROUSEL_SPLIT,
+    _MAPS_LOAD_CHECKPOINT_OR_DIFFUSION_MODEL,
 )
 
 NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
@@ -141,6 +154,7 @@ NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
     _NAMES_CONTROL_LIGHT,
     _NAMES_ASPECT_RATIO,
     _NAMES_CAROUSEL_SPLIT,
+    _NAMES_LOAD_CHECKPOINT_OR_DIFFUSION_MODEL,
 )
 
 WEB_DIRECTORY = "./web"
