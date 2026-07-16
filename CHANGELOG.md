@@ -103,6 +103,13 @@ All notable changes to internal packs are documented in this file.
 
 ## Downloader
 
+### 2026-07-16
+
+- Removed the missing custom-nodes workflow scanner from Downloader:
+  - Removed the warning button from the Downloader action row.
+  - Removed the missing-nodes modal, workflow dependency analysis route, and install-missing-nodes flow.
+  - Kept custom-node history updates working through a generic custom-node install endpoint.
+
 ### 2026-07-04
 
 - Improved Hugging Face auth handling in Downloader:

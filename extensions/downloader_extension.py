@@ -11,7 +11,6 @@ import urllib.parse
 import urllib.error
 import urllib.request
 import uuid
-import json
 import re
 import zipfile
 from pathlib import Path
@@ -33,8 +32,8 @@ DOWNLOAD_JOBS_LOCK = threading.Lock()
 ACTIVE_DOWNLOAD_STATUSES = {"queued", "running"}
 EXPORT_JOBS: dict[str, dict] = {}
 EXPORT_JOBS_LOCK = threading.Lock()
-MISSING_INSTALL_JOBS: dict[str, dict] = {}
-MISSING_INSTALL_JOBS_LOCK = threading.Lock()
+CUSTOM_NODE_INSTALL_JOBS: dict[str, dict] = {}
+CUSTOM_NODE_INSTALL_JOBS_LOCK = threading.Lock()
 
 
 def _sanitize_http_reason(reason: object, fallback: str = "Request failed") -> str:
@@ -673,16 +672,16 @@ def _find_active_download_for_destination(destination_path: str) -> dict | None:
     return None
 
 
-def _prune_old_missing_install_jobs() -> None:
+def _prune_old_custom_node_install_jobs() -> None:
     now = time.time()
-    with MISSING_INSTALL_JOBS_LOCK:
+    with CUSTOM_NODE_INSTALL_JOBS_LOCK:
         stale_job_ids = [
             job_id
-            for job_id, job in MISSING_INSTALL_JOBS.items()
+            for job_id, job in CUSTOM_NODE_INSTALL_JOBS.items()
             if job.get("status") in {"completed", "failed", "partial"} and now - float(job.get("updated_at", now)) > 3600
         ]
         for job_id in stale_job_ids:
-            MISSING_INSTALL_JOBS.pop(job_id, None)
+            CUSTOM_NODE_INSTALL_JOBS.pop(job_id, None)
 
 
 def _prune_old_export_jobs() -> None:
@@ -816,141 +815,10 @@ def _run_comfy_cli_command(args: list[str]) -> subprocess.CompletedProcess[str]:
         ) from exc
 
 
-def _display_name_from_source_url(source_url: str) -> str:
-    value = str(source_url or "").strip().rstrip("/")
-    if not value:
-        return "unknown"
-    base = os.path.basename(value)
-    if base.lower().endswith(".git"):
-        base = base[:-4]
-    return base or value
-
-
-def _should_ignore_unknown_node_name(node_name: str) -> bool:
-    value = str(node_name or "").strip()
-    if not value:
-        return True
-    if re.fullmatch(
-        r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
-        value,
-    ):
-        return True
-    if re.fullmatch(r"[0-9a-fA-F]{32}", value):
-        return True
-    return False
-
-
-def _analyze_workflow_missing_nodes(workflow: dict) -> dict:
-    if not isinstance(workflow, dict):
-        raise web.HTTPBadRequest(reason="`workflow` must be a JSON object")
-
-    workflow_tmp = ""
-    deps_tmp = ""
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".json",
-            prefix="dtd_workflow_",
-            encoding="utf-8",
-            delete=False,
-        ) as workflow_file:
-            workflow_tmp = workflow_file.name
-            json.dump(workflow, workflow_file, ensure_ascii=False)
-
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".json",
-            prefix="dtd_deps_",
-            encoding="utf-8",
-            delete=False,
-        ) as deps_file:
-            deps_tmp = deps_file.name
-
-        result = _run_comfy_cli_command(
-            ["node", "deps-in-workflow", "--workflow", workflow_tmp, "--output", deps_tmp]
-        )
-        if result.returncode != 0:
-            detail = (result.stderr or "").strip() or (result.stdout or "").strip() or "deps-in-workflow failed"
-            raise web.HTTPInternalServerError(
-                reason=_sanitize_http_reason(
-                    f"Missing-node analysis failed: {detail}",
-                    fallback="Missing-node analysis failed",
-                )
-            )
-
-        with open(deps_tmp, "r", encoding="utf-8") as handle:
-            deps = json.load(handle)
-    except web.HTTPException:
-        raise
-    except FileNotFoundError as exc:
-        raise web.HTTPInternalServerError(
-            reason=_sanitize_http_reason(
-                f"Dependency analysis output missing: {exc}",
-                fallback="Dependency analysis output missing",
-            )
-        ) from exc
-    except json.JSONDecodeError as exc:
-        raise web.HTTPInternalServerError(
-            reason=_sanitize_http_reason(
-                f"Failed to parse dependency analysis output: {exc}",
-                fallback="Failed to parse dependency analysis output",
-            )
-        ) from exc
-    except Exception as exc:
-        raise web.HTTPInternalServerError(
-            reason=_sanitize_http_reason(
-                f"Missing-node analysis failed: {exc}",
-                fallback="Missing-node analysis failed",
-            )
-        ) from exc
-    finally:
-        for path in (workflow_tmp, deps_tmp):
-            if path and os.path.exists(path):
-                try:
-                    os.remove(path)
-                except OSError:
-                    pass
-
-    custom_nodes = deps.get("custom_nodes", {})
-    unknown_nodes_raw = deps.get("unknown_nodes", [])
-
-    missing = []
-    if isinstance(custom_nodes, dict):
-        for source_url, info in custom_nodes.items():
-            state = str((info or {}).get("state", "unknown")).strip().lower()
-            if state == "installed":
-                continue
-            source = str(source_url or "").strip()
-            display_name = _display_name_from_source_url(source)
-            missing.append(
-                {
-                    "key": source or display_name,
-                    "display_name": display_name,
-                    "source_url": source,
-                    "state": state or "unknown",
-                    "install_target": source or display_name,
-                }
-            )
-
-    unknown_nodes: list[str] = []
-    if isinstance(unknown_nodes_raw, list):
-        unknown_nodes = sorted(
-            {
-                str(node_name).strip()
-                for node_name in unknown_nodes_raw
-                if str(node_name).strip()
-                and not _should_ignore_unknown_node_name(str(node_name))
-            }
-        )
-
-    missing.sort(key=lambda item: str(item.get("display_name", "")).lower())
-    return {"missing": missing, "unknown_nodes": unknown_nodes}
-
-
-def _run_missing_nodes_install_job(job_id: str, targets: list[str]) -> None:
+def _run_custom_node_install_job(job_id: str, targets: list[str]) -> None:
     total_targets = len(targets)
-    with MISSING_INSTALL_JOBS_LOCK:
-        job = MISSING_INSTALL_JOBS.get(job_id)
+    with CUSTOM_NODE_INSTALL_JOBS_LOCK:
+        job = CUSTOM_NODE_INSTALL_JOBS.get(job_id)
         if not job:
             return
         job["status"] = "running"
@@ -960,8 +828,8 @@ def _run_missing_nodes_install_job(job_id: str, targets: list[str]) -> None:
     failed_targets = 0
 
     for index, target in enumerate(targets):
-        with MISSING_INSTALL_JOBS_LOCK:
-            job = MISSING_INSTALL_JOBS.get(job_id)
+        with CUSTOM_NODE_INSTALL_JOBS_LOCK:
+            job = CUSTOM_NODE_INSTALL_JOBS.get(job_id)
             if not job:
                 return
             job["status"] = "running"
@@ -1011,8 +879,8 @@ def _run_missing_nodes_install_job(job_id: str, targets: list[str]) -> None:
                 "return_code": -1,
             }
 
-        with MISSING_INSTALL_JOBS_LOCK:
-            job = MISSING_INSTALL_JOBS.get(job_id)
+        with CUSTOM_NODE_INSTALL_JOBS_LOCK:
+            job = CUSTOM_NODE_INSTALL_JOBS.get(job_id)
             if not job:
                 return
             results = list(job.get("results", []))
@@ -1031,8 +899,8 @@ def _run_missing_nodes_install_job(job_id: str, targets: list[str]) -> None:
     elif failed_targets > 0 and completed_targets == 0:
         final_status = "failed"
 
-    with MISSING_INSTALL_JOBS_LOCK:
-        job = MISSING_INSTALL_JOBS.get(job_id)
+    with CUSTOM_NODE_INSTALL_JOBS_LOCK:
+        job = CUSTOM_NODE_INSTALL_JOBS.get(job_id)
         if not job:
             return
         job["status"] = final_status
@@ -1485,16 +1353,8 @@ async def download_export_path_as_zip(request: web.Request) -> web.StreamRespons
             EXPORT_JOBS.pop(job_id, None)
 
 
-@PromptServer.instance.routes.post("/download-to-dir/missing-nodes/analyze")
-async def analyze_missing_nodes(request: web.Request) -> web.Response:
-    body = await request.json()
-    workflow = body.get("workflow")
-    analyzed = _analyze_workflow_missing_nodes(workflow)
-    return web.json_response({"ok": True, **analyzed})
-
-
-@PromptServer.instance.routes.post("/download-to-dir/missing-nodes/install")
-async def install_missing_nodes(request: web.Request) -> web.Response:
+@PromptServer.instance.routes.post("/download-to-dir/custom-node-install")
+async def install_custom_node(request: web.Request) -> web.Response:
     body = await request.json()
     raw_targets = body.get("targets", [])
     if not isinstance(raw_targets, list):
@@ -1514,8 +1374,8 @@ async def install_missing_nodes(request: web.Request) -> web.Response:
 
     job_id = uuid.uuid4().hex
     now = time.time()
-    with MISSING_INSTALL_JOBS_LOCK:
-        MISSING_INSTALL_JOBS[job_id] = {
+    with CUSTOM_NODE_INSTALL_JOBS_LOCK:
+        CUSTOM_NODE_INSTALL_JOBS[job_id] = {
             "job_id": job_id,
             "status": "queued",
             "targets": list(targets),
@@ -1530,11 +1390,11 @@ async def install_missing_nodes(request: web.Request) -> web.Response:
         }
 
     threading.Thread(
-        target=_run_missing_nodes_install_job,
+        target=_run_custom_node_install_job,
         args=(job_id, list(targets)),
         daemon=True,
     ).start()
-    _prune_old_missing_install_jobs()
+    _prune_old_custom_node_install_jobs()
 
     return web.json_response(
         {
@@ -1546,13 +1406,13 @@ async def install_missing_nodes(request: web.Request) -> web.Response:
     )
 
 
-@PromptServer.instance.routes.get("/download-to-dir/missing-nodes/install-progress/{job_id}")
-async def get_missing_nodes_install_progress(request: web.Request) -> web.Response:
+@PromptServer.instance.routes.get("/download-to-dir/custom-node-install-progress/{job_id}")
+async def get_custom_node_install_progress(request: web.Request) -> web.Response:
     job_id = request.match_info.get("job_id", "").strip()
-    with MISSING_INSTALL_JOBS_LOCK:
-        job = MISSING_INSTALL_JOBS.get(job_id)
+    with CUSTOM_NODE_INSTALL_JOBS_LOCK:
+        job = CUSTOM_NODE_INSTALL_JOBS.get(job_id)
         if not job:
-            raise web.HTTPNotFound(reason="Missing-node install job not found")
+            raise web.HTTPNotFound(reason="Custom-node install job not found")
         payload = dict(job)
         payload["results"] = list(job.get("results", []))
         payload["targets"] = list(job.get("targets", []))

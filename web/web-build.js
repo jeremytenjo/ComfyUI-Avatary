@@ -16,11 +16,7 @@
     toggleEl: null,
     dialogEl: null,
     historyEntries: [],
-    missingNodes: [],
-    unknownNodes: [],
-    missingCheckBusy: false,
     installBusy: false,
-    manualSourceOverrides: {},
     installJobId: "",
     installProgress: null,
     installPollTimer: null,
@@ -315,26 +311,6 @@
       #${DIALOG_ID} #dtd-export:hover {
         background: var(--p-surface-700, #2c323d);
       }
-      #${DIALOG_ID} #dtd-missing-warning {
-        width: fit-content;
-        min-width: 0;
-        padding: 8px 10px;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        background: color-mix(in srgb, #f5bf2c 20%, var(--p-surface-900, #1a1f27));
-        border-color: color-mix(in srgb, #f5bf2c 70%, var(--p-content-border-color, #434958));
-        color: #ffd36a;
-      }
-      #${DIALOG_ID} #dtd-missing-warning.visible {
-        display: inline-flex;
-      }
-      #${DIALOG_ID} #dtd-missing-warning:hover {
-        filter: brightness(1.08);
-      }
-      #${DIALOG_ID} #dtd-missing-warning i {
-        font-size: 15px;
-      }
       #${DIALOG_ID} #dtd-restart {
         width: fit-content;
         min-width: 0;
@@ -586,161 +562,6 @@
         font-size: 13px;
         font-weight: 600;
       }
-      #${DIALOG_ID} .missing-modal {
-        position: fixed;
-        inset: 0;
-        z-index: 20000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(8, 10, 14, 0.72);
-      }
-      #${DIALOG_ID} .missing-modal[hidden] {
-        display: none;
-      }
-      #${DIALOG_ID} .missing-card {
-        width: min(720px, calc(100vw - 48px));
-        max-height: calc(100vh - 72px);
-        border-radius: 14px;
-        border: 1px solid var(--p-content-border-color, #434958);
-        background: var(--p-surface-900, #141922);
-        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
-        padding: 14px;
-        overflow: auto;
-      }
-      #${DIALOG_ID} .missing-title {
-        margin: 0 0 8px 0;
-        font-size: 17px;
-        line-height: 1.25;
-        font-weight: 700;
-      }
-      #${DIALOG_ID} .missing-copy {
-        margin: 0;
-        font-size: 13px;
-        line-height: 1.4;
-        color: var(--p-text-muted-color, #a8afbd);
-      }
-      #${DIALOG_ID} .missing-list {
-        margin-top: 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-      #${DIALOG_ID} .missing-progress {
-        margin-top: 12px;
-        border: 1px solid var(--p-content-border-color, #434958);
-        border-radius: 10px;
-        background: var(--p-surface-800, #232831);
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-      #${DIALOG_ID} .missing-progress-title {
-        margin: 0;
-        font-size: 13px;
-        font-weight: 700;
-      }
-      #${DIALOG_ID} .missing-progress-sub {
-        margin: 0;
-        font-size: 12px;
-        color: var(--p-text-muted-color, #a8afbd);
-        overflow-wrap: anywhere;
-      }
-      #${DIALOG_ID} .missing-progress progress {
-        width: 100%;
-        height: 12px;
-      }
-      #${DIALOG_ID} .missing-row {
-        border: 1px solid var(--p-content-border-color, #434958);
-        border-radius: 10px;
-        background: var(--p-surface-800, #232831);
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-      #${DIALOG_ID} .missing-row-name {
-        margin: 0;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--p-text-color, #f5f7fb);
-      }
-      #${DIALOG_ID} .missing-row-meta {
-        margin: 0;
-        font-size: 12px;
-        line-height: 1.35;
-        color: var(--p-text-muted-color, #a8afbd);
-      }
-      #${DIALOG_ID} .missing-row-meta a {
-        color: #7db9ff;
-      }
-      #${DIALOG_ID} .missing-row-meta b {
-        color: #ffd36a;
-      }
-      #${DIALOG_ID} .missing-row-url {
-        margin-top: 4px;
-        height: 34px;
-        font-size: 12px;
-        border-radius: 8px;
-        background: var(--p-surface-900, #1a1f27);
-      }
-      #${DIALOG_ID} .missing-row-url:disabled {
-        opacity: 0.6;
-      }
-      #${DIALOG_ID} .missing-unknown {
-        margin-top: 12px;
-        border-top: 1px solid var(--p-content-border-color, #434958);
-        padding-top: 10px;
-      }
-      #${DIALOG_ID} .missing-unknown h4 {
-        margin: 0 0 6px 0;
-        font-size: 13px;
-      }
-      #${DIALOG_ID} .missing-unknown ul {
-        margin: 0;
-        padding-left: 18px;
-        color: var(--p-text-muted-color, #a8afbd);
-        font-size: 12px;
-      }
-      #${DIALOG_ID} .missing-actions {
-        margin-top: 12px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-      }
-      #${DIALOG_ID} .missing-actions button {
-        width: auto;
-        min-width: 110px;
-        height: 36px;
-        padding: 8px 12px;
-        border-radius: 9px;
-        font-size: 13px;
-        font-weight: 600;
-      }
-      #${DIALOG_ID} #dtd-missing-install {
-        background: var(--p-primary-color, #2587f9);
-        border-color: color-mix(in srgb, var(--p-primary-color, #2587f9) 68%, #ffffff 32%);
-        color: #ffffff;
-      }
-      #${DIALOG_ID} #dtd-missing-restart {
-        display: none;
-        background: var(--p-surface-800, #232831);
-        border-color: var(--p-content-border-color, #434958);
-        color: var(--p-text-color, #f5f7fb);
-      }
-      #${DIALOG_ID} #dtd-missing-restart.visible {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-      #${DIALOG_ID} #dtd-missing-restart:hover {
-        background: var(--p-surface-700, #2c323d);
-      }
-      #${DIALOG_ID} #dtd-missing-install:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
       #${DIALOG_ID} #dtd-confirm-confirm {
         background: var(--p-primary-color, #2587f9);
         border-color: color-mix(in srgb, var(--p-primary-color, #2587f9) 68%, #ffffff 32%);
@@ -813,191 +634,6 @@
   function escapeHtml(value) {
     return String(value || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
   }
-  function collectCurrentWorkflowJson() {
-    try {
-      const graph = window.app?.graph;
-      if (!graph?.serialize) return null;
-      const workflow = graph.serialize();
-      return workflow && typeof workflow === "object" ? workflow : null;
-    } catch {
-      return null;
-    }
-  }
-  function isIgnoredUnknownNodeName(raw) {
-    const value = String(raw || "").trim();
-    if (!value) return true;
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      value
-    )) {
-      return true;
-    }
-    if (/^[0-9a-f]{32}$/i.test(value)) {
-      return true;
-    }
-    return false;
-  }
-  function collectMissingNodeTypesFromGraph() {
-    try {
-      const graphNodes = Array.isArray(window.app?.graph?._nodes) ? window.app.graph._nodes : [];
-      if (graphNodes.length === 0) return [];
-      const registeredTypes = new Set(
-        Object.keys(window.LiteGraph?.registered_node_types || {})
-      );
-      const virtualNodeTypes = /* @__PURE__ */ new Set(["Reroute", "Note"]);
-      const missing = /* @__PURE__ */ new Set();
-      for (const node of graphNodes) {
-        const typeName = String(node?.type || "").trim();
-        if (!typeName) continue;
-        if (virtualNodeTypes.has(typeName)) continue;
-        if (isIgnoredUnknownNodeName(typeName)) continue;
-        if (!registeredTypes.has(typeName)) {
-          missing.add(typeName);
-        }
-      }
-      return Array.from(missing).sort((a, b) => a.localeCompare(b));
-    } catch {
-      return [];
-    }
-  }
-  function normalizeMissingState(raw) {
-    const value = String(raw || "").trim().toLowerCase();
-    if (!value) return "unknown";
-    return value;
-  }
-  function setMissingNodeData(payload) {
-    const missing = Array.isArray(payload?.missing) ? payload.missing : [];
-    const unknown = Array.isArray(payload?.unknown_nodes) ? payload.unknown_nodes : [];
-    state.missingNodes = missing.map((entry) => {
-      const sourceUrl = String(entry?.source_url || "").trim();
-      const displayName = String(entry?.display_name || "").trim() || "unknown";
-      const key = String(entry?.key || "").trim() || sourceUrl || displayName;
-      return {
-        key,
-        display_name: displayName,
-        source_url: sourceUrl,
-        state: normalizeMissingState(entry?.state),
-        install_target: String(entry?.install_target || "").trim() || sourceUrl || displayName
-      };
-    });
-    state.unknownNodes = unknown.map((item) => String(item || "").trim()).filter((item) => item && !isIgnoredUnknownNodeName(item));
-    updateMissingWarningVisibility();
-    renderMissingNodesModalContent();
-  }
-  function updateMissingWarningVisibility() {
-    const warningButton = document.getElementById("dtd-missing-warning");
-    if (!warningButton) return;
-    const count = Number(state.missingNodes.length || 0) + Number(state.unknownNodes.length || 0);
-    const visible = count > 0;
-    warningButton.classList.toggle("visible", visible);
-    warningButton.hidden = !visible;
-    warningButton.setAttribute(
-      "aria-label",
-      visible ? `${count} missing workflow node${count === 1 ? "" : "s"}` : "No missing custom nodes"
-    );
-    warningButton.title = visible ? `${count} missing workflow node${count === 1 ? "" : "s"}` : "";
-  }
-  function renderMissingNodesModalContent() {
-    const body = document.getElementById("dtd-missing-body");
-    const installButton = document.getElementById("dtd-missing-install");
-    const restartButton = document.getElementById("dtd-missing-restart");
-    if (!body) return;
-    const disableInputs = state.installBusy;
-    const progress = state.installProgress || null;
-    const progressPercent = Math.max(
-      0,
-      Math.min(100, Number(progress?.progress_percent || 0))
-    );
-    const progressCompleted = Number(progress?.completed_targets || 0);
-    const progressFailed = Number(progress?.failed_targets || 0);
-    const progressTotal = Number(progress?.total_targets || 0);
-    const progressCurrent = String(progress?.current_target || "").trim();
-    const progressStatus = String(progress?.status || "").trim() || "idle";
-    const progressMarkup = state.installBusy || progress ? `
-      <div class="missing-progress">
-        <p class="missing-progress-title">Install Progress: ${escapeHtml(progressCompleted)}/${escapeHtml(progressTotal || 0)} complete</p>
-        <p class="missing-progress-sub">Status: ${escapeHtml(progressStatus)}${progressCurrent ? ` | Current: ${escapeHtml(progressCurrent)}` : ""}</p>
-        <p class="missing-progress-sub">Succeeded: ${escapeHtml(progressCompleted)} | Failed: ${escapeHtml(progressFailed)}</p>
-        <progress value="${escapeHtml(progressPercent)}" max="100"></progress>
-      </div>
-    ` : "";
-    const missingMarkup = state.missingNodes.length ? state.missingNodes.map((entry) => {
-      const sourceUrl = String(entry.source_url || "").trim();
-      const stateText = escapeHtml(entry.state || "unknown");
-      const heading = escapeHtml(entry.display_name || "unknown");
-      const sourceMarkup = sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceUrl)}</a>` : "<b>source unavailable</b>";
-      const disabledAttr = disableInputs ? "disabled" : "";
-      const manualInput = sourceUrl.length > 0 ? "" : `<input class="missing-row-url" type="text" data-action="manual-source" data-key="${escapeHtml(entry.key)}" value="${escapeHtml(state.manualSourceOverrides[entry.key] || "")}" placeholder="Enter git URL for this node (optional)" ${disabledAttr} />`;
-      return `
-              <div class="missing-row">
-                <p class="missing-row-name">${heading}</p>
-                <p class="missing-row-meta">State: <b>${stateText}</b></p>
-                <p class="missing-row-meta">Source: ${sourceMarkup}</p>
-                ${manualInput}
-              </div>
-            `;
-    }).join("") : '<p class="missing-copy">No missing custom nodes detected.</p>';
-    const unknownMarkup = state.unknownNodes.length ? `
-        <div class="missing-unknown">
-          <h4>Unknown Node Classes</h4>
-          <div class="missing-list">
-            ${state.unknownNodes.map((name) => {
-      const key = `unknown:${name}`;
-      const value = String(state.manualSourceOverrides[key] || "");
-      const disabledAttr = disableInputs ? "disabled" : "";
-      return `
-                  <div class="missing-row">
-                    <p class="missing-row-name">${escapeHtml(name)}</p>
-                    <p class="missing-row-meta">Source: <b>source unavailable</b></p>
-                    <input class="missing-row-url" type="text" data-action="manual-source" data-key="${escapeHtml(key)}" value="${escapeHtml(value)}" placeholder="Enter git URL for this node (optional)" ${disabledAttr} />
-                  </div>
-                `;
-    }).join("")}
-          </div>
-        </div>
-      ` : "";
-    body.innerHTML = `
-      <p class="missing-copy">Install missing custom nodes for the currently open workflow.</p>
-      ${progressMarkup}
-      <div class="missing-list">${missingMarkup}</div>
-      ${unknownMarkup}
-    `;
-    if (installButton) {
-      const canInstall = buildMissingInstallTargets().length > 0 && !state.installBusy;
-      installButton.disabled = !canInstall;
-      installButton.textContent = state.installBusy ? "Installing..." : "Install Missing Nodes";
-    }
-    if (restartButton) {
-      const showRestart = !state.installBusy && String(progressStatus || "").toLowerCase() === "completed" && progressCompleted > 0;
-      restartButton.classList.toggle("visible", showRestart);
-      restartButton.hidden = !showRestart;
-    }
-  }
-  function refreshMissingActionButtons() {
-    const installButton = document.getElementById("dtd-missing-install");
-    const restartButton = document.getElementById("dtd-missing-restart");
-    if (installButton) {
-      const canInstall = buildMissingInstallTargets().length > 0 && !state.installBusy;
-      installButton.disabled = !canInstall;
-      installButton.textContent = state.installBusy ? "Installing..." : "Install Missing Nodes";
-    }
-    if (restartButton) {
-      const progress = state.installProgress || null;
-      const showRestart = !state.installBusy && String(progress?.status || "").toLowerCase() === "completed" && Number(progress?.completed_targets || 0) > 0;
-      restartButton.classList.toggle("visible", showRestart);
-      restartButton.hidden = !showRestart;
-    }
-  }
-  function openMissingNodesModal() {
-    const modal = document.getElementById("dtd-missing-modal");
-    if (!modal) return;
-    modal.hidden = false;
-    renderMissingNodesModalContent();
-  }
-  function closeMissingNodesModal() {
-    const modal = document.getElementById("dtd-missing-modal");
-    if (!modal) return;
-    modal.hidden = true;
-  }
   function isTerminalInstallStatus(status) {
     return ["completed", "partial", "failed"].includes(
       String(status || "").toLowerCase()
@@ -1016,7 +652,7 @@
   }
   async function fetchInstallProgress(jobId) {
     const response = await apiFetch(
-      `/download-to-dir/missing-nodes/install-progress/${encodeURIComponent(jobId)}`,
+      `/download-to-dir/custom-node-install-progress/${encodeURIComponent(jobId)}`,
       {
         method: "GET",
         headers: { Accept: "application/json" }
@@ -1033,7 +669,6 @@
     state.installProgress = progress && typeof progress === "object" ? progress : null;
     state.installResults = Array.isArray(progress?.results) ? progress.results : [];
     state.installBusy = !isTerminalInstallStatus(progress?.status);
-    renderMissingNodesModalContent();
   }
   async function waitForInstallJobCompletion(jobId) {
     clearInstallPollTimer();
@@ -1045,176 +680,6 @@
         return progress;
       }
       await sleep(700);
-    }
-  }
-  async function refreshMissingNodes({ silent = false } = {}) {
-    if (state.missingCheckBusy) return;
-    const workflow = collectCurrentWorkflowJson();
-    if (!workflow) {
-      setMissingNodeData({ missing: [], unknown_nodes: [] });
-      return;
-    }
-    state.missingCheckBusy = true;
-    try {
-      const response = await apiFetch(
-        "/download-to-dir/missing-nodes/analyze",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          },
-          body: JSON.stringify({ workflow })
-        }
-      );
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const reason = String(data?.reason || data?.error || data?.stderr || "").trim() || `Failed to analyze workflow dependencies (${response.status})`;
-        throw new Error(reason);
-      }
-      setMissingNodeData(data);
-      if (state.missingNodes.length === 0 && state.unknownNodes.length === 0) {
-        const graphMissing = collectMissingNodeTypesFromGraph();
-        if (graphMissing.length > 0) {
-          setMissingNodeData({ missing: [], unknown_nodes: graphMissing });
-        }
-      }
-    } catch (err) {
-      const graphMissing = collectMissingNodeTypesFromGraph();
-      if (graphMissing.length > 0) {
-        setMissingNodeData({ missing: [], unknown_nodes: graphMissing });
-        return;
-      }
-      if (!silent) {
-        setStatus(err?.message || String(err), "error");
-      }
-    } finally {
-      state.missingCheckBusy = false;
-      renderMissingNodesModalContent();
-    }
-  }
-  function buildMissingInstallTargets() {
-    const targets = [];
-    const seen = /* @__PURE__ */ new Set();
-    for (const entry of state.missingNodes) {
-      const sourceUrl = String(entry.source_url || "").trim();
-      const manualSource = String(
-        state.manualSourceOverrides[entry.key] || ""
-      ).trim();
-      const target = sourceUrl || manualSource;
-      if (!target || seen.has(target)) continue;
-      seen.add(target);
-      targets.push(target);
-    }
-    for (const unknownName of state.unknownNodes) {
-      const key = `unknown:${unknownName}`;
-      const manualSource = String(
-        state.manualSourceOverrides[key] || ""
-      ).trim();
-      if (!manualSource || seen.has(manualSource)) continue;
-      seen.add(manualSource);
-      targets.push(manualSource);
-    }
-    return targets;
-  }
-  async function handleInstallMissingNodes() {
-    if (state.installBusy) return;
-    const targets = buildMissingInstallTargets();
-    if (targets.length === 0) {
-      setStatus(
-        "No install targets available. Add git URLs for rows with unavailable source.",
-        "error"
-      );
-      return;
-    }
-    state.installBusy = true;
-    state.installJobId = "";
-    state.installResults = [];
-    state.installProgress = {
-      status: "queued",
-      total_targets: targets.length,
-      completed_targets: 0,
-      failed_targets: 0,
-      progress_percent: 0,
-      current_target: "",
-      results: []
-    };
-    renderMissingNodesModalContent();
-    setStatus(`Installing ${targets.length} missing node(s)...`);
-    try {
-      const response = await apiFetch(
-        "/download-to-dir/missing-nodes/install",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          },
-          body: JSON.stringify({ targets })
-        }
-      );
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data?.job_id) {
-        const reason = String(data?.reason || data?.error || "").trim() || `Failed to start missing-node install (${response.status})`;
-        throw new Error(reason);
-      }
-      state.installJobId = String(data.job_id || "").trim();
-      applyInstallProgress({
-        ...state.installProgress || {},
-        ...data
-      });
-      const finalProgress = await waitForInstallJobCompletion(
-        state.installJobId
-      );
-      const finalStatus = String(finalProgress?.status || "").toLowerCase();
-      const installed = Number(finalProgress?.completed_targets || 0);
-      const failed = Number(finalProgress?.failed_targets || 0);
-      const successfulInstalls = Array.isArray(finalProgress?.results) ? finalProgress.results.filter((entry) => Boolean(entry?.ok)) : [];
-      state.installBusy = false;
-      renderMissingNodesModalContent();
-      if (finalStatus === "partial") {
-        setStatus(
-          `Installed ${installed} node(s); ${failed} failed. Review logs, then restart if needed.`,
-          "error"
-        );
-      } else if (finalStatus === "completed") {
-        setStatus(
-          `Installed ${installed} missing node(s). Click Restart in this modal.`,
-          "success"
-        );
-      } else {
-        const firstError = String(
-          finalProgress?.results?.find?.((entry) => !entry?.ok)?.stderr || ""
-        ).trim();
-        setStatus(
-          firstError || `Failed to install missing nodes. ${failed} target(s) failed.`,
-          "error"
-        );
-      }
-      for (const entry of successfulInstalls) {
-        const target = String(entry?.target || "").trim();
-        if (!target) continue;
-        const base = target.split("/").pop() || target;
-        const displayName = base.toLowerCase().endsWith(".git") ? base.slice(0, -4) : base;
-        addHistoryEntry({
-          operation: "install",
-          status: "success",
-          file_name: displayName || target,
-          destination_path: target,
-          path: target,
-          bytes_written: 0,
-          total_bytes: null,
-          progress_percent: null,
-          error: ""
-        });
-      }
-      await refreshMissingNodes({ silent: true });
-    } catch (err) {
-      setStatus(err?.message || String(err), "error");
-    } finally {
-      clearInstallPollTimer();
-      state.installBusy = false;
-      renderMissingNodesModalContent();
     }
   }
   function readSessionJson(key, fallback) {
@@ -1950,9 +1415,8 @@ Reinstall source: ${installTarget}`,
         current_target: installTarget,
         results: []
       };
-      renderMissingNodesModalContent();
       const installResp = await apiFetch(
-        "/download-to-dir/missing-nodes/install",
+        "/download-to-dir/custom-node-install",
         {
           method: "POST",
           headers: {
@@ -2014,7 +1478,6 @@ Reinstall source: ${installTarget}`,
     } finally {
       clearInstallPollTimer();
       state.installBusy = false;
-      renderMissingNodesModalContent();
     }
   }
   async function pollDownloadProgress(jobId, historyEntryId = jobId) {
@@ -2650,10 +2113,6 @@ ${copy}`.trim()));
           suffix = refreshed ? " Node definitions refreshed." : "";
         } catch {
         }
-        try {
-          await refreshMissingNodes({ silent: true });
-        } catch {
-        }
         setStatus(`${message}${suffix}`.trim(), "success");
         window.setTimeout(() => {
           setStatus("Ready.");
@@ -2853,9 +2312,6 @@ ${copy}`.trim()));
         <div class="cta-band bleed">
           <div class="actions">
             <button id="dtd-submit" type="button">Download</button>
-            <button id="dtd-missing-warning" type="button" hidden>
-              <i class="icon-[lucide--triangle-alert]"></i>
-            </button>
             <button id="dtd-export" type="button">Export</button>
             <button id="dtd-upload" type="button">Upload</button>
             <button id="dtd-restart" type="button">
@@ -2899,17 +2355,6 @@ ${copy}`.trim()));
             </div>
           </div>
         </div>
-        <div id="dtd-missing-modal" class="missing-modal" hidden>
-          <div class="missing-card">
-            <h3 class="missing-title">Missing Custom Nodes</h3>
-            <div id="dtd-missing-body"></div>
-            <div class="missing-actions">
-              <button id="dtd-missing-close" type="button">Close</button>
-              <button id="dtd-missing-restart" type="button" hidden>Restart</button>
-              <button id="dtd-missing-install" type="button">Install Missing Nodes</button>
-            </div>
-          </div>
-        </div>
       </div>
     `;
       document.body.appendChild(dialog2);
@@ -2920,8 +2365,6 @@ ${copy}`.trim()));
       if (!dialog.open) {
         dialog.classList.remove("dtd-closing");
         dialog.showModal();
-        refreshMissingNodes({ silent: true }).catch(() => {
-        });
       }
       if (state.roots.length === 0) {
         loadRoots().catch(
@@ -2946,7 +2389,6 @@ ${copy}`.trim()));
       });
     }
     renderHistory();
-    updateMissingWarningVisibility();
     const rootSelect = document.getElementById("dtd-root");
     const folderInput = document.getElementById("dtd-folder");
     if (rootSelect && folderInput) {
@@ -3018,14 +2460,6 @@ ${copy}`.trim()));
         handleDownload().catch(
           (err) => setStatus(err.message || String(err), "error")
         );
-      });
-    }
-    const missingWarning = document.getElementById("dtd-missing-warning");
-    if (missingWarning) {
-      missingWarning.addEventListener("click", () => {
-        openMissingNodesModal();
-        refreshMissingNodes({ silent: true }).catch(() => {
-        });
       });
     }
     const upload = document.getElementById("dtd-upload");
@@ -3212,62 +2646,18 @@ ${copy}`.trim()));
         closeExportPathModal(currentValue);
       });
     }
-    const missingModal = document.getElementById("dtd-missing-modal");
-    const missingClose = document.getElementById("dtd-missing-close");
-    const missingRestart = document.getElementById("dtd-missing-restart");
-    const missingInstall = document.getElementById("dtd-missing-install");
-    if (missingModal) {
-      missingModal.addEventListener("click", (event) => {
-        if (event.target === missingModal) closeMissingNodesModal();
-      });
-      missingModal.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          closeMissingNodesModal();
-        }
-      });
-      missingModal.addEventListener("input", (event) => {
-        const input = event.target instanceof Element ? event.target.closest(
-          'input[data-action="manual-source"][data-key]'
-        ) : null;
-        if (!(input instanceof HTMLInputElement)) return;
-        const key = String(input.dataset.key || "").trim();
-        if (!key) return;
-        state.manualSourceOverrides[key] = String(input.value || "").trim();
-        refreshMissingActionButtons();
-      });
-    }
-    if (missingClose) {
-      missingClose.addEventListener("click", () => closeMissingNodesModal());
-    }
-    if (missingRestart) {
-      missingRestart.addEventListener("click", () => {
-        handleRestart({ confirm: false }).catch(
-          (err) => setStatus(err.message || String(err), "error")
-        );
-      });
-    }
-    if (missingInstall) {
-      missingInstall.addEventListener("click", () => {
-        handleInstallMissingNodes().catch(
-          (err) => setStatus(err.message || String(err), "error")
-        );
-      });
-    }
     const close = document.getElementById("dtd-close-icon");
     if (close) {
       close.addEventListener("click", () => closeDialogAnimated(dialog));
     }
     dialog.addEventListener("click", (event) => {
       if (event.target === dialog) {
-        closeMissingNodesModal();
         closeConfirmModal(false);
         closeDialogAnimated(dialog);
       }
     });
     dialog.addEventListener("cancel", (event) => {
       event.preventDefault();
-      closeMissingNodesModal();
       closeConfirmModal(false);
       closeDialogAnimated(dialog);
     });
