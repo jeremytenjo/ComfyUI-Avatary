@@ -6650,3 +6650,121 @@ app5.graphToPrompt = async (...args) => {
   }
   return result;
 };
+
+// web-src/string_concatenate_frontend.ts
+import { app as app6 } from "/scripts/app.js";
+var NODE_CLASS4 = "AvataryStringConcatenate";
+var INPUT_PREFIX2 = "string_";
+var MAX_INPUTS = 64;
+var DEFAULT_W3 = 340;
+var NODE_VERTICAL_CHROME3 = 120;
+function isTargetNode3(node) {
+  return node?.comfyClass === NODE_CLASS4 || node?.type === NODE_CLASS4 || node?.constructor?.type === NODE_CLASS4;
+}
+function inputKeyForIndex2(index) {
+  return `${INPUT_PREFIX2}${index}`;
+}
+function indexFromInputName(name) {
+  const match = String(name || "").match(/^string_(\d+)$/);
+  if (!match) return 0;
+  const index = Number(match[1]);
+  return Number.isInteger(index) && index >= 1 && index <= MAX_INPUTS ? index : 0;
+}
+function getLinkForInput(input) {
+  if (!input) return null;
+  if (input.link != null) return input.link;
+  if (Array.isArray(input.links) && input.links.length) return input.links[0];
+  return null;
+}
+function isInputConnected(input) {
+  return getLinkForInput(input) != null;
+}
+function visibleCountForExistingInputs(inputs) {
+  let highestConnected = 0;
+  for (const input of inputs || []) {
+    const index = indexFromInputName(input?._avataryStringConcatInputKey || input?.name);
+    if (!index || !isInputConnected(input)) continue;
+    highestConnected = Math.max(highestConnected, index);
+  }
+  return Math.min(MAX_INPUTS, highestConnected + 1 || 1);
+}
+function syncInputs2(node) {
+  if (!node) return;
+  const existing = Array.isArray(node.inputs) ? node.inputs : [];
+  const visibleCount = visibleCountForExistingInputs(existing);
+  const existingByIndex = /* @__PURE__ */ new Map();
+  for (const input of existing) {
+    const index = indexFromInputName(input?._avataryStringConcatInputKey || input?.name);
+    if (!index) continue;
+    const current = existingByIndex.get(index);
+    if (!current || isInputConnected(input)) {
+      existingByIndex.set(index, input);
+    }
+  }
+  const dynamicInputs = [];
+  for (let index = 1; index <= visibleCount; index += 1) {
+    const inputKey = inputKeyForIndex2(index);
+    const input = existingByIndex.get(index) || {
+      name: inputKey,
+      type: "STRING",
+      link: null
+    };
+    input.name = inputKey;
+    input.type = "STRING";
+    input._avataryStringConcatInputKey = inputKey;
+    dynamicInputs.push(input);
+  }
+  node.inputs = dynamicInputs;
+  node.graph?.setDirtyCanvas?.(true, true);
+  app6.graph?.setDirtyCanvas?.(true, true);
+}
+function fitNodeHeight3(node) {
+  const width = Math.max(node.size?.[0] || 0, DEFAULT_W3);
+  const inputCount = Math.max(1, node.inputs?.length || 1);
+  const inputHeight = inputCount * 26 + 48;
+  const height = Math.max(150, inputHeight + NODE_VERTICAL_CHROME3);
+  if (typeof node.setSize === "function") {
+    node.setSize([width, height]);
+  } else if (Array.isArray(node.size)) {
+    node.size[0] = width;
+    node.size[1] = height;
+  }
+  node.graph?.setDirtyCanvas?.(true, true);
+  app6.graph?.setDirtyCanvas?.(true, true);
+}
+function refreshNode3(node) {
+  if (!isTargetNode3(node)) return;
+  syncInputs2(node);
+  fitNodeHeight3(node);
+}
+function bindNode5(node) {
+  refreshNode3(node);
+  setTimeout(() => refreshNode3(node), 80);
+}
+app6.registerExtension({
+  name: "Avatary.StringConcatenate",
+  async beforeRegisterNodeDef(nodeType, nodeData) {
+    if (nodeData.name !== NODE_CLASS4) return;
+    const originalOnNodeCreated = nodeType.prototype.onNodeCreated;
+    nodeType.prototype.onNodeCreated = function(...args) {
+      const result = originalOnNodeCreated?.apply(this, args);
+      bindNode5(this);
+      return result;
+    };
+    const originalOnConfigure = nodeType.prototype.onConfigure;
+    nodeType.prototype.onConfigure = function(...args) {
+      const result = originalOnConfigure?.apply(this, args);
+      bindNode5(this);
+      return result;
+    };
+    const originalOnConnectionsChange = nodeType.prototype.onConnectionsChange;
+    nodeType.prototype.onConnectionsChange = function(...args) {
+      const result = originalOnConnectionsChange?.apply(this, args);
+      requestAnimationFrame(() => refreshNode3(this));
+      return result;
+    };
+  },
+  loadedGraphNode(node) {
+    bindNode5(node);
+  }
+});

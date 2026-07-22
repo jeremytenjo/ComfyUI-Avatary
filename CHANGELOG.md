@@ -10,6 +10,9 @@ All notable changes to internal packs are documented in this file.
   - Builds one prompt from ordered named sections.
   - Provides default multiline section text and optional linked string inputs per section.
   - Connected section strings override their default text and non-empty sections are joined with newlines.
+- Added new `String Concatenate Avatary` node:
+  - Concatenates an expandable set of linked strings with a configurable delimiter.
+  - Auto-grows linked string inputs so workflows do not need to chain two-input concatenate nodes.
 
 ### 2026-07-16
 

@@ -16,6 +16,10 @@ Run multiple prompts from a single list
 
 Build one prompt from ordered named sections, with default section text and optional linked string inputs per section.
 
+#### `String Concatenate Avatary`
+
+Concatenate linked strings with a configurable delimiter and an auto-growing input list.
+
 #### `Load Images Avatary`
 
 Drop, paste, or point at a folder and feed ordered image sets straight into your graph.
