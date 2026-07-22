@@ -981,6 +981,10 @@ function renderPanel(node, groupsByTitle, stateStore) {
 		return true;
 	}
 
+	const hasAnyRules = groupsByTitle.some(
+		(entry) => getFeatureRules(node, entry.key).length > 0,
+	);
+
 	for (const entry of groupsByTitle) {
 		const isEnabled = resolveInitialEnabled(node, entry, stateStore);
 		if (!hasStoredState(stateStore, entry.key)) {
@@ -1030,7 +1034,7 @@ function renderPanel(node, groupsByTitle, stateStore) {
 		rulesText.textContent = "Rules";
 		rules.appendChild(rulesText);
 		const ruleCount = getFeatureRules(node, entry.key).length;
-		if (ruleCount > 0) {
+		if (ruleCount > 0 || hasAnyRules) {
 			const badge = document.createElement("span");
 			badge.className = "avatary-features-rules-badge";
 			badge.textContent = String(ruleCount);
