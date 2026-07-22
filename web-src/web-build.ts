@@ -7,3 +7,4 @@ import "./load_images_avatary.js";
 import "./lora_stack_frontend.js";
 import "./prompt_builder_frontend.js";
 import "./string_concatenate_frontend.js";
+import "./return_true_frontend.js";

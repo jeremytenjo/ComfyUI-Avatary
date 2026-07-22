@@ -20,6 +20,10 @@ Build one prompt from ordered named sections, with default section text and opti
 
 Concatenate linked strings with a configurable delimiter and an auto-growing input list.
 
+#### `Return True Avatary`
+
+Return the first truthy connected value from an auto-growing list of wildcard inputs.
+
 #### `Load Images Avatary`
 
 Drop, paste, or point at a folder and feed ordered image sets straight into your graph.

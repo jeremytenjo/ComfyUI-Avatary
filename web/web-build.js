@@ -6794,3 +6794,120 @@ app6.registerExtension({
     bindNode5(node);
   }
 });
+
+// web-src/return_true_frontend.ts
+import { app as app7 } from "/scripts/app.js";
+var NODE_CLASS5 = "AvataryReturnTrue";
+var INPUT_PREFIX3 = "arg_";
+var MAX_INPUTS2 = 64;
+var DEFAULT_W4 = 320;
+var NODE_VERTICAL_CHROME4 = 92;
+function isTargetNode4(node) {
+  return node?.comfyClass === NODE_CLASS5 || node?.type === NODE_CLASS5 || node?.constructor?.type === NODE_CLASS5;
+}
+function inputKeyForIndex3(index) {
+  return `${INPUT_PREFIX3}${index}`;
+}
+function indexFromInputName2(name) {
+  const match = String(name || "").match(/^arg_(\d+)$/);
+  if (!match) return 0;
+  const index = Number(match[1]);
+  return Number.isInteger(index) && index >= 1 && index <= MAX_INPUTS2 ? index : 0;
+}
+function getLinkForInput2(input) {
+  if (!input) return null;
+  if (input.link != null) return input.link;
+  if (Array.isArray(input.links) && input.links.length) return input.links[0];
+  return null;
+}
+function isInputConnected2(input) {
+  return getLinkForInput2(input) != null;
+}
+function visibleCountForExistingInputs2(inputs) {
+  let highestConnected = 0;
+  for (const input of inputs || []) {
+    const index = indexFromInputName2(input?._avataryReturnTrueInputKey || input?.name);
+    if (!index || !isInputConnected2(input)) continue;
+    highestConnected = Math.max(highestConnected, index);
+  }
+  return Math.min(MAX_INPUTS2, highestConnected + 1 || 1);
+}
+function syncInputs3(node) {
+  if (!node) return;
+  const existing = Array.isArray(node.inputs) ? node.inputs : [];
+  const visibleCount = visibleCountForExistingInputs2(existing);
+  const existingByIndex = /* @__PURE__ */ new Map();
+  for (const input of existing) {
+    const index = indexFromInputName2(input?._avataryReturnTrueInputKey || input?.name);
+    if (!index) continue;
+    const current = existingByIndex.get(index);
+    if (!current || isInputConnected2(input)) {
+      existingByIndex.set(index, input);
+    }
+  }
+  const dynamicInputs = [];
+  for (let index = 1; index <= visibleCount; index += 1) {
+    const inputKey = inputKeyForIndex3(index);
+    const input = existingByIndex.get(index) || {
+      name: inputKey,
+      type: "*",
+      link: null
+    };
+    input.name = inputKey;
+    input.type = "*";
+    input._avataryReturnTrueInputKey = inputKey;
+    dynamicInputs.push(input);
+  }
+  node.inputs = dynamicInputs;
+  node.graph?.setDirtyCanvas?.(true, true);
+  app7.graph?.setDirtyCanvas?.(true, true);
+}
+function fitNodeHeight4(node) {
+  const width = Math.max(node.size?.[0] || 0, DEFAULT_W4);
+  const inputCount = Math.max(1, node.inputs?.length || 1);
+  const height = Math.max(120, inputCount * 26 + NODE_VERTICAL_CHROME4);
+  if (typeof node.setSize === "function") {
+    node.setSize([width, height]);
+  } else if (Array.isArray(node.size)) {
+    node.size[0] = width;
+    node.size[1] = height;
+  }
+  node.graph?.setDirtyCanvas?.(true, true);
+  app7.graph?.setDirtyCanvas?.(true, true);
+}
+function refreshNode4(node) {
+  if (!isTargetNode4(node)) return;
+  syncInputs3(node);
+  fitNodeHeight4(node);
+}
+function bindNode6(node) {
+  refreshNode4(node);
+  setTimeout(() => refreshNode4(node), 80);
+}
+app7.registerExtension({
+  name: "Avatary.ReturnTrue",
+  async beforeRegisterNodeDef(nodeType, nodeData) {
+    if (nodeData.name !== NODE_CLASS5) return;
+    const originalOnNodeCreated = nodeType.prototype.onNodeCreated;
+    nodeType.prototype.onNodeCreated = function(...args) {
+      const result = originalOnNodeCreated?.apply(this, args);
+      bindNode6(this);
+      return result;
+    };
+    const originalOnConfigure = nodeType.prototype.onConfigure;
+    nodeType.prototype.onConfigure = function(...args) {
+      const result = originalOnConfigure?.apply(this, args);
+      bindNode6(this);
+      return result;
+    };
+    const originalOnConnectionsChange = nodeType.prototype.onConnectionsChange;
+    nodeType.prototype.onConnectionsChange = function(...args) {
+      const result = originalOnConnectionsChange?.apply(this, args);
+      requestAnimationFrame(() => refreshNode4(this));
+      return result;
+    };
+  },
+  loadedGraphNode(node) {
+    bindNode6(node);
+  }
+});

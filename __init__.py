@@ -49,6 +49,10 @@ try:
     from .nodes.node_string_concatenate_backend import (
         NODE_DISPLAY_NAME_MAPPINGS as _NAMES_STRING_CONCATENATE,
     )
+    from .nodes.node_return_true_backend import NODE_CLASS_MAPPINGS as _MAPS_RETURN_TRUE
+    from .nodes.node_return_true_backend import (
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES_RETURN_TRUE,
+    )
     from .nodes.node_save_image_avatary_backend import (
         NODE_CLASS_MAPPINGS as _MAPS_SAVE_IMAGE_ULTRA,
     )
@@ -92,6 +96,10 @@ except ImportError:
     from nodes.node_string_concatenate_backend import (
         NODE_DISPLAY_NAME_MAPPINGS as _NAMES_STRING_CONCATENATE,
     )
+    from nodes.node_return_true_backend import NODE_CLASS_MAPPINGS as _MAPS_RETURN_TRUE
+    from nodes.node_return_true_backend import (
+        NODE_DISPLAY_NAME_MAPPINGS as _NAMES_RETURN_TRUE,
+    )
     from nodes.node_save_image_avatary_backend import (
         NODE_CLASS_MAPPINGS as _MAPS_SAVE_IMAGE_ULTRA,
     )
@@ -134,6 +142,7 @@ NODE_CLASS_MAPPINGS = _merge_mapping_dicts(
     _MAPS_PROMPT_LIST,
     _MAPS_PROMPT_BUILDER,
     _MAPS_STRING_CONCATENATE,
+    _MAPS_RETURN_TRUE,
     _MAPS_SAVE_IMAGE_ULTRA,
     _MAPS_LOAD_IMAGE_BATCH,
     _MAPS_LORA_STACK,
@@ -149,6 +158,7 @@ NODE_DISPLAY_NAME_MAPPINGS = _merge_mapping_dicts(
     _NAMES_PROMPT_LIST,
     _NAMES_PROMPT_BUILDER,
     _NAMES_STRING_CONCATENATE,
+    _NAMES_RETURN_TRUE,
     _NAMES_SAVE_IMAGE_ULTRA,
     _NAMES_LOAD_IMAGE_BATCH,
     _NAMES_LORA_STACK,

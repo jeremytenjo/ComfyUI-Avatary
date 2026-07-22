@@ -46,6 +46,7 @@ def test_root_registry_contains_expected_nodes():
         "ComfyUI-Prompts",
         "AvataryPromptBuilder",
         "AvataryStringConcatenate",
+        "AvataryReturnTrue",
         "SaveImageWithPromptToggle",
         "AvataryLoadImageBatch",
         "AvataryLoraStack",
