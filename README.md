@@ -42,7 +42,7 @@ Saves final images with cleaner names, prompt metadata, and fewer output-folder 
 
 #### `Aspect Ratio Avatary`
 
-Converts presets or custom overrides into exact width and height values.
+Converts presets or custom overrides into exact width and height values, including 2-, 3-, and 4-image carousel presets.
 
 #### `Group Bypasser Avatary`
 

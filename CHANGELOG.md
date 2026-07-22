@@ -13,6 +13,7 @@ All notable changes to internal packs are documented in this file.
 - Added new `String Concatenate Avatary` node:
   - Concatenates an expandable set of linked strings with a configurable delimiter.
   - Auto-grows linked string inputs so workflows do not need to chain two-input concatenate nodes.
+- Added `3 img carousel: 3240×1920` to `Aspect Ratio Avatary`.
 
 ### 2026-07-16
 
