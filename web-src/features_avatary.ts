@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { app } from "../../scripts/app.js";
+import { captureTextInputEvents } from "./components/textfield.js";
 import { createToggle, ensureToggleStyles } from "./components/toggle.js";
 
 const NODE_NAME = "AvataryFeatures";
@@ -521,6 +522,11 @@ function ensureStyles() {
 			flex: 0 0 auto;
 			opacity: .72;
 		}
+		.avatary-features-rule-actions {
+			display: flex;
+			flex: 0 0 auto;
+			gap: 8px;
+		}
 		.avatary-features-modal-footer {
 			display: flex;
 			justify-content: flex-end;
@@ -710,9 +716,13 @@ function createDescription(text) {
 	return description;
 }
 
-function openToggleRegexModal(node, entry, type = "toggle") {
+function openToggleRegexModal(node, entry, type = "toggle", editIndex = null) {
 	const normalizedType = type === "toggle_node" ? "toggle_node" : "toggle";
-	const { body } = createModal(`${ruleTypeLabel(normalizedType)} Rule`);
+	const editing = Number.isInteger(editIndex);
+	const existingRule = editing ? getFeatureRules(node, entry.key)[editIndex] : null;
+	const { body } = createModal(
+		`${editing ? "Edit" : "Add"} ${ruleTypeLabel(normalizedType)} Rule`,
+	);
 
 	body.appendChild(createDescription(ruleTypeDescription(normalizedType)));
 
@@ -722,9 +732,8 @@ function openToggleRegexModal(node, entry, type = "toggle") {
 	input.placeholder = normalizedType.includes("_node")
 		? "Node name regex"
 		: "Group name regex";
-	input.addEventListener("pointerdown", stopCanvasEvent);
-	input.addEventListener("mousedown", stopCanvasEvent);
-	input.addEventListener("touchstart", stopCanvasEvent);
+	input.value = existingRule?.pattern || "";
+	captureTextInputEvents(input);
 
 	const error = document.createElement("div");
 	error.className = "avatary-features-regex-error";
@@ -755,7 +764,12 @@ function openToggleRegexModal(node, entry, type = "toggle") {
 			error.textContent = err?.message || "Invalid regex.";
 			return;
 		}
-		getFeatureRules(node, entry.key).push({ type: normalizedType, pattern });
+		const rules = getFeatureRules(node, entry.key);
+		if (editing && rules[editIndex]) {
+			rules[editIndex] = { type: normalizedType, pattern };
+		} else {
+			rules.push({ type: normalizedType, pattern });
+		}
 		app.graph?.setDirtyCanvas?.(true, true);
 		refreshRulesBadge(node);
 		openRulesModal(node, entry);
@@ -839,7 +853,19 @@ function openRulesModal(node, entry) {
 			openRulesModal(node, entry);
 		});
 
-		row.append(type, label, remove);
+		const edit = document.createElement("button");
+		edit.type = "button";
+		edit.className = "avatary-features-modal-button";
+		edit.textContent = "Edit";
+		edit.addEventListener("click", () => {
+			openToggleRegexModal(node, entry, rule.type, index);
+		});
+
+		const actions = document.createElement("div");
+		actions.className = "avatary-features-rule-actions";
+		actions.append(edit, remove);
+
+		row.append(type, label, actions);
 		list.appendChild(row);
 	}
 

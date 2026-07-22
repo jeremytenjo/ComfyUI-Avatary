@@ -3047,6 +3047,66 @@ app.registerExtension({
 // web-src/features_avatary.ts
 import { app as app2 } from "../../scripts/app.js";
 
+// web-src/components/textfield.ts
+var COMFY_TEXT_INPUT_EVENTS = [
+  "keydown",
+  "keyup",
+  "keypress",
+  "beforeinput",
+  "input",
+  "pointerdown",
+  "mousedown",
+  "mouseup",
+  "click",
+  "dblclick",
+  "touchstart",
+  "wheel"
+];
+function captureTextInputEvents(element) {
+  const stop = (event) => event.stopPropagation();
+  for (const eventName of COMFY_TEXT_INPUT_EVENTS) {
+    element.addEventListener(eventName, stop);
+  }
+}
+function createTextfield({
+  value = "",
+  placeholder = "",
+  disabled = false,
+  title = "",
+  className = "",
+  captureEvents = true,
+  onInput,
+  onChange
+}) {
+  const input = document.createElement("input");
+  input.type = "text";
+  const comfyClasses = [
+    // Mirrors ComfyUI_frontend widget input conventions.
+    "w-full",
+    "min-w-0",
+    "h-7",
+    "rounded-lg",
+    "border-none",
+    "bg-component-node-widget-background",
+    "text-component-node-foreground",
+    "px-4",
+    "text-xs",
+    "outline-none",
+    "transition-colors",
+    "hover:bg-component-node-widget-background-hovered",
+    "focus:bg-component-node-widget-background-hovered"
+  ].join(" ");
+  input.className = `${comfyClasses} ${className}`.trim();
+  input.value = value;
+  input.placeholder = placeholder;
+  input.disabled = disabled;
+  if (title) input.title = title;
+  input.addEventListener("input", () => onInput?.(input.value));
+  input.addEventListener("change", () => onChange?.(input.value));
+  if (captureEvents) captureTextInputEvents(input);
+  return input;
+}
+
 // web-src/components/toggle.ts
 var TOGGLE_STYLE_ID = "avatary-switch-toggle-styles";
 function ensureToggleStyles() {
@@ -3582,6 +3642,11 @@ function ensureStyles() {
 			flex: 0 0 auto;
 			opacity: .72;
 		}
+		.avatary-features-rule-actions {
+			display: flex;
+			flex: 0 0 auto;
+			gap: 8px;
+		}
 		.avatary-features-modal-footer {
 			display: flex;
 			justify-content: flex-end;
@@ -3741,17 +3806,20 @@ function createDescription(text) {
   description.textContent = text;
   return description;
 }
-function openToggleRegexModal(node, entry, type = "toggle") {
+function openToggleRegexModal(node, entry, type = "toggle", editIndex = null) {
   const normalizedType = type === "toggle_node" ? "toggle_node" : "toggle";
-  const { body } = createModal(`${ruleTypeLabel(normalizedType)} Rule`);
+  const editing = Number.isInteger(editIndex);
+  const existingRule = editing ? getFeatureRules(node, entry.key)[editIndex] : null;
+  const { body } = createModal(
+    `${editing ? "Edit" : "Add"} ${ruleTypeLabel(normalizedType)} Rule`
+  );
   body.appendChild(createDescription(ruleTypeDescription(normalizedType)));
   const input = document.createElement("input");
   input.type = "text";
   input.className = "avatary-features-regex-input";
   input.placeholder = normalizedType.includes("_node") ? "Node name regex" : "Group name regex";
-  input.addEventListener("pointerdown", stopCanvasEvent);
-  input.addEventListener("mousedown", stopCanvasEvent);
-  input.addEventListener("touchstart", stopCanvasEvent);
+  input.value = existingRule?.pattern || "";
+  captureTextInputEvents(input);
   const error = document.createElement("div");
   error.className = "avatary-features-regex-error";
   const footer = document.createElement("div");
@@ -3777,7 +3845,12 @@ function openToggleRegexModal(node, entry, type = "toggle") {
       error.textContent = err?.message || "Invalid regex.";
       return;
     }
-    getFeatureRules(node, entry.key).push({ type: normalizedType, pattern });
+    const rules = getFeatureRules(node, entry.key);
+    if (editing && rules[editIndex]) {
+      rules[editIndex] = { type: normalizedType, pattern };
+    } else {
+      rules.push({ type: normalizedType, pattern });
+    }
     app2.graph?.setDirtyCanvas?.(true, true);
     refreshRulesBadge(node);
     openRulesModal(node, entry);
@@ -3845,7 +3918,17 @@ function openRulesModal(node, entry) {
       refreshRulesBadge(node);
       openRulesModal(node, entry);
     });
-    row.append(type, label, remove);
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.className = "avatary-features-modal-button";
+    edit.textContent = "Edit";
+    edit.addEventListener("click", () => {
+      openToggleRegexModal(node, entry, rule.type, index);
+    });
+    const actions = document.createElement("div");
+    actions.className = "avatary-features-rule-actions";
+    actions.append(edit, remove);
+    row.append(type, label, actions);
     list.appendChild(row);
   }
   const footer = document.createElement("div");
@@ -5967,66 +6050,6 @@ app4.graphToPrompt = async (...args) => {
 
 // web-src/prompt_builder_frontend.ts
 import { app as app5 } from "/scripts/app.js";
-
-// web-src/components/textfield.ts
-var COMFY_TEXT_INPUT_EVENTS = [
-  "keydown",
-  "keyup",
-  "keypress",
-  "beforeinput",
-  "input",
-  "pointerdown",
-  "mousedown",
-  "mouseup",
-  "click",
-  "dblclick",
-  "touchstart",
-  "wheel"
-];
-function captureTextInputEvents(element) {
-  const stop = (event) => event.stopPropagation();
-  for (const eventName of COMFY_TEXT_INPUT_EVENTS) {
-    element.addEventListener(eventName, stop);
-  }
-}
-function createTextfield({
-  value = "",
-  placeholder = "",
-  disabled = false,
-  title = "",
-  className = "",
-  captureEvents = true,
-  onInput,
-  onChange
-}) {
-  const input = document.createElement("input");
-  input.type = "text";
-  const comfyClasses = [
-    // Mirrors ComfyUI_frontend widget input conventions.
-    "w-full",
-    "min-w-0",
-    "h-7",
-    "rounded-lg",
-    "border-none",
-    "bg-component-node-widget-background",
-    "text-component-node-foreground",
-    "px-4",
-    "text-xs",
-    "outline-none",
-    "transition-colors",
-    "hover:bg-component-node-widget-background-hovered",
-    "focus:bg-component-node-widget-background-hovered"
-  ].join(" ");
-  input.className = `${comfyClasses} ${className}`.trim();
-  input.value = value;
-  input.placeholder = placeholder;
-  input.disabled = disabled;
-  if (title) input.title = title;
-  input.addEventListener("input", () => onInput?.(input.value));
-  input.addEventListener("change", () => onChange?.(input.value));
-  if (captureEvents) captureTextInputEvents(input);
-  return input;
-}
 
 // web-src/components/textarea.ts
 function createTextarea({
