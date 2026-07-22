@@ -26,6 +26,7 @@ def test_aspect_ratio_returns_selected_dimensions():
     assert node.resolve("1:1: 1328×1328") == (1328, 1328)
     assert node.resolve("2:3: 1056×1584") == (1056, 1584)
     assert node.resolve("2 img carousel: 2160×1920") == (2160, 1920)
+    assert node.resolve("3 img carousel: 3240×1920") == (3240, 1920)
     assert node.resolve("4 img carousel: 4320×1920") == (4320, 1920)
     assert node.resolve("21:9: 1520×656") == (1520, 656)
 
