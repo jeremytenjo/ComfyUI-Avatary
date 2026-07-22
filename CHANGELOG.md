@@ -4,6 +4,13 @@ All notable changes to internal packs are documented in this file.
 
 ## Avatary Core
 
+### 2026-07-22
+
+- Added new `Prompt Builder Avatary` node:
+  - Builds one prompt from ordered named sections.
+  - Provides default multiline section text and optional linked string inputs per section.
+  - Connected section strings override their default text and non-empty sections are joined with newlines.
+
 ### 2026-07-16
 
 - Added new `Load Checkpoint or Diffusion Model Avatary` node:

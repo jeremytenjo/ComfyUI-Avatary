@@ -44,6 +44,7 @@ def test_root_registry_contains_expected_nodes():
         "AvataryFeatures",
         "NanoBananaProImage",
         "ComfyUI-Prompts",
+        "AvataryPromptBuilder",
         "SaveImageWithPromptToggle",
         "AvataryLoadImageBatch",
         "AvataryLoraStack",

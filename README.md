@@ -12,6 +12,10 @@ Instantly breaks carousel and grid outputs into clean native-size panels with a 
 
 Run multiple prompts from a single list
 
+#### `Prompt Builder Avatary`
+
+Build one prompt from ordered named sections, with default section text and optional linked string inputs per section.
+
 #### `Load Images Avatary`
 
 Drop, paste, or point at a folder and feed ordered image sets straight into your graph.

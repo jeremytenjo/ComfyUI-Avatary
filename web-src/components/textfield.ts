@@ -1,11 +1,34 @@
 // @ts-nocheck
 
+const COMFY_TEXT_INPUT_EVENTS = [
+	"keydown",
+	"keyup",
+	"keypress",
+	"beforeinput",
+	"input",
+	"pointerdown",
+	"mousedown",
+	"mouseup",
+	"click",
+	"dblclick",
+	"touchstart",
+	"wheel",
+];
+
+export function captureTextInputEvents(element) {
+	const stop = (event) => event.stopPropagation();
+	for (const eventName of COMFY_TEXT_INPUT_EVENTS) {
+		element.addEventListener(eventName, stop);
+	}
+}
+
 export function createTextfield({
 	value = "",
 	placeholder = "",
 	disabled = false,
 	title = "",
 	className = "",
+	captureEvents = true,
 	onInput,
 	onChange,
 }) {
@@ -36,5 +59,6 @@ export function createTextfield({
 	if (title) input.title = title;
 	input.addEventListener("input", () => onInput?.(input.value));
 	input.addEventListener("change", () => onChange?.(input.value));
+	if (captureEvents) captureTextInputEvents(input);
 	return input;
 }

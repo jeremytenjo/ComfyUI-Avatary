@@ -5,3 +5,4 @@ import "./group_bypasser.js";
 import "./features_avatary.js";
 import "./load_images_avatary.js";
 import "./lora_stack_frontend.js";
+import "./prompt_builder_frontend.js";
